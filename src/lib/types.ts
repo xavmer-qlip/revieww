@@ -20,6 +20,7 @@ export interface Business {
   subscription_status: SubscriptionStatus;
   plan_type: PlanType;
   monthly_spin_limit: number;
+  contact_limit: number;
   trial_ends_at: string;
   onboarding_completed: boolean;
 }
@@ -56,13 +57,13 @@ export interface Spin {
 }
 
 export type SubscriptionStatus =
-  | 'trialing'
+  | 'free'
   | 'active'
   | 'past_due'
   | 'canceled'
   | 'expired';
 
-export type PlanType = 'starter' | 'growth' | 'pro';
+export type PlanType = 'free' | 'starter' | 'growth' | 'pro';
 
 export interface Plan {
   id: PlanType;
@@ -71,6 +72,9 @@ export interface Plan {
   currency: string;
   spinsPerMonth: number;
   spinsLabel: string;
+  contactsLimit: number;
+  contactsLabel: string;
   description: string;
   popular?: boolean;
+  features?: string[];
 }

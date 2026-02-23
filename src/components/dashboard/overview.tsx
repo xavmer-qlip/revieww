@@ -339,24 +339,16 @@ function RecentActivity({ spins }: { spins: Spin[] }) {
 function SubscriptionStatus({ business }: { business: Business }) {
   const plan = PLANS.find((p) => p.id === business.plan_type);
   const status = business.subscription_status;
-  const isTrialing = status === 'trialing';
+  const isFree = status === 'free';
   const isActive = status === 'active';
   const isExpired = status === 'expired' || status === 'canceled';
 
-  // Trial countdown
-  let trialDaysLeft = 0;
-  if (isTrialing && business.trial_ends_at) {
-    const now = new Date();
-    const trialEnd = new Date(business.trial_ends_at);
-    trialDaysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-  }
-
-  const statusConfig = {
-    trialing: { label: 'Essai gratuit', variant: 'warning' as const },
-    active: { label: 'Actif', variant: 'success' as const },
-    past_due: { label: 'En retard', variant: 'danger' as const },
-    canceled: { label: 'Annulé', variant: 'danger' as const },
-    expired: { label: 'Expiré', variant: 'danger' as const },
+  const statusConfig: Record<string, { label: string; variant: 'muted' | 'success' | 'danger' }> = {
+    free: { label: 'Gratuit', variant: 'muted' },
+    active: { label: 'Actif', variant: 'success' },
+    past_due: { label: 'En retard', variant: 'danger' },
+    canceled: { label: 'Annulé', variant: 'danger' },
+    expired: { label: 'Expiré', variant: 'danger' },
   };
 
   const config = statusConfig[status] ?? statusConfig.expired;
@@ -386,29 +378,24 @@ function SubscriptionStatus({ business }: { business: Business }) {
               </Badge>
             </div>
             <p className="text-sm text-text-muted font-body mt-0.5">
-              {plan?.price} {plan?.currency}/mois
+              {isFree ? 'Gratuit' : `${plan?.price} ${plan?.currency}/mois`}
             </p>
           </div>
 
-          {(isExpired || status === 'past_due') && (
+          {(isFree || isExpired || status === 'past_due') && (
             <Link href="/dashboard/billing">
               <Button size="sm" variant="primary">
-                Mettre à jour
+                {isFree ? 'Upgrader' : 'Mettre à jour'}
               </Button>
             </Link>
           )}
         </div>
 
-        {/* Trial countdown */}
-        {isTrialing && (
-          <div className="mt-3 rounded-xl bg-warning/10 border border-warning/20 px-3 py-2">
-            <div className="flex items-center gap-2">
-              <AlertTriangle size={14} className="text-warning shrink-0" />
-              <p className="text-xs font-body text-text">
-                <span className="font-semibold">{trialDaysLeft} jour{trialDaysLeft !== 1 ? 's' : ''}</span>{' '}
-                restant{trialDaysLeft !== 1 ? 's' : ''} dans votre essai gratuit
-              </p>
-            </div>
+        {isFree && (
+          <div className="mt-3 rounded-xl bg-primary/10 border border-primary/20 px-3 py-2">
+            <p className="text-xs font-body text-primary font-medium">
+              {business.monthly_spin_limit - 0} spins restants sur votre plan gratuit
+            </p>
           </div>
         )}
 

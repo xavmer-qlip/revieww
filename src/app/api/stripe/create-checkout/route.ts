@@ -100,7 +100,6 @@ export async function POST(request: NextRequest) {
         },
       ],
       subscription_data: {
-        trial_period_days: 7,
         metadata: {
           businessId: typedBusiness.id,
           planType: body.planType,

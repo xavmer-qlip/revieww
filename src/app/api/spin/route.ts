@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { pickWeightedSegment } from '@/lib/utils';
-import { PLAN_SPIN_LIMITS } from '@/lib/constants';
+import { PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS } from '@/lib/constants';
 import { Business, WheelSegment } from '@/lib/types';
 import { sendPrizeWonEmail } from '@/lib/emails/prize-won';
 
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     const typedBusiness = business as Business;
 
     // ---- Check subscription status ----
-    const activeStatuses = ['active', 'trialing'];
+    const activeStatuses = ['active', 'trialing', 'free'];
     if (!activeStatuses.includes(typedBusiness.subscription_status)) {
       return NextResponse.json(
         { error: 'subscription_inactive' },
@@ -97,32 +97,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Check monthly spin count vs limit ----
+    // ---- Check spin limit ----
+    const isFree = typedBusiness.plan_type === 'free';
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfMonthISO = startOfMonth.toISOString();
-
-    const { count: monthlySpins, error: countError } = await supabase
-      .from('spins')
-      .select('*', { count: 'exact', head: true })
-      .eq('business_id', body.businessId)
-      .gte('created_at', startOfMonthISO);
-
-    if (countError) {
-      console.error('Error counting spins:', countError);
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
-    }
 
     const spinLimit =
       PLAN_SPIN_LIMITS[typedBusiness.plan_type] ??
       typedBusiness.monthly_spin_limit;
 
-    if ((monthlySpins ?? 0) >= spinLimit) {
+    if (isFree) {
+      // Free plan: total lifetime spins (not monthly)
+      const { count: totalSpins, error: countError } = await supabase
+        .from('spins')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', body.businessId);
+
+      if (countError) {
+        console.error('Error counting spins:', countError);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
+
+      if ((totalSpins ?? 0) >= spinLimit) {
+        return NextResponse.json({ error: 'free_limit_reached' }, { status: 429 });
+      }
+    } else {
+      // Paid plans: monthly spin count
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const { count: monthlySpins, error: countError } = await supabase
+        .from('spins')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', body.businessId)
+        .gte('created_at', startOfMonth.toISOString());
+
+      if (countError) {
+        console.error('Error counting spins:', countError);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      }
+
+      if ((monthlySpins ?? 0) >= spinLimit) {
+        return NextResponse.json({ error: 'quota_reached' }, { status: 429 });
+      }
+    }
+
+    // ---- Check contact limit ----
+    const contactLimit =
+      PLAN_CONTACT_LIMITS[typedBusiness.plan_type] ??
+      typedBusiness.contact_limit ?? 30;
+
+    const { count: uniqueContacts } = await supabase
+      .from('spins')
+      .select('email', { count: 'exact', head: true })
+      .eq('business_id', body.businessId);
+
+    if ((uniqueContacts ?? 0) >= contactLimit) {
       return NextResponse.json(
-        { error: 'quota_reached' },
+        { error: isFree ? 'free_limit_reached' : 'contact_limit_reached' },
         { status: 429 }
       );
     }

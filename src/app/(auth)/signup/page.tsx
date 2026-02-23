@@ -293,7 +293,7 @@ export default function SignupPage() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.35 }}
       >
-        {['Essai gratuit 7 jours', 'Sans engagement', 'Prêt en 1 min'].map(
+        {['30 spins offerts', 'Sans engagement', 'Prêt en 1 min'].map(
           (perk) => (
             <span
               key={perk}

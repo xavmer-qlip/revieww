@@ -6,40 +6,95 @@ export const APP_DOMAIN = 'revieww.ch';
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://revieww.ch';
 export const PLAY_URL = process.env.NEXT_PUBLIC_PLAY_URL || 'https://play.revieww.ch';
 
-export const PLANS: Plan[] = [
+export const FREE_PLAN: Plan = {
+  id: 'free',
+  name: 'Free',
+  price: 0,
+  currency: 'CHF',
+  spinsPerMonth: 30,
+  spinsLabel: '30 spins offerts',
+  contactsLimit: 30,
+  contactsLabel: '30 contacts',
+  description: 'Testez gratuitement',
+  features: [
+    'QR code personnalisé',
+    'Roue personnalisable',
+    '30 spins offerts',
+    'Dashboard complet',
+  ],
+};
+
+export const PAID_PLANS: Plan[] = [
   {
     id: 'starter',
     name: 'Starter',
-    price: 19,
+    price: 29,
     currency: 'CHF',
     spinsPerMonth: 50,
     spinsLabel: '50 spins/mois',
-    description: 'Idéal pour démarrer',
+    contactsLimit: 200,
+    contactsLabel: '200 contacts',
+    description: 'Pour lancer votre collecte',
+    features: [
+      'Tout du plan Free',
+      '50 spins/mois',
+      '200 contacts en base',
+      'Collecte d\'emails',
+      'Export CSV',
+    ],
   },
   {
     id: 'growth',
     name: 'Growth',
-    price: 39,
+    price: 59,
     currency: 'CHF',
-    spinsPerMonth: 200,
-    spinsLabel: '200 spins/mois',
+    spinsPerMonth: 250,
+    spinsLabel: '250 spins/mois',
+    contactsLimit: 1000,
+    contactsLabel: '1\'000 contacts',
     description: 'Le plus populaire',
     popular: true,
+    features: [
+      'Tout du plan Starter',
+      '250 spins/mois',
+      '1\'000 contacts en base',
+      'Multi-établissements',
+      'Dashboard partagé',
+    ],
   },
   {
     id: 'pro',
     name: 'Pro',
-    price: 79,
+    price: 89,
     currency: 'CHF',
     spinsPerMonth: 999999,
     spinsLabel: 'Spins illimités',
-    description: 'Pour les ambitieux',
+    contactsLimit: 999999,
+    contactsLabel: 'Contacts illimités',
+    description: 'Sans limites',
+    features: [
+      'Tout du plan Growth',
+      'Spins illimités',
+      'Contacts illimités',
+      'Multi-établissements dégressif',
+      'Support prioritaire',
+    ],
   },
 ];
 
+export const PLANS: Plan[] = [FREE_PLAN, ...PAID_PLANS];
+
 export const PLAN_SPIN_LIMITS: Record<string, number> = {
+  free: 30,
   starter: 50,
-  growth: 200,
+  growth: 250,
+  pro: 999999,
+};
+
+export const PLAN_CONTACT_LIMITS: Record<string, number> = {
+  free: 30,
+  starter: 200,
+  growth: 1000,
   pro: 999999,
 };
 
@@ -90,7 +145,7 @@ export const TEXTS = {
     title: 'Boostez vos avis Google.',
     subtitle: 'Vos clients adorent jouer.',
     description: 'revieww transforme chaque avis en une chance de gagner',
-    cta: 'Essai gratuit 7 jours',
+    cta: 'Commencer gratuitement',
   },
   howItWorks: {
     title: 'Comment ça marche',
@@ -107,7 +162,7 @@ export const TEXTS = {
   },
   pricing: {
     title: 'Des prix simples et transparents',
-    subtitle: 'Essai gratuit 7 jours · Sans engagement · Annulable à tout moment',
+    subtitle: 'Commencez gratuitement · Sans engagement · Annulable à tout moment',
     features: [
       'QR code personnalisé',
       'Roue personnalisable',
@@ -150,12 +205,11 @@ export const TEXTS = {
     comingSoon: 'Bientôt disponible',
   },
   onboarding: {
-    step1Title: 'Choisissez votre plan',
-    step2Title: 'Recherchez votre commerce',
-    step2Placeholder: 'Tapez le nom de votre commerce...',
-    step2Confirm: 'C\'est bien votre commerce ?',
-    step2Fallback: 'Coller un lien Google Review manuellement',
-    step3Title: 'Configurez votre roue',
-    step3Subtitle: 'Choisissez des lots pour vos clients',
+    step1Title: 'Trouvez votre commerce',
+    step1Placeholder: 'Tapez le nom de votre commerce...',
+    step1Confirm: 'C\'est bien votre commerce ?',
+    step1Fallback: 'Coller un lien Google Review manuellement',
+    step2Title: 'Configurez votre roue',
+    step2Subtitle: 'Choisissez des lots pour vos clients',
   },
 };

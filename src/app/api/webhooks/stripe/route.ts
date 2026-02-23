@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
-import { STRIPE_PRICE_IDS, PLAN_SPIN_LIMITS } from '@/lib/constants';
+import { STRIPE_PRICE_IDS, PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS } from '@/lib/constants';
 import { PlanType, SubscriptionStatus } from '@/lib/types';
 import { sendTrialExpiringEmail } from '@/lib/emails/trial-expiring';
 import Stripe from 'stripe';
@@ -24,7 +24,6 @@ function mapSubscriptionStatus(
 ): SubscriptionStatus {
   switch (stripeStatus) {
     case 'trialing':
-      return 'trialing';
     case 'active':
       return 'active';
     case 'past_due':
@@ -68,6 +67,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   if (planType) {
     updateData.plan_type = planType;
     updateData.monthly_spin_limit = PLAN_SPIN_LIMITS[planType];
+    updateData.contact_limit = PLAN_CONTACT_LIMITS[planType];
   }
 
   // Set trial_ends_at when subscription is trialing

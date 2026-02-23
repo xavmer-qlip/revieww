@@ -28,7 +28,7 @@ import {
   getQuotaColor,
   formatNumber,
 } from '@/lib/utils';
-import { PLANS } from '@/lib/constants';
+import { PAID_PLANS, PLANS } from '@/lib/constants';
 import type { Business, PlanType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -51,38 +51,46 @@ interface Toast {
 // ---------------------------------------------------------------------------
 
 const PLAN_ICONS: Record<PlanType, React.ElementType> = {
+  free: Sparkles,
   starter: Zap,
   growth: Rocket,
   pro: Crown,
 };
 
 const PLAN_COLORS: Record<PlanType, string> = {
+  free: '#6B7280',
   starter: '#F59E0B',
   growth: '#FF6B35',
   pro: '#10B981',
 };
 
 const PLAN_FEATURES: Record<PlanType, string[]> = {
-  starter: [
+  free: [
     'QR code personnalise',
     'Roue personnalisable',
+    '30 spins offerts',
+    'Dashboard complet',
+  ],
+  starter: [
+    'Tout du plan Free',
     '50 spins/mois',
+    '200 contacts en base',
     'Collecte d\'emails',
     'Export CSV',
   ],
   growth: [
-    'Tout Starter +',
-    '200 spins/mois',
-    'Dashboard complet',
-    'Statistiques avancees',
-    'Support prioritaire',
+    'Tout du plan Starter',
+    '250 spins/mois',
+    '1\'000 contacts en base',
+    'Multi-etablissements',
+    'Dashboard partage',
   ],
   pro: [
-    'Tout Growth +',
+    'Tout du plan Growth',
     'Spins illimites',
-    'Branding custom',
-    'API access',
-    'Support dedie',
+    'Contacts illimites',
+    'Multi-etablissements degressif',
+    'Support prioritaire',
   ],
 };
 
@@ -135,21 +143,13 @@ function ToastNotification({
 // ---------------------------------------------------------------------------
 
 function getStatusBadge(business: Business) {
-  const { subscription_status, trial_ends_at } = business;
+  const { subscription_status } = business;
 
-  if (subscription_status === 'trialing') {
-    const trialEnd = new Date(trial_ends_at);
-    const now = new Date();
-    const daysLeft = Math.max(
-      0,
-      Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    );
+  if (subscription_status === 'free') {
     return {
-      label: `Essai (${daysLeft} jour${daysLeft > 1 ? 's' : ''} restant${daysLeft > 1 ? 's' : ''})`,
-      variant: 'warning' as const,
-      icon: Clock,
-      isTrialEndingSoon: daysLeft <= 3,
-      daysLeft,
+      label: 'Gratuit',
+      variant: 'muted' as const,
+      icon: Sparkles,
     };
   }
 
@@ -158,8 +158,6 @@ function getStatusBadge(business: Business) {
       label: 'Actif',
       variant: 'success' as const,
       icon: Check,
-      isTrialEndingSoon: false,
-      daysLeft: 0,
     };
   }
 
@@ -168,8 +166,6 @@ function getStatusBadge(business: Business) {
       label: 'Paiement en retard',
       variant: 'danger' as const,
       icon: AlertCircle,
-      isTrialEndingSoon: false,
-      daysLeft: 0,
     };
   }
 
@@ -178,8 +174,6 @@ function getStatusBadge(business: Business) {
       label: 'Annule',
       variant: 'muted' as const,
       icon: X,
-      isTrialEndingSoon: false,
-      daysLeft: 0,
     };
   }
 
@@ -187,8 +181,6 @@ function getStatusBadge(business: Business) {
     label: 'Expire',
     variant: 'danger' as const,
     icon: AlertCircle,
-    isTrialEndingSoon: false,
-    daysLeft: 0,
   };
 }
 
@@ -368,6 +360,7 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
   );
   const quotaColor = getQuotaColor(quotaPercentage);
   const isPro = business.plan_type === 'pro';
+  const isFree = business.plan_type === 'free';
 
   // ---- Manage subscription (Stripe portal) ----
   const handleManageSubscription = useCallback(async () => {
@@ -402,10 +395,16 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
 
       setChangingPlan(planId);
       try {
-        const res = await fetch('/api/stripe/change-plan', {
+        // Free users (or no subscription) → create a new checkout session
+        const needsCheckout = !business.stripe_subscription_id;
+        const endpoint = needsCheckout
+          ? '/api/stripe/create-checkout'
+          : '/api/stripe/change-plan';
+
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ planId }),
+          body: JSON.stringify({ planType: planId }),
         });
 
         if (!res.ok) {
@@ -416,11 +415,10 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
         const data = await res.json();
 
         if (data.url) {
-          // Redirect to Stripe checkout for new subscription
+          // Redirect to Stripe checkout
           window.location.href = data.url;
         } else {
           addToast('success', `Plan change vers ${planId} avec succes !`);
-          // Reload page to reflect changes
           setTimeout(() => window.location.reload(), 1500);
         }
       } catch (err) {
@@ -433,7 +431,7 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
         setChangingPlan(null);
       }
     },
-    [business.plan_type, addToast]
+    [business.plan_type, business.stripe_subscription_id, addToast]
   );
 
   const StatusIcon = status.icon;
@@ -453,40 +451,6 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
           Gerez votre plan et votre facturation
         </p>
       </motion.div>
-
-      {/* ---- Trial ending warning banner ---- */}
-      <AnimatePresence>
-        {status.isTrialEndingSoon && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -10, height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="flex items-center gap-3 p-4 rounded-2xl bg-warning/10 border border-warning/20">
-              <AlertTriangle size={20} className="text-warning shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-display font-semibold text-text">
-                  Votre essai se termine bientot
-                </p>
-                <p className="text-xs font-body text-text-muted mt-0.5">
-                  Il vous reste {status.daysLeft} jour
-                  {status.daysLeft > 1 ? 's' : ''} d&apos;essai. Choisissez un plan
-                  pour continuer a utiliser revieww.
-                </p>
-              </div>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleManageSubscription}
-                loading={loadingPortal}
-              >
-                Choisir un plan
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ---- Current plan + status ---- */}
       <motion.div
@@ -527,7 +491,7 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
                   </Badge>
                 </div>
                 <p className="text-sm font-body text-text-muted mt-0.5">
-                  {currentPlan.price} {currentPlan.currency}/mois
+                  {isFree ? 'Gratuit' : `${currentPlan.price} ${currentPlan.currency}/mois`}
                   {' \u2022 '}
                   {currentPlan.spinsLabel}
                 </p>
@@ -535,22 +499,35 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
             </div>
 
             {/* Manage button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManageSubscription}
-              loading={loadingPortal}
-            >
-              <ExternalLink size={14} />
-              Gerer mon abonnement
-            </Button>
+            {isFree ? (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  document.getElementById('plans-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <ArrowRight size={14} />
+                Passer a un plan payant
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleManageSubscription}
+                loading={loadingPortal}
+              >
+                <ExternalLink size={14} />
+                Gerer mon abonnement
+              </Button>
+            )}
           </div>
 
           {/* ---- Spin quota ---- */}
           <div className="mt-6 pt-5 border-t border-border/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-display font-medium text-text">
-                Spins ce mois
+                {isFree ? 'Spins utilises' : 'Spins ce mois'}
               </span>
               {isPro ? (
                 <span className="text-sm font-display font-semibold text-accent flex items-center gap-1">
@@ -607,15 +584,15 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.15 }}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div id="plans-section" className="flex items-center gap-3 mb-4">
           <CreditCard size={18} className="text-primary" />
           <h2 className="text-lg font-display font-semibold text-text">
-            Nos plans
+            {isFree ? 'Choisir un plan' : 'Nos plans'}
           </h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {PLANS.map((plan, index) => (
+          {PAID_PLANS.map((plan, index) => (
             <PlanCard
               key={plan.id}
               plan={plan}

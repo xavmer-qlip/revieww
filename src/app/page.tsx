@@ -27,7 +27,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
-import { PLANS, TEXTS, APP_DOMAIN } from '@/lib/constants';
+import { FREE_PLAN, PAID_PLANS, TEXTS, APP_DOMAIN } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -373,7 +373,7 @@ function Navbar() {
               className="px-7 py-3 text-sm font-bold rounded-full font-display transition-all hover:scale-[1.02] active:scale-[0.98] text-white"
               style={{ backgroundColor: C.coral, boxShadow: '0 4px 15px rgba(248,131,121,0.3)' }}
             >
-              Essai gratuit
+              Commencer gratuitement
             </Link>
           </div>
           <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 cursor-pointer" style={{ color: C.muted }}>
@@ -404,7 +404,7 @@ function Navbar() {
                 Se connecter
               </Link>
               <Link href="/signup" onClick={() => setMobileOpen(false)} className="text-center py-3 rounded-full font-display font-bold text-white" style={{ backgroundColor: C.coral }}>
-                Essai gratuit
+                Commencer gratuitement
               </Link>
             </div>
           </motion.div>
@@ -496,7 +496,7 @@ function HeroSection() {
                 className="group inline-flex items-center gap-2.5 px-7 py-3.5 font-display font-bold text-sm rounded-full transition-all hover:scale-[1.03] active:scale-[0.97] text-white shadow-lg"
                 style={{ backgroundColor: C.coral, boxShadow: '0 8px 30px rgba(248,131,121,0.25)' }}
               >
-                Essai gratuit — 7 jours
+                Commencer gratuitement
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
               <button
@@ -997,7 +997,6 @@ function DemoSection() {
    PRICING
    ═══════════════════════════════════════════════════════════════════════════ */
 function PricingSection() {
-  const features = TEXTS.pricing.features;
   return (
     <section id="pricing" className="py-28 sm:py-36" style={{ background: C.surface }}>
       <div className="max-w-6xl mx-auto px-6">
@@ -1008,12 +1007,39 @@ function PricingSection() {
             <span style={{ color: C.coral }}>Transparent.</span>
           </h2>
           <p className="font-body text-lg max-w-md mx-auto" style={{ color: C.muted }}>
-            Tout est inclus dans chaque plan. Seul le volume de spins change.
+            {TEXTS.pricing.subtitle}
           </p>
         </motion.div>
 
+        {/* Free plan highlight */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.5 }}
+          className="max-w-lg mx-auto mb-10"
+        >
+          <div className="rounded-2xl p-6 text-center border" style={{ background: C.bg, borderColor: C.border }}>
+            <span className="inline-block px-3 py-1 rounded-full text-[11px] font-display font-bold mb-3" style={{ background: `${C.green}15`, color: C.green }}>
+              Gratuit
+            </span>
+            <h3 className="font-display font-bold text-lg mb-1" style={{ color: C.text }}>Commencez sans payer</h3>
+            <p className="font-body text-sm mb-4" style={{ color: C.muted }}>
+              {FREE_PLAN.spinsLabel} · {FREE_PLAN.contactsLabel} · QR code · Dashboard complet
+            </p>
+            <Link
+              href="/signup"
+              className="inline-block px-8 py-2.5 rounded-full font-display font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+              style={{ backgroundColor: C.green, color: '#fff' }}
+            >
+              Commencer gratuitement
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Paid plans */}
         <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
-          {PLANS.map((plan, i) => (
+          {PAID_PLANS.map((plan, i) => (
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 30, scale: 0.92 }}
@@ -1040,15 +1066,20 @@ function PricingSection() {
                 )}
                 <h3 className="font-display font-bold text-base" style={{ color: C.text }}>{plan.name}</h3>
                 <p className="font-body text-[13px] mb-5" style={{ color: C.muted }}>{plan.description}</p>
-                <div className="mb-5">
+                <div className="mb-3">
                   <span className="font-display font-extrabold text-4xl" style={{ color: C.text }}>{plan.price}</span>
                   <span className="font-body text-sm ml-1" style={{ color: C.muted }}>{plan.currency}/mois</span>
                 </div>
-                <span className="inline-block px-3 py-1 rounded-lg text-[13px] font-display font-semibold mb-6 self-start" style={{ background: 'rgba(255,255,255,0.04)', color: C.muted }}>
-                  {plan.spinsLabel}
-                </span>
+                <div className="flex flex-col gap-1 mb-6">
+                  <span className="inline-block px-3 py-1 rounded-lg text-[13px] font-display font-semibold self-start" style={{ background: 'rgba(255,255,255,0.04)', color: C.muted }}>
+                    {plan.spinsLabel}
+                  </span>
+                  <span className="inline-block px-3 py-1 rounded-lg text-[13px] font-display font-semibold self-start" style={{ background: 'rgba(255,255,255,0.04)', color: C.muted }}>
+                    {plan.contactsLabel}
+                  </span>
+                </div>
                 <ul className="flex flex-col gap-2.5 mb-7 flex-1">
-                  {features.map((f) => (
+                  {(plan.features ?? []).map((f) => (
                     <li key={f} className="flex items-start gap-2.5">
                       <Check className="w-4 h-4 mt-0.5 shrink-0" style={{ color: C.green }} />
                       <span className="font-body text-[13px]" style={{ color: C.muted }}>{f}</span>
@@ -1071,7 +1102,7 @@ function PricingSection() {
           ))}
         </div>
         <p className="text-center font-body text-[13px] mt-10" style={{ color: C.muted }}>
-          Essai gratuit 7 jours · Sans engagement · Annulable à tout moment
+          Commencez gratuitement · Sans engagement · Annulable à tout moment
         </p>
       </div>
     </section>
@@ -1146,7 +1177,7 @@ function FAQSection() {
     },
     {
       q: 'Puis-je annuler à tout moment ?',
-      a: 'Oui. Pas d\'engagement, pas de frais cachés. Vous pouvez annuler depuis votre dashboard en un clic. L\'essai gratuit de 7 jours ne nécessite pas de carte bancaire.',
+      a: 'Oui. Pas d\'engagement, pas de frais cachés. Vous pouvez annuler depuis votre dashboard en un clic. Le plan gratuit ne nécessite pas de carte bancaire.',
     },
     {
       q: 'C\'est adapté à quel type de commerce ?',
@@ -1196,14 +1227,14 @@ function FinalCTASection() {
             <span style={{ color: C.coral }}>des avis ?</span>
           </h2>
           <p className="font-body text-lg mb-10 max-w-md mx-auto" style={{ color: C.muted }}>
-            1 minute pour s&apos;inscrire. 7 jours pour tester gratuitement. 0 raison d&apos;hésiter.
+            1 minute pour s&apos;inscrire. 30 spins offerts. 0 raison d&apos;hésiter.
           </p>
           <Link
             href="/signup"
             className="group inline-flex items-center gap-2.5 px-8 py-4 font-display font-bold text-base rounded-full transition-all hover:scale-[1.03] active:scale-[0.97] text-white"
             style={{ backgroundColor: C.coral, boxShadow: '0 10px 40px rgba(248,131,121,0.25)' }}
           >
-            Lancer mon essai gratuit
+            Commencer gratuitement
             <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
           <p className="font-body text-[13px] mt-6" style={{ color: 'rgba(255,255,255,0.2)' }}>

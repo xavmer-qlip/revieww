@@ -65,7 +65,8 @@ const NAV_ITEMS: NavItem[] = [
 // Plan badge helper
 // ---------------------------------------------------------------------------
 
-const PLAN_META: Record<PlanType, { label: string; variant: 'primary' | 'success' | 'warning' }> = {
+const PLAN_META: Record<PlanType, { label: string; variant: 'primary' | 'success' | 'warning' | 'muted' }> = {
+  free: { label: 'Free', variant: 'muted' },
   starter: { label: 'Starter', variant: 'warning' },
   growth: { label: 'Growth', variant: 'primary' },
   pro: { label: 'Pro', variant: 'success' },

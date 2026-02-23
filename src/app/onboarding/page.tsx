@@ -7,7 +7,6 @@ import {
   Check,
   ChevronRight,
   ArrowLeft,
-  Star,
   Link as LinkIcon,
   HelpCircle,
   Store,
@@ -21,16 +20,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PLANS, WHEEL_TEMPLATES, TEXTS } from '@/lib/constants';
+import { WHEEL_TEMPLATES, TEXTS, PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS } from '@/lib/constants';
 import { slugify, cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import type { PlanType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 2;
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -107,102 +105,6 @@ function ProgressIndicator({ currentStep }: { currentStep: number }) {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 1 — Choose Plan
-// ---------------------------------------------------------------------------
-
-function StepChoosePlan({
-  selectedPlan,
-  onSelect,
-}: {
-  selectedPlan: PlanType | null;
-  onSelect: (plan: PlanType) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          {TEXTS.onboarding.step1Title}
-        </h2>
-        <p className="mt-2 text-text-muted font-body">
-          Essai gratuit 7 jours, quel que soit le plan
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {PLANS.map((plan) => {
-          const isSelected = selectedPlan === plan.id;
-          const isPopular = plan.popular;
-
-          return (
-            <motion.button
-              key={plan.id}
-              type="button"
-              onClick={() => onSelect(plan.id)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              animate={isSelected ? { scale: 1.03 } : { scale: 1 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className={cn(
-                'relative flex flex-col items-center gap-3 rounded-2xl border-2 p-6 text-center transition-all duration-200 cursor-pointer bg-surface',
-                isSelected
-                  ? 'border-primary shadow-lg shadow-primary/15'
-                  : isPopular
-                    ? 'border-primary/30 shadow-md'
-                    : 'border-border/50 hover:border-primary/40 hover:shadow-md'
-              )}
-            >
-              {/* Popular badge */}
-              {isPopular && (
-                <Badge
-                  variant="primary"
-                  size="sm"
-                  className="absolute -top-2.5 left-1/2 -translate-x-1/2"
-                >
-                  <Star size={10} className="fill-current" />
-                  Populaire
-                </Badge>
-              )}
-
-              {/* Selected checkmark */}
-              {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white"
-                >
-                  <Check size={14} strokeWidth={3} />
-                </motion.div>
-              )}
-
-              <h3 className="text-lg font-display font-bold text-text">
-                {plan.name}
-              </h3>
-
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-display font-extrabold text-text">
-                  {plan.price}
-                </span>
-                <span className="text-sm text-text-muted font-body">
-                  {plan.currency}/mois
-                </span>
-              </div>
-
-              <Badge variant="muted" size="sm">
-                {plan.spinsLabel}
-              </Badge>
-
-              <p className="text-sm text-text-muted font-body">
-                {plan.description}
-              </p>
-            </motion.button>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -396,7 +298,7 @@ function StepFindBusiness({
               <Input
                 id="business-search"
                 label="Rechercher votre commerce"
-                placeholder={TEXTS.onboarding.step2Placeholder}
+                placeholder={TEXTS.onboarding.step1Placeholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 icon={searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
@@ -452,7 +354,7 @@ function StepFindBusiness({
               className="flex items-center gap-2 text-sm text-primary font-medium font-display hover:underline cursor-pointer"
             >
               <HelpCircle size={14} />
-              {TEXTS.onboarding.step2Fallback}
+              {TEXTS.onboarding.step1Fallback}
             </button>
 
             <AnimatePresence>
@@ -508,10 +410,10 @@ function StepConfigureWheel({
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          {TEXTS.onboarding.step3Title}
+          {TEXTS.onboarding.step2Title}
         </h2>
         <p className="mt-2 text-text-muted font-body">
-          {TEXTS.onboarding.step3Subtitle}
+          {TEXTS.onboarding.step2Subtitle}
         </p>
       </div>
 
@@ -586,10 +488,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
 
-  // Step 1
-  const [selectedPlan, setSelectedPlan] = useState<PlanType | null>('growth');
-
-  // Step 2
+  // Step 1 — Find Business
   const [businessName, setBusinessName] = useState('');
   const [googleReviewLink, setGoogleReviewLink] = useState('');
   const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
@@ -598,7 +497,7 @@ export default function OnboardingPage() {
   const [googleCategory, setGoogleCategory] = useState<string | null>(null);
   const [businessAddress, setBusinessAddress] = useState<string | null>(null);
 
-  // Step 3
+  // Step 2 — Configure Wheel
   const [selectedSegments, setSelectedSegments] = useState<number[]>([0, 1, 2, 3, 6]);
 
   // Loading
@@ -624,13 +523,12 @@ export default function OnboardingPage() {
   }, []);
 
   // --- Validation ---
-  const canProceedStep1 = selectedPlan !== null;
-  const canProceedStep2 = businessName.trim().length >= 2;
+  const canProceedStep1 = businessName.trim().length >= 2;
   const canFinish = selectedSegments.length >= 3;
 
   // --- Complete onboarding ---
   const handleComplete = useCallback(async () => {
-    if (!selectedPlan || !businessName.trim()) return;
+    if (!businessName.trim()) return;
 
     setLoading(true);
     setError(null);
@@ -650,13 +548,9 @@ export default function OnboardingPage() {
         return;
       }
 
-      // Determine spin limit from plan
-      const plan = PLANS.find((p) => p.id === selectedPlan);
-      const spinLimit = plan?.spinsPerMonth ?? 50;
-
-      // Create trial end date (7 days from now)
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+      // Free plan: 30 spins, 30 contacts
+      const spinLimit = PLAN_SPIN_LIMITS.free;
+      const contactLimit = PLAN_CONTACT_LIMITS.free;
 
       // Create business
       const { data: business, error: bizError } = await supabase
@@ -671,10 +565,11 @@ export default function OnboardingPage() {
           google_review_count: googleReviewCount,
           google_business_category: googleCategory,
           address: businessAddress,
-          plan_type: selectedPlan,
+          plan_type: 'free',
           monthly_spin_limit: spinLimit,
-          subscription_status: 'trialing',
-          trial_ends_at: trialEndsAt.toISOString(),
+          contact_limit: contactLimit,
+          subscription_status: 'free',
+          trial_ends_at: new Date().toISOString(),
           primary_color: '#FF6B35',
           secondary_color: '#1B2A4A',
           onboarding_completed: true,
@@ -724,7 +619,7 @@ export default function OnboardingPage() {
       setError('Une erreur est survenue. Réessayez.');
       setLoading(false);
     }
-  }, [selectedPlan, businessName, googleReviewLink, googlePlaceId, googleRating, googleReviewCount, googleCategory, businessAddress, selectedSegments, router]);
+  }, [businessName, googleReviewLink, googlePlaceId, googleRating, googleReviewCount, googleCategory, businessAddress, selectedSegments, router]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -782,24 +677,6 @@ export default function OnboardingPage() {
                   transition={slideTransition}
                   className="w-full"
                 >
-                  <StepChoosePlan
-                    selectedPlan={selectedPlan}
-                    onSelect={setSelectedPlan}
-                  />
-                </motion.div>
-              )}
-
-              {step === 2 && (
-                <motion.div
-                  key="step-2"
-                  custom={direction}
-                  variants={slideVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={slideTransition}
-                  className="w-full"
-                >
                   <StepFindBusiness
                     businessName={businessName}
                     googleReviewLink={googleReviewLink}
@@ -817,9 +694,9 @@ export default function OnboardingPage() {
                 </motion.div>
               )}
 
-              {step === 3 && (
+              {step === 2 && (
                 <motion.div
-                  key="step-3"
+                  key="step-2"
                   custom={direction}
                   variants={slideVariants}
                   initial="enter"
@@ -851,23 +728,11 @@ export default function OnboardingPage() {
           {/* Footer actions */}
           <div className="mt-6 flex flex-col items-center gap-3">
             {step === 1 && (
-              <Button
-                size="lg"
-                onClick={goNext}
-                disabled={!canProceedStep1}
-                className="w-full sm:w-auto min-w-[200px]"
-              >
-                Suivant
-                <ChevronRight size={16} />
-              </Button>
-            )}
-
-            {step === 2 && (
               <>
                 <Button
                   size="lg"
                   onClick={goNext}
-                  disabled={!canProceedStep2}
+                  disabled={!canProceedStep1}
                   className="w-full sm:w-auto min-w-[200px]"
                 >
                   Suivant
@@ -883,7 +748,7 @@ export default function OnboardingPage() {
               </>
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <Button
                 size="lg"
                 onClick={handleComplete}
@@ -897,8 +762,8 @@ export default function OnboardingPage() {
             )}
           </div>
 
-          {/* Minimum segments hint for step 3 */}
-          {step === 3 && selectedSegments.length < 3 && (
+          {/* Minimum segments hint for step 2 */}
+          {step === 2 && selectedSegments.length < 3 && (
             <p className="text-center text-xs text-text-muted font-body mt-2">
               Selectionnez au moins 3 lots pour votre roue
             </p>

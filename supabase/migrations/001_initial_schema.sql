@@ -5,11 +5,11 @@
 
 -- Custom types
 CREATE TYPE subscription_status AS ENUM (
-  'trialing', 'active', 'past_due', 'canceled', 'expired'
+  'free', 'active', 'past_due', 'canceled', 'expired'
 );
 
 CREATE TYPE plan_type AS ENUM (
-  'starter', 'growth', 'pro'
+  'free', 'starter', 'growth', 'pro'
 );
 
 -- ============================================================
@@ -32,9 +32,10 @@ CREATE TABLE businesses (
   phone         TEXT,
   stripe_customer_id    TEXT,
   stripe_subscription_id TEXT,
-  subscription_status   subscription_status NOT NULL DEFAULT 'trialing',
-  plan_type     plan_type NOT NULL DEFAULT 'starter',
-  monthly_spin_limit    INTEGER NOT NULL DEFAULT 50,
+  subscription_status   subscription_status NOT NULL DEFAULT 'free',
+  plan_type     plan_type NOT NULL DEFAULT 'free',
+  monthly_spin_limit    INTEGER NOT NULL DEFAULT 30,
+  contact_limit         INTEGER NOT NULL DEFAULT 30,
   trial_ends_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '7 days'),
   onboarding_completed  BOOLEAN NOT NULL DEFAULT false,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
