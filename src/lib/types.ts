@@ -23,6 +23,7 @@ export interface Business {
   contact_limit: number;
   trial_ends_at: string;
   flow_type: FlowType;
+  require_review: boolean;
   onboarding_completed: boolean;
   email_verified: boolean;
 }

@@ -249,11 +249,15 @@ export async function POST(request: NextRequest) {
                 : new Date();
               const daysLeft = Math.max(1, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
 
-              sendTrialExpiringEmail({
-                to: user.email,
-                businessName: business.name,
-                daysLeft,
-              }).catch((err) => console.error('Trial email error:', err));
+              try {
+                await sendTrialExpiringEmail({
+                  to: user.email,
+                  businessName: business.name,
+                  daysLeft,
+                });
+              } catch (err) {
+                console.error('Trial email error:', err);
+              }
             }
           }
         }

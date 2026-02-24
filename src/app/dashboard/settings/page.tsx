@@ -221,6 +221,7 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [flowType, setFlowType] = useState<FlowType>('lottery_first');
+  const [requireReview, setRequireReview] = useState(true);
 
   // ---- Toast helpers ----
   const addToast = useCallback((type: Toast['type'], message: string) => {
@@ -259,6 +260,7 @@ export default function SettingsPage() {
           setSecondaryColor(data.secondary_color);
           setLogoUrl(data.logo_url);
           setFlowType(data.flow_type || 'lottery_first');
+          setRequireReview(data.require_review ?? true);
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -357,6 +359,7 @@ export default function SettingsPage() {
           secondary_color: secondaryColor,
           logo_url: newLogoUrl,
           flow_type: flowType,
+          require_review: requireReview,
           updated_at: new Date().toISOString(),
         })
         .eq('id', business.id);
@@ -386,6 +389,7 @@ export default function SettingsPage() {
     logoUrl,
     logoFile,
     flowType,
+    requireReview,
     supabase,
     addToast,
   ]);
@@ -756,6 +760,49 @@ export default function SettingsPage() {
               );
             })}
           </div>
+
+          {/* Require review toggle — only visible in lottery_first mode */}
+          <AnimatePresence>
+            {flowType === 'lottery_first' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-4 px-4 py-3 rounded-xl bg-background border border-border/50">
+                  <label className="flex items-center justify-between gap-3 cursor-pointer">
+                    <div>
+                      <p className="text-sm font-display font-medium text-text">
+                        Exiger un avis Google pour débloquer le lot
+                      </p>
+                      <p className="text-xs font-body text-text-muted mt-0.5">
+                        Si désactivé, le client reçoit son lot directement après le spin
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={requireReview}
+                      onClick={() => setRequireReview(!requireReview)}
+                      className={cn(
+                        'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30',
+                        requireReview ? 'bg-primary' : 'bg-border'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ease-in-out',
+                          requireReview ? 'translate-x-5' : 'translate-x-0'
+                        )}
+                      />
+                    </button>
+                  </label>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
       </motion.div>
 

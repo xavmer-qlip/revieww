@@ -104,10 +104,14 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   // ---- Dynamic step order ----
   const stepOrder: Step[] = useMemo(() => {
     if (isLotteryFirst) {
-      return ['welcome', 'wheel', 'locked', 'email', 'result'];
+      if (business.require_review) {
+        return ['welcome', 'wheel', 'locked', 'email', 'result'];
+      }
+      // No review required: skip locked step entirely
+      return ['welcome', 'wheel', 'email', 'result'];
     }
     return ['welcome', 'email', 'wheel', 'result'];
-  }, [isLotteryFirst]);
+  }, [isLotteryFirst, business.require_review]);
 
   // ---- State ----
   const [step, setStep] = useState<Step>('welcome');
@@ -432,8 +436,13 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     setTimeout(() => {
       setShowResult(true);
       if (isLotteryFirst) {
-        // Go to locked step (prize visible but locked)
-        goTo('locked');
+        if (business.require_review) {
+          // Both winners and losers go through locked (review) step
+          goTo('locked');
+        } else {
+          // No review required: skip locked, go direct to email
+          goTo('email');
+        }
       } else {
         goTo('result');
       }
@@ -846,7 +855,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 }}
                 className="text-4xl mb-4"
               >
-                🎉
+                {lockedPrize && !lockedPrize.is_winning ? '🙏' : '🎉'}
               </motion.div>
 
               <motion.h2
@@ -855,7 +864,11 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 transition={{ delay: 0.15, duration: 0.5 }}
                 className="text-xl sm:text-2xl font-display font-bold text-white mb-1 text-center"
               >
-                {TEXTS.play.emailTitle} 🎉
+                {lockedPrize && !lockedPrize.is_winning
+                  ? TEXTS.play.lostEmailTitle
+                  : isLotteryFirst && !business.require_review
+                    ? `${TEXTS.play.noReviewEmailTitle} 🎉`
+                    : `${TEXTS.play.emailTitle} 🎉`}
               </motion.h2>
 
               <motion.p
@@ -864,7 +877,11 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 transition={{ delay: 0.25 }}
                 className="text-white/60 font-body text-sm mb-6 text-center"
               >
-                {TEXTS.play.emailPlaceholder}
+                {lockedPrize && !lockedPrize.is_winning
+                  ? TEXTS.play.lostEmailSubtitle
+                  : isLotteryFirst && !business.require_review
+                    ? TEXTS.play.noReviewEmailSubtitle
+                    : TEXTS.play.emailPlaceholder}
               </motion.p>
 
               {/* Form */}
@@ -953,10 +970,17 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   className="w-full text-lg"
                 >
                   {isLotteryFirst ? (
-                    <>
-                      {!submitting && '🎁'} Débloquer mon cadeau
-                      {!submitting && <ChevronRight className="w-5 h-5" />}
-                    </>
+                    lockedPrize && !lockedPrize.is_winning ? (
+                      <>
+                        {!submitting && TEXTS.play.lostEmailCta}
+                        {!submitting && <ChevronRight className="w-5 h-5" />}
+                      </>
+                    ) : (
+                      <>
+                        {!submitting && '🎁'} Débloquer mon cadeau
+                        {!submitting && <ChevronRight className="w-5 h-5" />}
+                      </>
+                    )
                   ) : (
                     <>
                       {!submitting && '🎰'} {TEXTS.play.spinButton}
@@ -1035,27 +1059,39 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 transition={{ type: 'spring', stiffness: 300, damping: 25 }}
                 className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm"
               >
-                {/* Blurred emoji with lock overlay */}
-                <div className="relative inline-block mb-4">
+                {lockedPrize.is_winning ? (
+                  /* ---- WINNER: Blurred emoji with lock overlay ---- */
+                  <div className="relative inline-block mb-4">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 15, delay: 0.2 }}
+                      className="text-6xl blur-sm select-none"
+                    >
+                      {lockedPrize.emoji}
+                    </motion.div>
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.4 }}
+                      className="absolute inset-0 flex items-center justify-center"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-text/80 flex items-center justify-center shadow-lg">
+                        <Lock className="w-6 h-6 text-white" />
+                      </div>
+                    </motion.div>
+                  </div>
+                ) : (
+                  /* ---- LOSER: Emoji visible, no lock ---- */
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 15, delay: 0.2 }}
-                    className="text-6xl blur-sm select-none"
+                    className="text-6xl mb-4"
                   >
                     {lockedPrize.emoji}
                   </motion.div>
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.4 }}
-                    className="absolute inset-0 flex items-center justify-center"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-text/80 flex items-center justify-center shadow-lg">
-                      <Lock className="w-6 h-6 text-white" />
-                    </div>
-                  </motion.div>
-                </div>
+                )}
 
                 <motion.h2
                   initial={{ opacity: 0, y: 10 }}
@@ -1063,19 +1099,19 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   transition={{ delay: 0.3 }}
                   className="text-2xl font-display font-extrabold text-text mb-1"
                 >
-                  {TEXTS.play.lockedTitle}
+                  {lockedPrize.is_winning ? TEXTS.play.lockedTitle : TEXTS.play.lostLockedTitle}
                 </motion.h2>
 
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-text-muted font-body text-sm mb-2"
-                >
-                  {lockedPrize.is_winning
-                    ? `${lockedPrize.emoji} ${lockedPrize.label}`
-                    : lockedPrize.label}
-                </motion.p>
+                {lockedPrize.is_winning && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-text-muted font-body text-sm mb-2"
+                  >
+                    {lockedPrize.emoji} {lockedPrize.label}
+                  </motion.p>
+                )}
 
                 <motion.p
                   initial={{ opacity: 0 }}
@@ -1083,7 +1119,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   transition={{ delay: 0.5 }}
                   className="text-text-muted font-body text-xs mb-6"
                 >
-                  {TEXTS.play.lockedSubtitle}
+                  {lockedPrize.is_winning ? TEXTS.play.lockedSubtitle : TEXTS.play.lostLockedSubtitle}
                 </motion.p>
 
                 {!googleClicked ? (
@@ -1092,6 +1128,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
+                    className="space-y-3"
                   >
                     <button
                       onClick={handleGoogleClick}
@@ -1104,8 +1141,18 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                       }}
                     >
                       <Star className="w-5 h-5 fill-current" />
-                      {TEXTS.play.lockedCta}
+                      {lockedPrize.is_winning ? TEXTS.play.lockedCta : TEXTS.play.lostLockedCta}
                     </button>
+
+                    {/* Loser can skip review immediately */}
+                    {!lockedPrize.is_winning && (
+                      <button
+                        onClick={() => goTo('email')}
+                        className="w-full py-3 px-6 rounded-xl font-display font-medium text-sm text-text-muted hover:text-text transition-colors cursor-pointer"
+                      >
+                        {TEXTS.play.lostLockedSkip}
+                      </button>
+                    )}
                   </motion.div>
                 ) : (
                   /* ---- Waiting + countdown after Google click ---- */
@@ -1172,6 +1219,16 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     >
                       {TEXTS.play.confirmButton} ✅
                     </button>
+
+                    {/* Loser can skip review even during countdown */}
+                    {!lockedPrize.is_winning && (
+                      <button
+                        onClick={() => goTo('email')}
+                        className="w-full py-2 px-6 rounded-xl font-display font-medium text-sm text-text-muted hover:text-text transition-colors cursor-pointer"
+                      >
+                        {TEXTS.play.lostLockedSkip}
+                      </button>
+                    )}
                   </div>
                 )}
               </motion.div>

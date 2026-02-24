@@ -42,20 +42,38 @@ interface CreatedBusiness {
 // Step 0 — How it works
 // ---------------------------------------------------------------------------
 
-const HOW_IT_WORKS_CARDS = [
+const HOW_IT_WORKS_LOTTERY: { emoji: string; title: string; description: string }[] = [
   {
     emoji: '📱',
-    title: 'Placez le QR code',
+    title: 'Votre client scanne le QR code',
+    description: 'Sur vos tables, au comptoir, dans l\'addition',
+  },
+  {
+    emoji: '🎡',
+    title: 'Il tourne la roue',
+    description: 'Un jeu fun et engageant — il découvre son lot',
+  },
+  {
+    emoji: '⭐',
+    title: 'Il laisse un avis pour débloquer',
+    description: 'Avis Google + email = lot débloqué',
+  },
+];
+
+const HOW_IT_WORKS_REVIEW: { emoji: string; title: string; description: string }[] = [
+  {
+    emoji: '📱',
+    title: 'Votre client scanne le QR code',
     description: 'Sur vos tables, au comptoir, dans l\'addition',
   },
   {
     emoji: '⭐',
-    title: 'Vos clients laissent un avis',
-    description: 'Ils scannent et laissent un avis Google',
+    title: 'Il laisse un avis Google',
+    description: 'En 30 secondes, directement depuis son téléphone',
   },
   {
     emoji: '🎡',
-    title: 'Ils tournent et gagnent',
+    title: 'Il tourne la roue et gagne',
     description: 'Un jeu fun avec des lots instantanés',
   },
 ];
@@ -68,7 +86,15 @@ const EMOJI_GRID = [
   '🍿', '🥤', '🍷', '🍸', '🍓', '🍫',
 ];
 
-function StepHowItWorks() {
+function StepHowItWorks({
+  flowType,
+  onFlowChange,
+}: {
+  flowType: FlowType;
+  onFlowChange: (ft: FlowType) => void;
+}) {
+  const cards = flowType === 'lottery_first' ? HOW_IT_WORKS_LOTTERY : HOW_IT_WORKS_REVIEW;
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -80,29 +106,64 @@ function StepHowItWorks() {
         </p>
       </div>
 
+      {/* Flow type toggle */}
+      <div className="flex flex-col items-center gap-2">
+        <div className="inline-flex rounded-xl bg-background border border-border/50 p-1">
+          {([
+            { key: 'lottery_first' as FlowType, label: 'Loterie d\'abord', recommended: true },
+            { key: 'review_first' as FlowType, label: 'Avis d\'abord', recommended: false },
+          ]).map((option) => (
+            <button
+              key={option.key}
+              onClick={() => onFlowChange(option.key)}
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-display font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5',
+                flowType === option.key
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-text-muted hover:text-text'
+              )}
+            >
+              {option.label}
+              {option.recommended && flowType === option.key && (
+                <Badge variant="success" size="sm" className="text-[9px] px-1.5 py-0">
+                  Recommandé
+                </Badge>
+              )}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-text-muted/60 font-body">
+          Modifiable à tout moment dans les paramètres
+        </p>
+      </div>
+
+      {/* Dynamic cards based on flow type */}
       <div className="grid gap-4 max-w-lg mx-auto">
-        {HOW_IT_WORKS_CARDS.map((card, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 + i * 0.12, type: 'spring', stiffness: 300, damping: 25 }}
-          >
-            <Card padding="md" className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="text-2xl">{card.emoji}</span>
-              </div>
-              <div>
-                <h3 className="text-sm font-display font-bold text-text">
-                  {card.title}
-                </h3>
-                <p className="text-xs font-body text-text-muted mt-0.5">
-                  {card.description}
-                </p>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
+        <AnimatePresence mode="wait">
+          {cards.map((card, i) => (
+            <motion.div
+              key={`${flowType}-${i}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ delay: 0.05 + i * 0.1, type: 'spring', stiffness: 300, damping: 25 }}
+            >
+              <Card padding="md" className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="text-2xl">{card.emoji}</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-display font-bold text-text">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs font-body text-text-muted mt-0.5">
+                    {card.description}
+                  </p>
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -315,145 +376,7 @@ function StepConfigurePrizes({
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 — Choose flow type
-// ---------------------------------------------------------------------------
-
-const FLOW_OPTIONS: {
-  key: FlowType;
-  labelKey: 'flowLotteryFirstLabel' | 'flowReviewFirstLabel';
-  descKey: 'flowLotteryFirstDesc' | 'flowReviewFirstDesc';
-  steps: { emoji: string; label: string }[];
-  recommended: boolean;
-}[] = [
-  {
-    key: 'lottery_first',
-    labelKey: 'flowLotteryFirstLabel',
-    descKey: 'flowLotteryFirstDesc',
-    steps: [
-      { emoji: '🎡', label: 'Tourner' },
-      { emoji: '🔒', label: 'Lot verrouillé' },
-      { emoji: '⭐', label: 'Avis + Email' },
-      { emoji: '🎁', label: 'Débloqué !' },
-    ],
-    recommended: true,
-  },
-  {
-    key: 'review_first',
-    labelKey: 'flowReviewFirstLabel',
-    descKey: 'flowReviewFirstDesc',
-    steps: [
-      { emoji: '⭐', label: 'Avis Google' },
-      { emoji: '📧', label: 'Email' },
-      { emoji: '🎡', label: 'Tourner' },
-      { emoji: '🎁', label: 'Résultat' },
-    ],
-    recommended: false,
-  },
-];
-
-function StepChooseFlow({
-  flowType,
-  onSelect,
-}: {
-  flowType: FlowType;
-  onSelect: (ft: FlowType) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          {TEXTS.onboarding.flowTitle}
-        </h2>
-        <p className="mt-2 text-text-muted font-body">
-          {TEXTS.onboarding.flowSubtitle}
-        </p>
-      </div>
-
-      <div className="space-y-4 max-w-lg mx-auto">
-        {FLOW_OPTIONS.map((option) => {
-          const selected = flowType === option.key;
-          return (
-            <motion.button
-              key={option.key}
-              onClick={() => onSelect(option.key)}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: option.key === 'lottery_first' ? 0.1 : 0.2, type: 'spring', stiffness: 300, damping: 25 }}
-              className={cn(
-                'w-full text-left rounded-2xl border-2 p-5 transition-all duration-200 cursor-pointer',
-                selected
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-border/50 bg-surface opacity-60 hover:opacity-80 hover:border-border'
-              )}
-            >
-              <div className="flex items-start gap-3">
-                {/* Radio indicator */}
-                <div className={cn(
-                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all',
-                  selected ? 'border-primary' : 'border-border'
-                )}>
-                  {selected && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                      className="w-2.5 h-2.5 rounded-full bg-primary"
-                    />
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-display font-bold text-text">
-                      {TEXTS.onboarding[option.labelKey]}
-                    </h3>
-                    {option.recommended && (
-                      <Badge variant="success" size="sm">
-                        {TEXTS.onboarding.flowRecommended}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xs font-body text-text-muted mb-4">
-                    {TEXTS.onboarding[option.descKey]}
-                  </p>
-
-                  {/* Animated flow steps */}
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {option.steps.map((s, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <motion.div
-                          initial={selected ? { opacity: 0, scale: 0.5, y: 10 } : { opacity: 1, scale: 1, y: 0 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          transition={selected ? {
-                            delay: 0.15 + i * 0.12,
-                            type: 'spring',
-                            stiffness: 400,
-                            damping: 15,
-                          } : { duration: 0 }}
-                          key={`${option.key}-${selected}`}
-                          className="flex flex-col items-center gap-0.5"
-                        >
-                          <span className="text-lg">{s.emoji}</span>
-                          <span className="text-[9px] font-body text-text-muted whitespace-nowrap">{s.label}</span>
-                        </motion.div>
-                        {i < option.steps.length - 1 && (
-                          <ChevronRight size={12} className="text-text-muted/40 shrink-0 mt-[-12px]" />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 3 — QR code ready
+// Step 2 — QR code ready
 // ---------------------------------------------------------------------------
 
 function StepQRReady({
@@ -779,12 +702,7 @@ export default function OnboardingPage() {
 
     if (step === 1) {
       if (!validation.valid) return;
-      setStep(2);
-      return;
-    }
-
-    if (step === 2) {
-      // Create business + segments (flow_type is now known)
+      // Create business + segments (flow_type was chosen in step 0)
       setLoading(true);
       setError(null);
 
@@ -882,7 +800,7 @@ export default function OnboardingPage() {
           slug: business.slug,
           name: business.name,
         });
-        setStep(3);
+        setStep(2);
 
         // Fire-and-forget: send verification email
         fetch('/api/send-verification', { method: 'POST' }).catch(() => {});
@@ -895,14 +813,14 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (step === 3) {
+    if (step === 2) {
       window.location.href = '/dashboard';
     }
   }, [step, validation, enabledPresets, flowType, router]);
 
   // --- Button label ---
-  const buttonLabel = step === 3 ? 'Aller au dashboard' : 'Suivant';
-  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 2 || step === 3;
+  const buttonLabel = step === 2 ? 'Aller au dashboard' : 'Suivant';
+  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 2;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -913,7 +831,7 @@ export default function OnboardingPage() {
 
       {/* Step indicator */}
       <div className="py-3">
-        <StepIndicator currentStep={step} totalSteps={4} />
+        <StepIndicator currentStep={step} totalSteps={3} />
       </div>
 
       {/* Content */}
@@ -933,7 +851,7 @@ export default function OnboardingPage() {
                   exit={{ opacity: 0, x: -50 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 >
-                  <StepHowItWorks />
+                  <StepHowItWorks flowType={flowType} onFlowChange={setFlowType} />
                 </motion.div>
               )}
 
@@ -961,24 +879,9 @@ export default function OnboardingPage() {
                 </motion.div>
               )}
 
-              {step === 2 && (
+              {step === 2 && createdBusiness && (
                 <motion.div
                   key="step-2"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                >
-                  <StepChooseFlow
-                    flowType={flowType}
-                    onSelect={setFlowType}
-                  />
-                </motion.div>
-              )}
-
-              {step === 3 && createdBusiness && (
-                <motion.div
-                  key="step-3"
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -50 }}
@@ -1014,7 +917,7 @@ export default function OnboardingPage() {
               loading={loading}
               className="w-full sm:w-auto min-w-[200px]"
             >
-              {step === 3 ? (
+              {step === 2 ? (
                 <>
                   {buttonLabel}
                   <ArrowRight size={16} />

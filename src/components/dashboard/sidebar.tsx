@@ -8,6 +8,7 @@ import {
   Disc3,
   QrCode,
   Users,
+  ShieldCheck,
   MessageSquare,
   Settings,
   CreditCard,
@@ -50,6 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: Disc3, label: 'Ma Roue', href: '/dashboard/wheel' },
   { icon: QrCode, label: 'Mon QR Code', href: '/dashboard/qrcode' },
   { icon: Users, label: 'Avis & Contacts', href: '/dashboard/clients' },
+  { icon: ShieldCheck, label: 'Valider un lot', href: '/dashboard/validate' },
   {
     icon: MessageSquare,
     label: 'Messages',

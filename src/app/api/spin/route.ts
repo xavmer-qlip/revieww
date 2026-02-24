@@ -148,16 +148,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Send prize email (fire-and-forget) ----
+    // ---- Send prize email (awaited — fire-and-forget gets killed on Vercel serverless) ----
     if (winningSegment.is_winning && process.env.RESEND_API_KEY) {
-      sendPrizeWonEmail({
-        to: body.email.toLowerCase().trim(),
-        businessName: business.name,
-        prizeEmoji: winningSegment.emoji,
-        prizeLabel: winningSegment.label,
-        promoCode: winningSegment.promo_code,
-        validationCode,
-      }).catch((err) => console.error('Prize email error:', err));
+      try {
+        await sendPrizeWonEmail({
+          to: body.email.toLowerCase().trim(),
+          businessName: business.name,
+          prizeEmoji: winningSegment.emoji,
+          prizeLabel: winningSegment.label,
+          promoCode: winningSegment.promo_code,
+          validationCode,
+        });
+      } catch (err) {
+        console.error('Prize email error:', err);
+      }
     }
 
     // ---- Return result ----
