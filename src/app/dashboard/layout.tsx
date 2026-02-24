@@ -34,6 +34,18 @@ export default async function DashboardLayout({
     redirect('/onboarding');
   }
 
+  // ---- Auto-verify OAuth users ----
+  if (!business.email_verified) {
+    const provider = user.app_metadata?.provider;
+    if (provider && provider !== 'email') {
+      await supabase
+        .from('businesses')
+        .update({ email_verified: true })
+        .eq('id', business.id);
+      business.email_verified = true;
+    }
+  }
+
   // ---- Fetch spin count for current month ----
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -51,6 +63,7 @@ export default async function DashboardLayout({
       planType={business.plan_type}
       spinsUsed={spinsUsed ?? 0}
       spinsLimit={business.monthly_spin_limit}
+      emailVerified={business.email_verified}
     >
       {children}
     </DashboardShell>

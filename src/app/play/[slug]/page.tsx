@@ -59,6 +59,10 @@ export default async function PlayPage({ params }: PlayPageProps) {
     return <NotFoundView />;
   }
 
+  if (!business.email_verified) {
+    return <NotActivatedView businessName={business.name} />;
+  }
+
   // Fetch wheel segments ordered by position
   const { data: segments, error: segmentsError } = await supabase
     .from('wheel_segments')
@@ -84,6 +88,31 @@ export default async function PlayPage({ params }: PlayPageProps) {
       }
     >
       <PlayFlow business={typedBusiness} segments={typedSegments} />
+    </div>
+  );
+}
+
+function NotActivatedView({ businessName }: { businessName: string }) {
+  return (
+    <div className="min-h-[100dvh] w-full flex items-center justify-center bg-gradient-to-br from-secondary via-secondary-light to-secondary p-6">
+      <div className="text-center max-w-sm">
+        <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6">
+          <span className="text-4xl">🔒</span>
+        </div>
+        <h1 className="text-2xl font-display font-bold text-white mb-3">
+          Commerce pas encore activé
+        </h1>
+        <p className="text-white/70 font-body text-sm leading-relaxed">
+          {businessName} n&apos;est pas encore activé.
+          Le propriétaire doit confirmer son adresse email pour activer la roue.
+        </p>
+        <a
+          href="https://revieww.ch"
+          className="inline-block mt-6 px-6 py-3 bg-primary text-white font-display font-semibold rounded-2xl hover:bg-primary-dark transition-colors"
+        >
+          Découvrir {APP_NAME}
+        </a>
+      </div>
     </div>
   );
 }

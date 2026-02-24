@@ -163,22 +163,22 @@ export function PlaceSearch({
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border-2 border-accent bg-accent/5 p-4 space-y-3"
+            className="rounded-2xl border-2 border-accent bg-accent/5 p-3 sm:p-4 space-y-2.5"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
-                  <MapPin size={20} className="text-accent" />
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
+                  <MapPin size={18} className="text-accent" />
                 </div>
-                <div className="min-w-0">
-                  <p className="font-display font-bold text-text">{selectedPlace.name}</p>
-                  <p className="text-xs text-text-muted font-body truncate">{selectedPlace.address}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display font-bold text-text text-sm sm:text-base leading-tight">{selectedPlace.name}</p>
+                  <p className="text-xs text-text-muted font-body truncate mt-0.5">{selectedPlace.address}</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={handleReset}
-                className="text-xs text-text-muted hover:text-danger transition-colors font-display font-medium cursor-pointer shrink-0"
+                className="text-xs text-text-muted hover:text-danger transition-colors font-display font-medium cursor-pointer shrink-0 mt-0.5"
               >
                 Changer
               </button>
@@ -192,12 +192,15 @@ export function PlaceSearch({
                     <StarIcon
                       key={i}
                       size={14}
-                      className={i < Math.round(selectedPlace.rating!) ? 'text-yellow-400 fill-yellow-400' : 'text-border'}
+                      className={i < Math.round(selectedPlace.rating!) ? 'text-amber-500 fill-amber-500' : 'text-gray-300'}
                     />
                   ))}
                 </div>
+                <span className="text-xs font-body text-text font-medium">
+                  {selectedPlace.rating}
+                </span>
                 <span className="text-xs font-body text-text-muted">
-                  {selectedPlace.rating} ({selectedPlace.review_count} avis)
+                  ({selectedPlace.review_count} avis)
                 </span>
               </div>
             )}
@@ -205,7 +208,7 @@ export function PlaceSearch({
             <div className="flex items-center gap-2">
               <Check size={14} className="text-accent" />
               <span className="text-xs font-body text-accent font-medium">
-                Lien Google Review configure automatiquement
+                Lien Google Review configuré
               </span>
             </div>
           </motion.div>
@@ -265,47 +268,51 @@ export function PlaceSearch({
               </div>
             )}
 
-            {/* Manual fallback */}
-            <button
-              type="button"
-              onClick={() => setShowManual(!showManual)}
-              className="flex items-center gap-2 text-sm text-primary font-medium font-display hover:underline cursor-pointer"
-            >
-              <HelpCircle size={14} />
-              {TEXTS.onboarding.step1Fallback}
-            </button>
-
-            <AnimatePresence>
-              {showManual && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="overflow-hidden space-y-4"
+            {/* Manual fallback — hidden in compact/signup mode */}
+            {!compact && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowManual(!showManual)}
+                  className="flex items-center gap-2 text-sm text-primary font-medium font-display hover:underline cursor-pointer"
                 >
-                  <Input
-                    id="business-name-manual"
-                    label="Nom de votre commerce"
-                    placeholder="Cafe du Marche"
-                    value={businessName}
-                    onChange={(e) => onNameChange(e.target.value)}
-                    icon={<Store size={16} />}
-                  />
-                  <Input
-                    id="google-review-link"
-                    label="Lien Google Review"
-                    placeholder="https://search.google.com/local/writereview?placeid=..."
-                    value={googleReviewLink}
-                    onChange={(e) => onLinkChange(e.target.value)}
-                    icon={<LinkIcon size={16} />}
-                  />
-                  <p className="text-xs text-text-muted font-body">
-                    Trouvez votre commerce sur Google Maps, cliquez &quot;Laisser un avis&quot; et copiez l&apos;URL
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <HelpCircle size={14} />
+                  {TEXTS.onboarding.step1Fallback}
+                </button>
+
+                <AnimatePresence>
+                  {showManual && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="overflow-hidden space-y-4"
+                    >
+                      <Input
+                        id="business-name-manual"
+                        label="Nom de votre commerce"
+                        placeholder="Cafe du Marche"
+                        value={businessName}
+                        onChange={(e) => onNameChange(e.target.value)}
+                        icon={<Store size={16} />}
+                      />
+                      <Input
+                        id="google-review-link"
+                        label="Lien Google Review"
+                        placeholder="https://search.google.com/local/writereview?placeid=..."
+                        value={googleReviewLink}
+                        onChange={(e) => onLinkChange(e.target.value)}
+                        icon={<LinkIcon size={16} />}
+                      />
+                      <p className="text-xs text-text-muted font-body">
+                        Trouvez votre commerce sur Google Maps, cliquez &quot;Laisser un avis&quot; et copiez l&apos;URL
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
           </>
         )}
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { MailCheck } from 'lucide-react';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
 import type { PlanType } from '@/lib/types';
@@ -12,6 +13,7 @@ interface DashboardShellProps {
   planType: PlanType;
   spinsUsed: number;
   spinsLimit: number;
+  emailVerified: boolean;
 }
 
 export function DashboardShell({
@@ -21,11 +23,27 @@ export function DashboardShell({
   planType,
   spinsUsed,
   spinsLimit,
+  emailVerified,
 }: DashboardShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
 
   const toggleMenu = useCallback(() => setMobileMenuOpen((prev) => !prev), []);
   const closeMenu = useCallback(() => setMobileMenuOpen(false), []);
+
+  const handleResendVerification = async () => {
+    setResending(true);
+    setResendSuccess(false);
+    try {
+      const res = await fetch('/api/send-verification', { method: 'POST' });
+      if (res.ok) {
+        setResendSuccess(true);
+      }
+    } finally {
+      setResending(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,6 +62,29 @@ export function DashboardShell({
       <div className="lg:pl-64">
         {/* Mobile topbar */}
         <Topbar onMenuToggle={toggleMenu} />
+
+        {/* Email verification banner */}
+        {!emailVerified && (
+          <div className="border-b border-warning/20 bg-warning/10 px-4 py-3 sm:px-6">
+            <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-warning">
+                <MailCheck className="h-4 w-4 shrink-0" />
+                <span>Vérifiez votre email pour activer votre page.</span>
+              </div>
+              <button
+                onClick={handleResendVerification}
+                disabled={resending}
+                className="shrink-0 text-sm font-semibold text-warning underline-offset-2 hover:underline disabled:opacity-50"
+              >
+                {resendSuccess
+                  ? 'Lien envoyé !'
+                  : resending
+                    ? 'Envoi…'
+                    : 'Renvoyer le lien →'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronRight, Download, Copy, Send, ArrowRight } from 'lucide-react';
+import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X, Info } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,14 @@ const HOW_IT_WORKS_CARDS = [
   },
 ];
 
+const EMOJI_GRID = [
+  '☕', '🎂', '🍺', '💰', '🎁', '🍽️',
+  '❌', '😢', '🎉', '🏆', '⭐', '💎',
+  '🌟', '🔥', '🌈', '🥳', '🥇', '🎯',
+  '💥', '🍀', '🍰', '🍩', '🍔', '🍕',
+  '🍿', '🥤', '🍷', '🍸', '🍓', '🍫',
+];
+
 function StepHowItWorks() {
   return (
     <div className="space-y-8">
@@ -110,6 +118,10 @@ function StepConfigurePrizes({
   presets,
   onToggle,
   onStockChange,
+  onLabelChange,
+  onEmojiChange,
+  onAddPreset,
+  onDeletePreset,
   validation,
 }: {
   detectedSector: SectorKey;
@@ -118,9 +130,16 @@ function StepConfigurePrizes({
   presets: SelectedPreset[];
   onToggle: (index: number) => void;
   onStockChange: (index: number, stock: number) => void;
+  onLabelChange: (index: number, label: string) => void;
+  onEmojiChange: (index: number, emoji: string) => void;
+  onAddPreset: () => void;
+  onDeletePreset: (index: number) => void;
   validation: { valid: boolean; message: string };
 }) {
   const sectorKeys = Object.keys(SECTOR_LABELS) as SectorKey[];
+  const [openEmojiIndex, setOpenEmojiIndex] = useState<number | null>(null);
+  const enabledWinners = presets.filter((p) => p.enabled && p.isWinning).length;
+  const winnerPercent = enabledWinners > 0 ? Math.round(70 / enabledWinners) : 0;
 
   return (
     <div className="space-y-6">
@@ -188,15 +207,35 @@ function StepConfigurePrizes({
                   {preset.enabled && <Check size={12} className="text-white" strokeWidth={3} />}
                 </button>
 
-                {/* Emoji + label */}
-                <span className="text-xl">{preset.emoji}</span>
+                {/* Emoji button */}
+                <button
+                  onClick={() => setOpenEmojiIndex(openEmojiIndex === index ? null : index)}
+                  className="text-xl hover:scale-110 transition-transform shrink-0"
+                  title="Changer l'emoji"
+                >
+                  {preset.emoji}
+                </button>
                 <div
                   className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: preset.color }}
                 />
-                <span className="text-sm font-medium font-body text-text flex-1 truncate">
-                  {preset.label}
-                </span>
+
+                {/* Editable label */}
+                <input
+                  type="text"
+                  value={preset.label}
+                  onChange={(e) => onLabelChange(index, e.target.value)}
+                  className="text-sm font-medium font-body text-text flex-1 min-w-0 px-2 py-1 rounded-lg bg-transparent border border-transparent focus:border-primary/30 focus:bg-background focus:outline-none transition-all"
+                />
+
+                {/* Delete button */}
+                <button
+                  onClick={() => onDeletePreset(index)}
+                  className="p-1 rounded-lg text-text-muted/40 hover:text-danger hover:bg-danger/10 transition-all shrink-0"
+                  title="Supprimer"
+                >
+                  <Trash2 size={14} />
+                </button>
 
                 {/* Stock input or "Illimité" */}
                 {preset.isWinning && preset.enabled ? (
@@ -214,9 +253,52 @@ function StepConfigurePrizes({
                   <span className="text-[10px] text-text-muted font-body shrink-0">Illimité</span>
                 ) : null}
               </div>
+
+              {/* Inline emoji picker */}
+              <AnimatePresence>
+                {openEmojiIndex === index && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-6 gap-1 pt-2 mt-2 border-t border-border/30">
+                      {EMOJI_GRID.map((emoji) => (
+                        <button
+                          key={emoji}
+                          onClick={() => {
+                            onEmojiChange(index, emoji);
+                            setOpenEmojiIndex(null);
+                          }}
+                          className={cn(
+                            'w-8 h-8 flex items-center justify-center rounded-lg text-lg transition-all',
+                            'hover:bg-primary/10 hover:scale-110',
+                            emoji === preset.emoji && 'bg-primary/15 ring-2 ring-primary/30',
+                          )}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Card>
           </motion.div>
         ))}
+      </div>
+
+      {/* Add preset button */}
+      <div className="max-w-lg mx-auto">
+        <button
+          onClick={onAddPreset}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-border/50 text-sm font-medium font-body text-text-muted hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all"
+        >
+          <Plus size={14} />
+          Ajouter un lot
+        </button>
       </div>
 
       {/* Validation message */}
@@ -230,10 +312,23 @@ function StepConfigurePrizes({
         </motion.p>
       )}
 
-      {/* Auto-probability hint */}
-      <p className="text-center text-[10px] text-text-muted/70 font-body">
-        Les probabilités sont calculées automatiquement : 30% perdant, 70% répartis entre les gagnants
-      </p>
+      {/* Probability explanation */}
+      <div className="max-w-lg mx-auto">
+        <Card padding="sm" className="bg-primary/5 border-primary/20">
+          <div className="flex gap-3">
+            <Info size={16} className="text-primary shrink-0 mt-0.5" />
+            <div className="text-xs font-body text-text-muted space-y-1">
+              <p className="font-medium text-text">Comment sont calculées les chances ?</p>
+              <p>
+                Les lots « Perdu » représentent 30% des tirages.
+                {enabledWinners > 0
+                  ? ` Les 70% restants sont répartis entre vos ${enabledWinners} lot${enabledWinners > 1 ? 's' : ''} gagnant${enabledWinners > 1 ? 's' : ''} (~${winnerPercent}% chacun).`
+                  : ' Activez au moins 1 lot gagnant pour répartir les 70% restants.'}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -412,7 +507,7 @@ export default function OnboardingPage() {
   const [createdBusiness, setCreatedBusiness] = useState<CreatedBusiness | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
-  // --- Load user metadata on mount ---
+  // --- Load user metadata on mount (with localStorage fallback for OAuth) ---
   useEffect(() => {
     async function loadUser() {
       const supabase = createClient();
@@ -420,8 +515,38 @@ export default function OnboardingPage() {
       if (!user) return;
 
       const meta = user.user_metadata ?? {};
-      setBusinessName((meta.business_name as string) || '');
-      const cat = (meta.google_category as string) || null;
+      let name = (meta.business_name as string) || '';
+      let cat = (meta.google_category as string) || null;
+
+      // OAuth fallback: read business data saved before OAuth redirect
+      if (!name) {
+        try {
+          const stored = localStorage.getItem('oauth_business_data');
+          if (stored) {
+            const data = JSON.parse(stored);
+            name = data.business_name || '';
+            cat = data.google_category || null;
+            localStorage.removeItem('oauth_business_data');
+
+            // Persist to user metadata so it's available in business creation
+            await supabase.auth.updateUser({
+              data: {
+                business_name: data.business_name,
+                google_place_id: data.google_place_id,
+                google_rating: data.google_rating,
+                google_review_count: data.google_review_count,
+                google_category: data.google_category,
+                google_review_link: data.google_review_link,
+                business_address: data.business_address,
+              },
+            });
+          }
+        } catch {
+          // localStorage not available — ignore
+        }
+      }
+
+      setBusinessName(name);
       setGoogleCategory(cat);
 
       const sector = mapGoogleCategoryToSector(cat);
@@ -462,6 +587,33 @@ export default function OnboardingPage() {
     setPresets((prev) =>
       prev.map((p, i) => (i === index ? { ...p, stock } : p))
     );
+  }, []);
+
+  // --- Update label ---
+  const updateLabel = useCallback((index: number, label: string) => {
+    setPresets((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, label } : p))
+    );
+  }, []);
+
+  // --- Update emoji ---
+  const updateEmoji = useCallback((index: number, emoji: string) => {
+    setPresets((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, emoji } : p))
+    );
+  }, []);
+
+  // --- Add custom preset ---
+  const addPreset = useCallback(() => {
+    setPresets((prev) => [
+      ...prev,
+      { emoji: '🎁', label: 'Mon lot', color: '#9C27B0', isWinning: true, enabled: true, stock: 5, suggestedStock: 5 },
+    ]);
+  }, []);
+
+  // --- Delete preset ---
+  const deletePreset = useCallback((index: number) => {
+    setPresets((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   // --- Validation ---
@@ -668,6 +820,10 @@ export default function OnboardingPage() {
                     presets={presets}
                     onToggle={togglePreset}
                     onStockChange={updateStock}
+                    onLabelChange={updateLabel}
+                    onEmojiChange={updateEmoji}
+                    onAddPreset={addPreset}
+                    onDeletePreset={deletePreset}
                     validation={validation}
                   />
                 </motion.div>

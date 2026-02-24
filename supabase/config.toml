@@ -1,7 +1,3 @@
-[project]
-id = ""
-name = "revieww"
-
 [db]
 port = 54322
 shadow_port = 54320

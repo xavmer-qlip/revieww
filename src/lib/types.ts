@@ -23,6 +23,7 @@ export interface Business {
   contact_limit: number;
   trial_ends_at: string;
   onboarding_completed: boolean;
+  email_verified: boolean;
 }
 
 export interface WheelSegment {
