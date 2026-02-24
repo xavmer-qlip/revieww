@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,23 +12,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Auth check ----
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'auth_required' },
-        { status: 401 }
-      );
-    }
-
-    // ---- Fetch spin by validation code ----
-    const { data: spin, error: spinError } = await supabase
+    // ---- Fetch spin by validation code (service client — bypass RLS) ----
+    const serviceClient = await createServiceClient();
+    const { data: spin, error: spinError } = await serviceClient
       .from('spins')
-      .select('*, businesses!inner(user_id, name)')
+      .select('*, businesses!inner(name, prize_validity_days)')
       .eq('validation_code', validationCode.toUpperCase())
       .single();
 
@@ -36,15 +24,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'not_found' },
         { status: 404 }
-      );
-    }
-
-    // ---- Ownership check ----
-    const business = spin.businesses as { user_id: string; name: string };
-    if (business.user_id !== user.id) {
-      return NextResponse.json(
-        { error: 'not_owner' },
-        { status: 403 }
       );
     }
 
@@ -56,19 +35,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Expiry check (7 days) ----
+    // ---- Expiry check ----
+    const business = spin.businesses as { name: string; prize_validity_days: number };
+    const validityDays = business.prize_validity_days ?? 7;
     const createdAt = new Date(spin.created_at);
     const now = new Date();
     const daysSince = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysSince > 7) {
+    if (daysSince > validityDays) {
       return NextResponse.json(
         { error: 'expired' },
         { status: 410 }
       );
     }
 
-    // ---- Mark as claimed (service client to bypass RLS) ----
-    const serviceClient = await createServiceClient();
+    // ---- Mark as claimed ----
     const { error: updateError } = await serviceClient
       .from('spins')
       .update({ claimed: true, claimed_at: new Date().toISOString() })
@@ -82,7 +62,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      prize_label: spin.prize_label,
+      prize_emoji: spin.prize_emoji,
+      email: spin.email,
+      businessName: business.name,
+    });
   } catch (error) {
     console.error('Validate API error:', error);
     return NextResponse.json(

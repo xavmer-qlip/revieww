@@ -1,9 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Check, Clock, ShieldAlert, LogIn, ShieldCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Check, Clock, Gift } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { TEXTS } from '@/lib/constants';
 
@@ -20,8 +18,6 @@ interface ValidateClientProps {
   };
   businessName: string;
   businessColor: string;
-  isOwner: boolean;
-  isLoggedIn: boolean;
   isExpired: boolean;
 }
 
@@ -39,55 +35,8 @@ export function ValidateClient({
   spin,
   businessName,
   businessColor,
-  isOwner,
-  isLoggedIn,
   isExpired,
 }: ValidateClientProps) {
-  const [claimed, setClaimed] = useState(spin.claimed);
-  const [claimedAt, setClaimedAt] = useState(spin.claimed_at);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleClaim() {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ validationCode: spin.validation_code }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (data.error === 'already_claimed') {
-          setClaimed(true);
-          setClaimedAt(data.claimed_at);
-        } else if (data.error === 'expired') {
-          setError(TEXTS.validate.expired);
-        } else if (data.error === 'not_owner') {
-          setError(TEXTS.validate.notOwner);
-        } else {
-          setError(data.error || 'Une erreur est survenue');
-        }
-        setLoading(false);
-        return;
-      }
-
-      setClaimed(true);
-      setClaimedAt(new Date().toISOString());
-    } catch {
-      setError('Erreur de connexion');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // Determine state for display
-  const canClaim = isOwner && !claimed && !isExpired;
-
   return (
     <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       {/* Logo */}
@@ -155,9 +104,8 @@ export function ValidateClient({
           </div>
         </div>
 
-        {/* Status / Actions */}
-        {claimed ? (
-          // Already claimed
+        {/* Status */}
+        {spin.claimed ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -169,14 +117,13 @@ export function ValidateClient({
             <p className="text-sm font-display font-bold text-accent">
               {TEXTS.validate.claimed}
             </p>
-            {claimedAt && (
+            {spin.claimed_at && (
               <p className="text-xs font-body text-text-muted mt-1">
-                {TEXTS.validate.claimedAt} {formatDate(claimedAt)}
+                {TEXTS.validate.claimedAt} {formatDate(spin.claimed_at)}
               </p>
             )}
           </motion.div>
         ) : isExpired ? (
-          // Expired
           <div className="bg-warning/10 border border-warning/20 rounded-2xl p-4 text-center">
             <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center mx-auto mb-2">
               <Clock className="w-5 h-5 text-warning" />
@@ -185,60 +132,13 @@ export function ValidateClient({
               {TEXTS.validate.expired}
             </p>
           </div>
-        ) : !isLoggedIn ? (
-          // Not logged in
-          <div className="text-center space-y-3">
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
-                <LogIn className="w-5 h-5 text-blue-600" />
-              </div>
-              <p className="text-sm font-body text-blue-800">
-                {TEXTS.validate.loginRequired}
-              </p>
-            </div>
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full"
-              onClick={() => {
-                window.location.href = `/login?redirect=/validate/${spin.validation_code}`;
-              }}
-            >
-              <LogIn className="w-4 h-4" />
-              {TEXTS.validate.loginButton}
-            </Button>
-          </div>
-        ) : !isOwner ? (
-          // Logged in but not owner
-          <div className="bg-danger/10 border border-danger/20 rounded-2xl p-4 text-center">
-            <div className="w-10 h-10 rounded-full bg-danger/20 flex items-center justify-center mx-auto mb-2">
-              <ShieldAlert className="w-5 h-5 text-danger" />
-            </div>
-            <p className="text-sm font-body text-danger">
-              {TEXTS.validate.notOwner}
-            </p>
-          </div>
         ) : (
-          // Can claim
-          <div className="space-y-3">
-            {error && (
-              <div className="bg-danger/10 border border-danger/20 rounded-xl p-3 text-center">
-                <p className="text-xs font-body text-danger">{error}</p>
-              </div>
-            )}
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full"
-              loading={loading}
-              disabled={loading}
-              onClick={handleClaim}
-            >
-              {!loading && <ShieldCheck className="w-5 h-5" />}
-              {TEXTS.validate.claim}
-            </Button>
-            <p className="text-xs font-body text-text-muted text-center">
-              {TEXTS.validate.validFor}
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center">
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-2">
+              <Gift className="w-5 h-5 text-blue-600" />
+            </div>
+            <p className="text-sm font-body text-blue-800">
+              Présentez ce code en caisse pour récupérer votre lot
             </p>
           </div>
         )}

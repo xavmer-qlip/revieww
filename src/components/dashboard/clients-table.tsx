@@ -21,8 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { cn, getConfidenceBadge } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 import type { Spin } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -210,18 +209,18 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
     setClaimedMap((prev) => ({ ...prev, [spinId]: newValue }));
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('spins')
-        .update({ claimed: newValue })
-        .eq('id', spinId);
+      const res = await fetch('/api/toggle-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spinId, claimed: newValue }),
+      });
 
-      if (error) throw error;
-      addToast('success', newValue ? 'Lot marque comme reclame' : 'Lot marque comme non reclame');
+      if (!res.ok) throw new Error('update failed');
+      addToast('success', newValue ? 'Lot marqué comme réclamé' : 'Lot marqué comme non réclamé');
     } catch {
       // Revert on error
       setClaimedMap((prev) => ({ ...prev, [spinId]: current }));
-      addToast('error', 'Erreur lors de la mise a jour');
+      addToast('error', 'Erreur lors de la mise à jour');
     }
   }, [claimedMap, addToast]);
 
@@ -299,12 +298,10 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
       'Gagnant',
       'Reclame',
       'Etoiles',
-      'Confiance',
       'Marketing opt-in',
     ];
 
     const rows = spins.map((s) => {
-      const confidence = getConfidenceBadge(s.confidence_score);
       return [
         formatDate(s.created_at),
         s.email,
@@ -314,7 +311,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
         s.is_winner ? 'Oui' : 'Non',
         (claimedMap[s.id] ?? s.claimed) ? 'Oui' : 'Non',
         s.self_reported_stars?.toString() || '',
-        confidence.label,
         s.opted_in_marketing ? 'Oui' : 'Non',
       ];
     });
@@ -519,9 +515,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
                   <th className="text-left px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
                     Etoiles
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
-                    Confiance
-                  </th>
                   <th className="text-center px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
                     Reclame
                   </th>
@@ -530,9 +523,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
               <tbody>
                 <AnimatePresence mode="popLayout">
                   {paginatedSpins.map((spin, index) => {
-                    const confidence = getConfidenceBadge(
-                      spin.confidence_score
-                    );
                     return (
                       <motion.tr
                         key={spin.id}
@@ -571,17 +561,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
                         </td>
                         <td className="px-4 py-3">
                           <StarRating stars={spin.self_reported_stars} />
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className="inline-flex items-center gap-1 text-xs font-semibold font-display px-2 py-0.5 rounded-full"
-                            style={{
-                              backgroundColor: confidence.color + '15',
-                              color: confidence.color,
-                            }}
-                          >
-                            {confidence.emoji} {confidence.label}
-                          </span>
                         </td>
                         <td className="px-4 py-3 text-center">
                           {spin.is_winner ? (

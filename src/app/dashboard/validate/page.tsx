@@ -24,7 +24,7 @@ export default function DashboardValidatePage() {
   function handleVerify() {
     const trimmed = code.trim().toUpperCase();
     if (!trimmed) return;
-    router.push(`/validate/${trimmed}`);
+    router.push(`/validate?code=${trimmed}`);
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {

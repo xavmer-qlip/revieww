@@ -24,6 +24,7 @@ export interface Business {
   trial_ends_at: string;
   flow_type: FlowType;
   require_review: boolean;
+  prize_validity_days: number;
   onboarding_completed: boolean;
   email_verified: boolean;
 }

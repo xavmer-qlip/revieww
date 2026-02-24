@@ -20,6 +20,7 @@ import {
   Image as ImageIcon,
   Gamepad2,
   ChevronRight,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -222,6 +223,7 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [flowType, setFlowType] = useState<FlowType>('lottery_first');
   const [requireReview, setRequireReview] = useState(true);
+  const [prizeValidityDays, setPrizeValidityDays] = useState(7);
 
   // ---- Toast helpers ----
   const addToast = useCallback((type: Toast['type'], message: string) => {
@@ -261,6 +263,7 @@ export default function SettingsPage() {
           setLogoUrl(data.logo_url);
           setFlowType(data.flow_type || 'lottery_first');
           setRequireReview(data.require_review ?? true);
+          setPrizeValidityDays(data.prize_validity_days ?? 7);
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -360,6 +363,7 @@ export default function SettingsPage() {
           logo_url: newLogoUrl,
           flow_type: flowType,
           require_review: requireReview,
+          prize_validity_days: prizeValidityDays,
           updated_at: new Date().toISOString(),
         })
         .eq('id', business.id);
@@ -390,6 +394,7 @@ export default function SettingsPage() {
     logoFile,
     flowType,
     requireReview,
+    prizeValidityDays,
     supabase,
     addToast,
   ]);
@@ -807,12 +812,58 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* ================================================================
-          SECTION 5: Compte
+          SECTION 5: Validite des lots
           ================================================================ */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.25 }}
+        transition={{ duration: 0.4, delay: 0.24 }}
+      >
+        <Card padding="lg">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+              <Clock size={20} className="text-accent" />
+            </div>
+            <div>
+              <h2 className="text-base font-display font-semibold text-text">
+                Validité des lots
+              </h2>
+              <p className="text-xs font-body text-text-muted">
+                Durée pendant laquelle un lot gagné peut être réclamé
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <Input
+                id="prize-validity"
+                label="Nombre de jours"
+                type="number"
+                value={prizeValidityDays.toString()}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val) && val >= 1 && val <= 90) {
+                    setPrizeValidityDays(val);
+                  }
+                }}
+                icon={<Clock size={16} />}
+              />
+            </div>
+            <p className="text-[11px] font-body text-text-muted pl-1">
+              Après ce délai, le lot sera marqué comme expiré. Entre 1 et 90 jours.
+            </p>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* ================================================================
+          SECTION 6: Compte
+          ================================================================ */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.27 }}
       >
         <Card padding="lg">
           <div className="flex items-center gap-3 mb-6">

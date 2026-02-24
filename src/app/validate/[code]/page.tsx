@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { APP_NAME, TEXTS } from '@/lib/constants';
 import { ValidateClient } from './validate-client';
 
@@ -15,12 +15,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ValidatePage({ params }: ValidatePageProps) {
   const { code } = await params;
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   // Fetch spin by validation code (with business info)
   const { data: spin, error } = await supabase
     .from('spins')
-    .select('*, businesses(id, name, user_id, primary_color, logo_url)')
+    .select('*, businesses(name, primary_color, prize_validity_days)')
     .eq('validation_code', code.toUpperCase())
     .single();
 
@@ -28,27 +28,18 @@ export default async function ValidatePage({ params }: ValidatePageProps) {
     return <NotFoundView />;
   }
 
-  // Check current user (may or may not be logged in)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const business = spin.businesses as {
-    id: string;
     name: string;
-    user_id: string;
     primary_color: string;
-    logo_url: string | null;
+    prize_validity_days: number;
   };
 
-  const isOwner = user?.id === business.user_id;
-  const isLoggedIn = !!user;
-
-  // Check expiry (7 days)
+  // Check expiry
+  const validityDays = business.prize_validity_days ?? 7;
   const createdAt = new Date(spin.created_at);
   const now = new Date();
   const daysSince = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
-  const isExpired = daysSince > 7;
+  const isExpired = daysSince > validityDays;
 
   return (
     <ValidateClient
@@ -64,8 +55,6 @@ export default async function ValidatePage({ params }: ValidatePageProps) {
       }}
       businessName={business.name}
       businessColor={business.primary_color}
-      isOwner={isOwner}
-      isLoggedIn={isLoggedIn}
       isExpired={isExpired}
     />
   );
