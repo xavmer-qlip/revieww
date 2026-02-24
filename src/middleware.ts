@@ -10,6 +10,11 @@ export async function middleware(request: NextRequest) {
   if (PLAY_HOSTNAMES.includes(hostname)) {
     const pathname = request.nextUrl.pathname;
 
+    // Let API routes pass through without rewriting
+    if (pathname.startsWith('/api/')) {
+      return await updateSession(request);
+    }
+
     // Rewrite root to /play (will 404 without slug, but that's expected)
     // Rewrite /{slug} to /play/{slug}
     if (pathname === '/' || !pathname.startsWith('/play')) {
