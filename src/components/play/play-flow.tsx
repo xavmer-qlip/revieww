@@ -10,8 +10,9 @@ import { Logo } from '@/components/ui/logo';
 import { WheelCanvas } from '@/components/wheel/wheel-canvas';
 import { EmojiExplosion } from '@/components/wheel/emoji-explosion';
 import { Business, WheelSegment } from '@/lib/types';
-import { TEXTS } from '@/lib/constants';
+import { TEXTS, APP_URL } from '@/lib/constants';
 import { getInitials, cn } from '@/lib/utils';
+import QRCode from 'qrcode';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -30,6 +31,7 @@ interface SpinResult {
   emoji: string;
   is_winning: boolean;
   promo_code: string | null;
+  validation_code: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -123,6 +125,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   const [showExplosion, setShowExplosion] = useState(false);
   const [showResult, setShowResult] = useState(false);
 
+  // Validation QR code
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
   // Error states
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -135,6 +140,16 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
       setAlreadyPlayed(true);
     }
   }, [business.slug]);
+
+  // ---- Generate QR code for validation ----
+  useEffect(() => {
+    if (spinResult?.validation_code && spinResult.is_winning) {
+      const url = `${APP_URL}/validate/${spinResult.validation_code}`;
+      QRCode.toDataURL(url, { width: 160, margin: 1 })
+        .then(setQrDataUrl)
+        .catch(() => {});
+    }
+  }, [spinResult]);
 
   // ---- Responsive wheel size ----
   useEffect(() => {
@@ -272,6 +287,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
         emoji: data.segment.emoji,
         is_winning: data.segment.is_winning,
         promo_code: data.segment.promo_code,
+        validation_code: data.validation_code ?? null,
       });
       goTo('wheel');
 
@@ -871,6 +887,32 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                       <p className="text-lg font-display font-bold text-secondary tracking-wider">
                         {spinResult.promo_code}
                       </p>
+                    </motion.div>
+                  )}
+
+                  {/* Validation code + QR */}
+                  {spinResult.validation_code && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                      className="border-2 border-dashed border-blue-300 bg-blue-50 rounded-2xl px-4 py-4 mb-4"
+                    >
+                      <p className="text-xs text-text-muted font-body mb-1">
+                        {TEXTS.play.validationCode}
+                      </p>
+                      <p className="text-2xl font-display font-extrabold text-blue-700 tracking-[0.15em]">
+                        {spinResult.validation_code}
+                      </p>
+                      {qrDataUrl && (
+                        <div className="mt-3 flex justify-center">
+                          <img
+                            src={qrDataUrl}
+                            alt="QR code de validation"
+                            className="w-28 h-28 rounded-lg"
+                          />
+                        </div>
+                      )}
                     </motion.div>
                   )}
 

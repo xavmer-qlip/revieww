@@ -44,19 +44,23 @@ export async function updateSession(request: NextRequest) {
   const isPublicRoute =
     publicRoutes.some((route) => pathname === route) ||
     pathname.startsWith('/play/') ||
+    pathname.startsWith('/validate/') ||
+    pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/');
 
-  // Redirect unauthenticated users from dashboard
-  if (!user && pathname.startsWith('/dashboard')) {
+  // Redirect unauthenticated users from protected routes
+  if (!user && (pathname.startsWith('/dashboard') || pathname === '/onboarding')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users from auth pages to dashboard
+  // Redirect authenticated users from auth pages
   if (user && (pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    const redirect = request.nextUrl.searchParams.get('redirect');
+    url.pathname = redirect || '/dashboard';
+    url.search = '';
     return NextResponse.redirect(url);
   }
 

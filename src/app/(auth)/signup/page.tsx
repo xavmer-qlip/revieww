@@ -3,11 +3,12 @@
 import { useState, FormEvent, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Store, Mail, Lock, ArrowRight, AlertCircle, Check } from 'lucide-react';
+import { Store, Mail, Lock, ArrowRight, AlertCircle, Check, MailCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createClient } from '@/lib/supabase/client';
+import { APP_URL } from '@/lib/constants';
 
 function getPasswordStrength(password: string): {
   score: number;
@@ -36,6 +37,7 @@ export default function SignupPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCheckEmail, setShowCheckEmail] = useState(false);
 
   const passwordStrength = useMemo(
     () => (password.length > 0 ? getPasswordStrength(password) : null),
@@ -60,13 +62,14 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             business_name: businessName,
           },
+          emailRedirectTo: `${APP_URL}/auth/callback?next=/onboarding`,
         },
       });
 
@@ -81,8 +84,16 @@ export default function SignupPage() {
         return;
       }
 
-      router.push('/onboarding');
-      router.refresh();
+      // If session is returned immediately (email confirmation disabled),
+      // go straight to onboarding
+      if (data.session) {
+        router.push('/onboarding');
+        router.refresh();
+        return;
+      }
+
+      // Email confirmation required — show "check your email" screen
+      setShowCheckEmail(true);
     } catch {
       setError('Une erreur est survenue. Veuillez reessayer.');
     } finally {
@@ -90,6 +101,66 @@ export default function SignupPage() {
     }
   }
 
+  // ---- Check email confirmation screen ----
+  if (showCheckEmail) {
+    return (
+      <div className="text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6"
+        >
+          <MailCheck className="w-10 h-10 text-accent" />
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-2xl sm:text-3xl font-display font-extrabold text-text"
+        >
+          Verifiez votre email
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-3 text-text-muted font-body text-base max-w-sm mx-auto"
+        >
+          Nous avons envoye un lien de confirmation a{' '}
+          <strong className="text-text">{email}</strong>.
+          Cliquez sur le lien pour activer votre compte.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-8 space-y-4"
+        >
+          <div className="bg-primary/5 border border-primary/10 rounded-2xl px-4 py-3">
+            <p className="text-sm font-body text-text-muted">
+              Pensez a verifier vos <strong className="text-text">spams</strong> si vous ne trouvez pas l&apos;email.
+            </p>
+          </div>
+
+          <p className="text-sm font-body text-text-muted">
+            Deja confirme ?{' '}
+            <Link
+              href="/login"
+              className="text-primary font-display font-semibold hover:text-primary-dark transition-colors"
+            >
+              Se connecter
+            </Link>
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // ---- Signup form ----
   return (
     <div>
       {/* Heading */}

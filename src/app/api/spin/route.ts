@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { pickWeightedSegment } from '@/lib/utils';
+import { pickWeightedSegment, generateValidationCode } from '@/lib/utils';
 import { PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS } from '@/lib/constants';
 import { Business, WheelSegment } from '@/lib/types';
 import { sendPrizeWonEmail } from '@/lib/emails/prize-won';
@@ -186,6 +186,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ---- Generate validation code for winners (with retry on collision) ----
+    let validationCode: string | null = null;
+    if (winningSegment.is_winning) {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = generateValidationCode();
+        const { count } = await supabase
+          .from('spins')
+          .select('*', { count: 'exact', head: true })
+          .eq('validation_code', candidate);
+        if ((count ?? 0) === 0) {
+          validationCode = candidate;
+          break;
+        }
+      }
+      if (!validationCode) {
+        return NextResponse.json(
+          { error: 'Failed to generate unique code' },
+          { status: 500 }
+        );
+      }
+    }
+
     // ---- Insert spin record ----
     const { error: insertError } = await supabase.from('spins').insert({
       business_id: body.businessId,
@@ -200,6 +222,7 @@ export async function POST(request: NextRequest) {
       confidence_score: body.confidenceScore ?? 0,
       time_on_google_seconds: body.timeOnGoogleSeconds ?? null,
       self_reported_stars: body.selfReportedStars ?? null,
+      validation_code: validationCode,
     });
 
     if (insertError) {
@@ -218,6 +241,7 @@ export async function POST(request: NextRequest) {
         prizeEmoji: winningSegment.emoji,
         prizeLabel: winningSegment.label,
         promoCode: winningSegment.promo_code,
+        validationCode,
       }).catch((err) => console.error('Prize email error:', err));
     }
 
@@ -231,6 +255,7 @@ export async function POST(request: NextRequest) {
         is_winning: winningSegment.is_winning,
         promo_code: winningSegment.promo_code,
       },
+      validation_code: validationCode,
     });
   } catch (error) {
     console.error('Spin API error:', error);

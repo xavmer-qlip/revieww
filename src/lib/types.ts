@@ -50,6 +50,8 @@ export interface Spin {
   claimed: boolean;
   opted_in_marketing: boolean;
   device_fingerprint: string | null;
+  validation_code: string | null;
+  claimed_at: string | null;
   confidence_score: number;
   time_on_google_seconds: number | null;
   self_reported_stars: number | null;

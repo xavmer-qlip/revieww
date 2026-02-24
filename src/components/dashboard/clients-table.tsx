@@ -295,6 +295,7 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
       'Email',
       'Telephone',
       'Lot gagne',
+      'Code',
       'Gagnant',
       'Reclame',
       'Etoiles',
@@ -309,6 +310,7 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
         s.email,
         s.phone || '',
         `${s.prize_emoji || ''} ${s.prize_label}`,
+        s.validation_code || '',
         s.is_winner ? 'Oui' : 'Non',
         (claimedMap[s.id] ?? s.claimed) ? 'Oui' : 'Non',
         s.self_reported_stars?.toString() || '',
@@ -512,6 +514,9 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
                     Lot gagne
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
+                    Code
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
                     Etoiles
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
@@ -560,6 +565,9 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
                             )}
                             {spin.prize_label}
                           </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-xs font-display font-bold text-blue-700 tracking-wider whitespace-nowrap">
+                          {spin.validation_code || '-'}
                         </td>
                         <td className="px-4 py-3">
                           <StarRating stars={spin.self_reported_stars} />

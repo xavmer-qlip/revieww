@@ -56,6 +56,17 @@ export function pickWeightedSegment(
   return segments[segments.length - 1].id;
 }
 
+// Safe alphabet: no O/0/I/1/L to avoid confusion
+const SAFE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+
+export function generateValidationCode(): string {
+  const chars: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    chars.push(SAFE_CHARS[Math.floor(Math.random() * SAFE_CHARS.length)]);
+  }
+  return `RW-${chars.join('')}`;
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()
