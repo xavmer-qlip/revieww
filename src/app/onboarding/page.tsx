@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X, Info } from 'lucide-react';
+import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
@@ -138,9 +138,6 @@ function StepConfigurePrizes({
 }) {
   const sectorKeys = Object.keys(SECTOR_LABELS) as SectorKey[];
   const [openEmojiIndex, setOpenEmojiIndex] = useState<number | null>(null);
-  const enabledWinners = presets.filter((p) => p.enabled && p.isWinning).length;
-  const winnerPercent = enabledWinners > 0 ? Math.round(70 / enabledWinners) : 0;
-
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -312,23 +309,6 @@ function StepConfigurePrizes({
         </motion.p>
       )}
 
-      {/* Probability explanation */}
-      <div className="max-w-lg mx-auto">
-        <Card padding="sm" className="bg-primary/5 border-primary/20">
-          <div className="flex gap-3">
-            <Info size={16} className="text-primary shrink-0 mt-0.5" />
-            <div className="text-xs font-body text-text-muted space-y-1">
-              <p className="font-medium text-text">Comment sont calculées les chances ?</p>
-              <p>
-                Les lots « Perdu » représentent 30% des tirages.
-                {enabledWinners > 0
-                  ? ` Les 70% restants sont répartis entre vos ${enabledWinners} lot${enabledWinners > 1 ? 's' : ''} gagnant${enabledWinners > 1 ? 's' : ''} (~${winnerPercent}% chacun).`
-                  : ' Activez au moins 1 lot gagnant pour répartir les 70% restants.'}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </div>
     </div>
   );
 }
@@ -766,8 +746,7 @@ export default function OnboardingPage() {
     }
 
     if (step === 2) {
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
     }
   }, [step, validation, enabledPresets, router]);
 
