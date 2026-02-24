@@ -18,15 +18,17 @@ import {
   Globe,
   Lock,
   Image as ImageIcon,
+  Gamepad2,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn, slugify } from '@/lib/utils';
-import { APP_URL } from '@/lib/constants';
+import { APP_URL, TEXTS } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
-import type { Business } from '@/lib/types';
+import type { Business, FlowType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -218,6 +220,7 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [flowType, setFlowType] = useState<FlowType>('lottery_first');
 
   // ---- Toast helpers ----
   const addToast = useCallback((type: Toast['type'], message: string) => {
@@ -255,6 +258,7 @@ export default function SettingsPage() {
           setPrimaryColor(data.primary_color);
           setSecondaryColor(data.secondary_color);
           setLogoUrl(data.logo_url);
+          setFlowType(data.flow_type || 'lottery_first');
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -352,6 +356,7 @@ export default function SettingsPage() {
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           logo_url: newLogoUrl,
+          flow_type: flowType,
           updated_at: new Date().toISOString(),
         })
         .eq('id', business.id);
@@ -380,6 +385,7 @@ export default function SettingsPage() {
     secondaryColor,
     logoUrl,
     logoFile,
+    flowType,
     supabase,
     addToast,
   ]);
@@ -666,7 +672,95 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* ================================================================
-          SECTION 4: Compte
+          SECTION 4: Mode de jeu
+          ================================================================ */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.22 }}
+      >
+        <Card padding="lg">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Gamepad2 size={20} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-display font-semibold text-text">
+                Mode de jeu
+              </h2>
+              <p className="text-xs font-body text-text-muted">
+                Comment vos clients interagissent avec la roue
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {([
+              {
+                key: 'lottery_first' as FlowType,
+                label: TEXTS.onboarding.flowLotteryFirstLabel,
+                desc: TEXTS.onboarding.flowLotteryFirstDesc,
+                flow: '🎡 → 🔒 → ⭐ → 🎁',
+                recommended: true,
+              },
+              {
+                key: 'review_first' as FlowType,
+                label: TEXTS.onboarding.flowReviewFirstLabel,
+                desc: TEXTS.onboarding.flowReviewFirstDesc,
+                flow: '⭐ → 📧 → 🎡 → 🎁',
+                recommended: false,
+              },
+            ]).map((option) => {
+              const selected = flowType === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => setFlowType(option.key)}
+                  className={cn(
+                    'w-full text-left rounded-xl border-2 px-4 py-3 transition-all duration-200 cursor-pointer',
+                    selected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border/50 bg-background hover:border-border'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      selected ? 'border-primary' : 'border-border'
+                    )}>
+                      {selected && (
+                        <div className="w-2 h-2 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-display font-semibold text-text">
+                          {option.label}
+                        </span>
+                        {option.recommended && (
+                          <Badge variant="success" size="sm">
+                            {TEXTS.onboarding.flowRecommended}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs font-body text-text-muted mt-0.5">
+                        {option.desc}
+                      </p>
+                      <p className="text-xs font-body text-text-muted/60 mt-1 tracking-wider">
+                        {option.flow}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* ================================================================
+          SECTION 5: Compte
           ================================================================ */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}

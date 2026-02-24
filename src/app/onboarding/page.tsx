@@ -21,6 +21,7 @@ import {
 import type { SectorKey, SectorPreset } from '@/lib/constants';
 import { slugify, cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import type { FlowType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -314,7 +315,145 @@ function StepConfigurePrizes({
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 — QR code ready
+// Step 2 — Choose flow type
+// ---------------------------------------------------------------------------
+
+const FLOW_OPTIONS: {
+  key: FlowType;
+  labelKey: 'flowLotteryFirstLabel' | 'flowReviewFirstLabel';
+  descKey: 'flowLotteryFirstDesc' | 'flowReviewFirstDesc';
+  steps: { emoji: string; label: string }[];
+  recommended: boolean;
+}[] = [
+  {
+    key: 'lottery_first',
+    labelKey: 'flowLotteryFirstLabel',
+    descKey: 'flowLotteryFirstDesc',
+    steps: [
+      { emoji: '🎡', label: 'Tourner' },
+      { emoji: '🔒', label: 'Lot verrouillé' },
+      { emoji: '⭐', label: 'Avis + Email' },
+      { emoji: '🎁', label: 'Débloqué !' },
+    ],
+    recommended: true,
+  },
+  {
+    key: 'review_first',
+    labelKey: 'flowReviewFirstLabel',
+    descKey: 'flowReviewFirstDesc',
+    steps: [
+      { emoji: '⭐', label: 'Avis Google' },
+      { emoji: '📧', label: 'Email' },
+      { emoji: '🎡', label: 'Tourner' },
+      { emoji: '🎁', label: 'Résultat' },
+    ],
+    recommended: false,
+  },
+];
+
+function StepChooseFlow({
+  flowType,
+  onSelect,
+}: {
+  flowType: FlowType;
+  onSelect: (ft: FlowType) => void;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
+          {TEXTS.onboarding.flowTitle}
+        </h2>
+        <p className="mt-2 text-text-muted font-body">
+          {TEXTS.onboarding.flowSubtitle}
+        </p>
+      </div>
+
+      <div className="space-y-4 max-w-lg mx-auto">
+        {FLOW_OPTIONS.map((option) => {
+          const selected = flowType === option.key;
+          return (
+            <motion.button
+              key={option.key}
+              onClick={() => onSelect(option.key)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: option.key === 'lottery_first' ? 0.1 : 0.2, type: 'spring', stiffness: 300, damping: 25 }}
+              className={cn(
+                'w-full text-left rounded-2xl border-2 p-5 transition-all duration-200 cursor-pointer',
+                selected
+                  ? 'border-primary bg-primary/5 shadow-md'
+                  : 'border-border/50 bg-surface opacity-60 hover:opacity-80 hover:border-border'
+              )}
+            >
+              <div className="flex items-start gap-3">
+                {/* Radio indicator */}
+                <div className={cn(
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all',
+                  selected ? 'border-primary' : 'border-border'
+                )}>
+                  {selected && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                      className="w-2.5 h-2.5 rounded-full bg-primary"
+                    />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-sm font-display font-bold text-text">
+                      {TEXTS.onboarding[option.labelKey]}
+                    </h3>
+                    {option.recommended && (
+                      <Badge variant="success" size="sm">
+                        {TEXTS.onboarding.flowRecommended}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs font-body text-text-muted mb-4">
+                    {TEXTS.onboarding[option.descKey]}
+                  </p>
+
+                  {/* Animated flow steps */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {option.steps.map((s, i) => (
+                      <div key={i} className="flex items-center gap-1">
+                        <motion.div
+                          initial={selected ? { opacity: 0, scale: 0.5, y: 10 } : { opacity: 1, scale: 1, y: 0 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          transition={selected ? {
+                            delay: 0.15 + i * 0.12,
+                            type: 'spring',
+                            stiffness: 400,
+                            damping: 15,
+                          } : { duration: 0 }}
+                          key={`${option.key}-${selected}`}
+                          className="flex flex-col items-center gap-0.5"
+                        >
+                          <span className="text-lg">{s.emoji}</span>
+                          <span className="text-[9px] font-body text-text-muted whitespace-nowrap">{s.label}</span>
+                        </motion.div>
+                        {i < option.steps.length - 1 && (
+                          <ChevronRight size={12} className="text-text-muted/40 shrink-0 mt-[-12px]" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 3 — QR code ready
 // ---------------------------------------------------------------------------
 
 function StepQRReady({
@@ -485,7 +624,10 @@ export default function OnboardingPage() {
   const [currentSector, setCurrentSector] = useState<SectorKey>('autre');
   const [presets, setPresets] = useState<SelectedPreset[]>([]);
 
-  // Created business (after step 1 completes)
+  // Flow type (step 2)
+  const [flowType, setFlowType] = useState<FlowType>('lottery_first');
+
+  // Created business (after step 2 completes)
   const [createdBusiness, setCreatedBusiness] = useState<CreatedBusiness | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
@@ -636,8 +778,13 @@ export default function OnboardingPage() {
     }
 
     if (step === 1) {
-      // Create business + segments
       if (!validation.valid) return;
+      setStep(2);
+      return;
+    }
+
+    if (step === 2) {
+      // Create business + segments (flow_type is now known)
       setLoading(true);
       setError(null);
 
@@ -684,6 +831,7 @@ export default function OnboardingPage() {
             primary_color: '#FF6B35',
             secondary_color: '#1B2A4A',
             onboarding_completed: true,
+            flow_type: flowType,
           })
           .select()
           .single();
@@ -734,7 +882,7 @@ export default function OnboardingPage() {
           slug: business.slug,
           name: business.name,
         });
-        setStep(2);
+        setStep(3);
 
         // Fire-and-forget: send verification email
         fetch('/api/send-verification', { method: 'POST' }).catch(() => {});
@@ -747,14 +895,14 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (step === 2) {
+    if (step === 3) {
       window.location.href = '/dashboard';
     }
-  }, [step, validation, enabledPresets, router]);
+  }, [step, validation, enabledPresets, flowType, router]);
 
   // --- Button label ---
-  const buttonLabel = step === 2 ? 'Aller au dashboard' : 'Suivant';
-  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 2;
+  const buttonLabel = step === 3 ? 'Aller au dashboard' : 'Suivant';
+  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 2 || step === 3;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -765,7 +913,7 @@ export default function OnboardingPage() {
 
       {/* Step indicator */}
       <div className="py-3">
-        <StepIndicator currentStep={step} totalSteps={3} />
+        <StepIndicator currentStep={step} totalSteps={4} />
       </div>
 
       {/* Content */}
@@ -813,9 +961,24 @@ export default function OnboardingPage() {
                 </motion.div>
               )}
 
-              {step === 2 && createdBusiness && (
+              {step === 2 && (
                 <motion.div
                   key="step-2"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <StepChooseFlow
+                    flowType={flowType}
+                    onSelect={setFlowType}
+                  />
+                </motion.div>
+              )}
+
+              {step === 3 && createdBusiness && (
+                <motion.div
+                  key="step-3"
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -50 }}
@@ -851,7 +1014,7 @@ export default function OnboardingPage() {
               loading={loading}
               className="w-full sm:w-auto min-w-[200px]"
             >
-              {step === 2 ? (
+              {step === 3 ? (
                 <>
                   {buttonLabel}
                   <ArrowRight size={16} />

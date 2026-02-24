@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Phone, Star, ChevronRight, Clock, Gift, AlertCircle, Check } from 'lucide-react';
+import { Mail, Phone, Star, ChevronRight, Clock, Gift, AlertCircle, Check, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/logo';
@@ -23,7 +23,7 @@ interface PlayFlowProps {
   segments: WheelSegment[];
 }
 
-type Step = 'welcome' | 'email' | 'wheel' | 'result';
+type Step = 'welcome' | 'email' | 'wheel' | 'result' | 'locked';
 
 interface SpinResult {
   id: string;
@@ -99,10 +99,28 @@ const slideTransition = {
 // ---------------------------------------------------------------------------
 
 export function PlayFlow({ business, segments }: PlayFlowProps) {
+  const isLotteryFirst = business.flow_type === 'lottery_first';
+
+  // ---- Dynamic step order ----
+  const stepOrder: Step[] = useMemo(() => {
+    if (isLotteryFirst) {
+      return ['welcome', 'wheel', 'locked', 'email', 'result'];
+    }
+    return ['welcome', 'email', 'wheel', 'result'];
+  }, [isLotteryFirst]);
+
   // ---- State ----
   const [step, setStep] = useState<Step>('welcome');
   const [direction, setDirection] = useState(1);
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
+
+  // Lottery-first: reservation token + locked prize
+  const [reserveToken, setReserveToken] = useState<string | null>(null);
+  const [lockedPrize, setLockedPrize] = useState<{
+    label: string;
+    emoji: string;
+    is_winning: boolean;
+  } | null>(null);
 
   // Waiting state after Google click
   const [googleClicked, setGoogleClicked] = useState(false);
@@ -113,14 +131,14 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   const googleClickTimeRef = useRef<number | null>(null);
   const visibilityRef = useRef<number | null>(null);
 
-  // Step 2 – email
+  // Email form
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [optedIn, setOptedIn] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Step 3 – wheel & result
+  // Wheel & result
   const [targetSegmentId, setTargetSegmentId] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [spinResult, setSpinResult] = useState<SpinResult | null>(null);
@@ -169,18 +187,12 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   // ---- Navigation ----
   const goTo = useCallback(
     (next: Step) => {
-      const order: Step[] = [
-        'welcome',
-        'email',
-        'wheel',
-        'result',
-      ];
-      const currentIdx = order.indexOf(step);
-      const nextIdx = order.indexOf(next);
+      const currentIdx = stepOrder.indexOf(step);
+      const nextIdx = stepOrder.indexOf(next);
       setDirection(nextIdx > currentIdx ? 1 : -1);
       setStep(next);
     },
-    [step]
+    [step, stepOrder]
   );
 
   // ---- Countdown timer after Google click ----
@@ -254,29 +266,16 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     return score;
   }
 
-  async function handleSpinSubmit() {
-    // Validate email
-    if (!EMAIL_REGEX.test(email)) {
-      setEmailError('Veuillez entrer un email valide');
-      return;
-    }
-    setEmailError('');
+  // ---- Lottery-first: reserve a spin (stateless token) ----
+  async function handleReserveSpin() {
     setSubmitting(true);
     setApiError(null);
 
     try {
-      const res = await fetch('/api/spin', {
+      const res = await fetch('/api/spin/reserve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          businessId: business.id,
-          email,
-          phone: phone || null,
-          optedInMarketing: optedIn,
-          confidenceScore: calculateConfidenceScore(),
-          timeOnGoogleSeconds: timeOnGoogle,
-          selfReportedStars: selectedStars || null,
-        }),
+        body: JSON.stringify({ businessId: business.id }),
       });
 
       const data = await res.json();
@@ -295,20 +294,121 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
         return;
       }
 
-      // Success — set target and go to wheel
-      setTargetSegmentId(data.segment.id);
-      setSpinResult({
-        id: data.segment.id,
+      // Store token and prize info
+      setReserveToken(data.token);
+      setLockedPrize({
         label: data.segment.label,
         emoji: data.segment.emoji,
         is_winning: data.segment.is_winning,
-        promo_code: data.segment.promo_code,
-        validation_code: data.validation_code ?? null,
       });
-      goTo('wheel');
+      setTargetSegmentId(data.segment.id);
 
-      // Slight delay then start spinning
+      // Go to wheel
+      goTo('wheel');
       setTimeout(() => setSpinning(true), 600);
+    } catch {
+      setApiError('Erreur de connexion. Veuillez reessayer.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // ---- Review-first: submit email + spin ----
+  async function handleSpinSubmit() {
+    if (!EMAIL_REGEX.test(email)) {
+      setEmailError('Veuillez entrer un email valide');
+      return;
+    }
+    setEmailError('');
+    setSubmitting(true);
+    setApiError(null);
+
+    try {
+      // Lottery-first: confirm with token
+      if (isLotteryFirst && reserveToken) {
+        const res = await fetch('/api/spin/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: reserveToken,
+            email,
+            phone: phone || null,
+            optedInMarketing: optedIn,
+            confidenceScore: calculateConfidenceScore(),
+            timeOnGoogleSeconds: timeOnGoogle,
+            selfReportedStars: selectedStars || null,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          if (data.error === 'token_expired') {
+            setApiError('Le délai a expiré. Veuillez recommencer.');
+          } else if (data.error === 'already_played') {
+            setApiError(TEXTS.play.alreadyPlayed);
+          } else {
+            setApiError(data.error || 'Une erreur est survenue');
+          }
+          setSubmitting(false);
+          return;
+        }
+
+        // Set spin result from confirmation
+        setSpinResult({
+          id: data.segment.id,
+          label: data.segment.label,
+          emoji: data.segment.emoji,
+          is_winning: data.segment.is_winning,
+          promo_code: data.segment.promo_code,
+          validation_code: data.validation_code ?? null,
+        });
+        saveSpin(business.slug);
+        goTo('result');
+      } else {
+        // Review-first: original flow
+        const res = await fetch('/api/spin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId: business.id,
+            email,
+            phone: phone || null,
+            optedInMarketing: optedIn,
+            confidenceScore: calculateConfidenceScore(),
+            timeOnGoogleSeconds: timeOnGoogle,
+            selfReportedStars: selectedStars || null,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          if (data.error === 'quota_reached') {
+            setApiError(TEXTS.play.quotaReached);
+          } else if (data.error === 'all_prizes_exhausted') {
+            setApiError('Tous les lots ont été distribués ce mois. Revenez bientôt !');
+          } else if (data.error === 'subscription_inactive') {
+            setApiError(TEXTS.play.paused);
+          } else {
+            setApiError(data.error || 'Une erreur est survenue');
+          }
+          setSubmitting(false);
+          return;
+        }
+
+        setTargetSegmentId(data.segment.id);
+        setSpinResult({
+          id: data.segment.id,
+          label: data.segment.label,
+          emoji: data.segment.emoji,
+          is_winning: data.segment.is_winning,
+          promo_code: data.segment.promo_code,
+          validation_code: data.validation_code ?? null,
+        });
+        goTo('wheel');
+        setTimeout(() => setSpinning(true), 600);
+      }
     } catch {
       setApiError('Erreur de connexion. Veuillez reessayer.');
     } finally {
@@ -318,7 +418,10 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
 
   function handleSpinEnd() {
     setSpinning(false);
-    saveSpin(business.slug);
+
+    if (!isLotteryFirst) {
+      saveSpin(business.slug);
+    }
 
     // Trigger emoji explosion
     setShowExplosion(true);
@@ -326,10 +429,14 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
 
   function handleExplosionComplete() {
     setShowExplosion(false);
-    // Show result card with a small delay for dramatic effect
     setTimeout(() => {
       setShowResult(true);
-      goTo('result');
+      if (isLotteryFirst) {
+        // Go to locked step (prize visible but locked)
+        goTo('locked');
+      } else {
+        goTo('result');
+      }
     }, 300);
   }
 
@@ -358,7 +465,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   }
 
   // ---- API error gate ----
-  if (apiError && step !== 'email') {
+  if (apiError && step !== 'email' && step !== 'welcome') {
     return (
       <div className="min-h-[100dvh] w-full flex items-center justify-center p-6 bg-gradient-to-br from-[var(--business-secondary)] to-[var(--business-primary)]">
         <motion.div
@@ -412,7 +519,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
       <div className="w-full max-w-md mx-auto px-5 py-16 relative z-10">
         <AnimatePresence mode="wait" custom={direction}>
           {/* ================================================================
-              STEP 1: WELCOME (initial + waiting state after Google click)
+              STEP: WELCOME
               ================================================================ */}
           {step === 'welcome' && (
             <motion.div
@@ -462,8 +569,69 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 {business.name}
               </motion.h1>
 
-              {!googleClicked ? (
-                /* ---- Initial state: CTA to leave Google review ---- */
+              {isLotteryFirst && !googleClicked ? (
+                /* ---- Lottery-first: CTA to spin the wheel ---- */
+                <>
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    className="text-white/80 font-body text-base sm:text-lg mb-8 max-w-xs leading-relaxed"
+                  >
+                    {TEXTS.play.lotteryWelcome} 🎁
+                  </motion.p>
+
+                  {/* API error in welcome (lottery_first) */}
+                  <AnimatePresence>
+                    {apiError && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden w-full mb-4"
+                      >
+                        <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-2xl px-4 py-3">
+                          <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+                          <p className="text-sm font-body">{apiError}</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="w-full"
+                  >
+                    <button
+                      onClick={handleReserveSpin}
+                      disabled={submitting}
+                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
+                        flex items-center justify-center gap-3
+                        hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer
+                        disabled:opacity-60 disabled:cursor-not-allowed"
+                      style={{
+                        background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
+                        boxShadow: `0 8px 32px ${business.primary_color}66`,
+                      }}
+                    >
+                      {submitting ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                        />
+                      ) : (
+                        <>
+                          🎡 {TEXTS.play.lotteryCta}
+                        </>
+                      )}
+                    </button>
+                  </motion.div>
+                </>
+              ) : !googleClicked ? (
+                /* ---- Review-first: CTA to leave Google review ---- */
                 <>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -515,7 +683,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     className="relative w-32 h-32 mb-6"
                   >
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                      {/* Background circle */}
                       <circle
                         cx="60"
                         cy="60"
@@ -524,7 +691,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                         stroke="rgba(255,255,255,0.15)"
                         strokeWidth="8"
                       />
-                      {/* Progress circle */}
                       <circle
                         cx="60"
                         cy="60"
@@ -538,7 +704,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                         className="transition-all duration-1000 ease-linear"
                       />
                     </svg>
-                    {/* Center content */}
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       {countdownDone ? (
                         <motion.div
@@ -656,7 +821,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
           )}
 
           {/* ================================================================
-              STEP 2: EMAIL + SPIN
+              STEP: EMAIL
               ================================================================ */}
           {step === 'email' && (
             <motion.div
@@ -778,7 +943,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   )}
                 </AnimatePresence>
 
-                {/* Spin button */}
+                {/* Submit button */}
                 <Button
                   onClick={handleSpinSubmit}
                   variant="primary"
@@ -787,15 +952,24 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   disabled={!email || submitting}
                   className="w-full text-lg"
                 >
-                  {!submitting && '🎰'} {TEXTS.play.spinButton}
-                  {!submitting && <ChevronRight className="w-5 h-5" />}
+                  {isLotteryFirst ? (
+                    <>
+                      {!submitting && '🎁'} Débloquer mon cadeau
+                      {!submitting && <ChevronRight className="w-5 h-5" />}
+                    </>
+                  ) : (
+                    <>
+                      {!submitting && '🎰'} {TEXTS.play.spinButton}
+                      {!submitting && <ChevronRight className="w-5 h-5" />}
+                    </>
+                  )}
                 </Button>
               </motion.div>
             </motion.div>
           )}
 
           {/* ================================================================
-              STEP 3: WHEEL
+              STEP: WHEEL
               ================================================================ */}
           {step === 'wheel' && !showResult && (
             <motion.div
@@ -830,10 +1004,10 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
 
               {/* Emoji explosion overlay */}
               <AnimatePresence>
-                {showExplosion && spinResult && (
+                {showExplosion && (lockedPrize || spinResult) && (
                   <EmojiExplosion
-                    emoji={spinResult.emoji}
-                    isWinner={spinResult.is_winning}
+                    emoji={(lockedPrize || spinResult)!.emoji}
+                    isWinner={(lockedPrize || spinResult)!.is_winning}
                     onComplete={handleExplosionComplete}
                   />
                 )}
@@ -842,7 +1016,170 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
           )}
 
           {/* ================================================================
-              STEP 4: RESULT
+              STEP: LOCKED (lottery_first only)
+              ================================================================ */}
+          {step === 'locked' && lockedPrize && (
+            <motion.div
+              key="locked"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={slideTransition}
+              className="flex flex-col items-center text-center"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm"
+              >
+                {/* Blurred emoji with lock overlay */}
+                <div className="relative inline-block mb-4">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 15, delay: 0.2 }}
+                    className="text-6xl blur-sm select-none"
+                  >
+                    {lockedPrize.emoji}
+                  </motion.div>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.4 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-text/80 flex items-center justify-center shadow-lg">
+                      <Lock className="w-6 h-6 text-white" />
+                    </div>
+                  </motion.div>
+                </div>
+
+                <motion.h2
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-2xl font-display font-extrabold text-text mb-1"
+                >
+                  {TEXTS.play.lockedTitle}
+                </motion.h2>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-text-muted font-body text-sm mb-2"
+                >
+                  {lockedPrize.is_winning
+                    ? `${lockedPrize.emoji} ${lockedPrize.label}`
+                    : lockedPrize.label}
+                </motion.p>
+
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-text-muted font-body text-xs mb-6"
+                >
+                  {TEXTS.play.lockedSubtitle}
+                </motion.p>
+
+                {!googleClicked ? (
+                  /* ---- CTA: Leave a Google review ---- */
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                  >
+                    <button
+                      onClick={handleGoogleClick}
+                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-xl
+                        flex items-center justify-center gap-3
+                        hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                      style={{
+                        background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
+                        boxShadow: `0 8px 32px ${business.primary_color}66`,
+                      }}
+                    >
+                      <Star className="w-5 h-5 fill-current" />
+                      {TEXTS.play.lockedCta}
+                    </button>
+                  </motion.div>
+                ) : (
+                  /* ---- Waiting + countdown after Google click ---- */
+                  <div className="space-y-4">
+                    {/* Mini progress ring */}
+                    <div className="flex justify-center">
+                      <div className="relative w-20 h-20">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                          <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="8" />
+                          <circle
+                            cx="60" cy="60" r="52" fill="none"
+                            stroke={countdownDone ? '#10B981' : business.primary_color}
+                            strokeWidth="8" strokeLinecap="round"
+                            strokeDasharray={2 * Math.PI * 52}
+                            strokeDashoffset={2 * Math.PI * 52 * (countdown / 30)}
+                            className="transition-all duration-1000 ease-linear"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          {countdownDone ? (
+                            <Check className="w-6 h-6 text-accent" />
+                          ) : (
+                            <span className="text-lg font-display font-bold text-text">{countdown}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Star rating (inline) */}
+                    <div>
+                      <p className="text-text-muted font-body text-xs mb-2">
+                        {TEXTS.play.starsQuestion}
+                      </p>
+                      <div className="flex items-center justify-center gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setSelectedStars(star)}
+                            className="cursor-pointer focus:outline-none"
+                          >
+                            <Star
+                              className={cn(
+                                'w-7 h-7 transition-colors duration-200',
+                                selectedStars >= star
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-border'
+                              )}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Confirm review button */}
+                    <button
+                      onClick={handleConfirmReview}
+                      disabled={!countdownDone}
+                      className={cn(
+                        'w-full py-3 px-6 rounded-xl font-display font-bold text-base transition-all duration-200',
+                        countdownDone
+                          ? 'bg-accent text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
+                          : 'bg-border/30 text-text-muted cursor-not-allowed'
+                      )}
+                    >
+                      {TEXTS.play.confirmButton} ✅
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* ================================================================
+              STEP: RESULT
               ================================================================ */}
           {step === 'result' && spinResult && (
             <motion.div

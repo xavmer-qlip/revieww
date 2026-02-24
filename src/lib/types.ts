@@ -22,6 +22,7 @@ export interface Business {
   monthly_spin_limit: number;
   contact_limit: number;
   trial_ends_at: string;
+  flow_type: FlowType;
   onboarding_completed: boolean;
   email_verified: boolean;
 }
@@ -66,6 +67,8 @@ export type SubscriptionStatus =
   | 'past_due'
   | 'canceled'
   | 'expired';
+
+export type FlowType = 'review_first' | 'lottery_first';
 
 export type PlanType = 'free' | 'starter' | 'growth' | 'pro';
 

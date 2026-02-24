@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pickWeightedSegment, generateValidationCode } from '@/lib/utils';
-import { WheelSegment } from '@/lib/types';
-import { sendPrizeWonEmail } from '@/lib/emails/prize-won';
+import { createServiceClient } from '@/lib/supabase/server';
+import { generateValidationCode } from '@/lib/utils';
 import {
   validateBusinessForSpin,
   checkSpinQuotas,
-  getEligibleSegments,
+  verifyReservationToken,
 } from '@/lib/spin-helpers';
+import { sendPrizeWonEmail } from '@/lib/emails/prize-won';
+import { WheelSegment } from '@/lib/types';
 
-interface SpinRequestBody {
-  businessId: string;
+interface ConfirmRequestBody {
+  token: string;
   email: string;
   phone: string | null;
   optedInMarketing: boolean;
@@ -20,26 +21,31 @@ interface SpinRequestBody {
 
 export async function POST(request: NextRequest) {
   try {
-    const body: SpinRequestBody = await request.json();
+    const body: ConfirmRequestBody = await request.json();
 
-    // ---- Validate required fields ----
-    if (!body.email || typeof body.email !== 'string') {
-      return NextResponse.json(
-        { error: 'email is required' },
-        { status: 400 }
-      );
+    // Validate required fields
+    if (!body.token || typeof body.token !== 'string') {
+      return NextResponse.json({ error: 'token is required' }, { status: 400 });
     }
-
+    if (!body.email || typeof body.email !== 'string') {
+      return NextResponse.json({ error: 'email is required' }, { status: 400 });
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(body.email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    // Verify HMAC token
+    const payload = verifyReservationToken(body.token);
+    if (!payload) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
+        { error: 'token_expired', message: 'Le délai a expiré. Veuillez recommencer.' },
+        { status: 401 }
       );
     }
 
-    // ---- Validate business ----
-    const bizResult = await validateBusinessForSpin(body.businessId);
+    // Re-validate business
+    const bizResult = await validateBusinessForSpin(payload.businessId);
     if (!bizResult.ok) {
       return NextResponse.json(
         { error: bizResult.error },
@@ -49,25 +55,7 @@ export async function POST(request: NextRequest) {
 
     const { business, supabase } = bizResult;
 
-    // ---- Server-side anti-cheat: 1 spin per email per business per 7 days ----
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const { count: recentSpinCount } = await supabase
-      .from('spins')
-      .select('*', { count: 'exact', head: true })
-      .eq('business_id', body.businessId)
-      .eq('email', body.email.toLowerCase().trim())
-      .gte('created_at', sevenDaysAgo.toISOString());
-
-    if ((recentSpinCount ?? 0) > 0) {
-      return NextResponse.json(
-        { error: 'already_played' },
-        { status: 429 }
-      );
-    }
-
-    // ---- Check quotas ----
+    // Re-check quotas
     const quotaError = await checkSpinQuotas(supabase, business);
     if (quotaError) {
       return NextResponse.json(
@@ -76,34 +64,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Get eligible segments ----
-    const segResult = await getEligibleSegments(supabase, body.businessId);
-    if ('ok' in segResult && !segResult.ok) {
-      return NextResponse.json(
-        { error: segResult.error },
-        { status: segResult.status }
-      );
+    // Anti-cheat: 1 spin per email per business per 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const { count: recentSpinCount } = await supabase
+      .from('spins')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', payload.businessId)
+      .eq('email', body.email.toLowerCase().trim())
+      .gte('created_at', sevenDaysAgo.toISOString());
+
+    if ((recentSpinCount ?? 0) > 0) {
+      return NextResponse.json({ error: 'already_played' }, { status: 429 });
     }
 
-    const eligibleSegments = (segResult as { segments: WheelSegment[] }).segments;
+    // Fetch the reserved segment to get full data
+    const { data: segment } = await supabase
+      .from('wheel_segments')
+      .select('*')
+      .eq('id', payload.segmentId)
+      .single();
 
-    // ---- Pick winning segment (server-side, weighted random) ----
-    const winningSegmentId = pickWeightedSegment(
-      eligibleSegments.map((s) => ({ id: s.id, probability: s.probability }))
-    );
-
-    const winningSegment = eligibleSegments.find((s) => s.id === winningSegmentId);
-
-    if (!winningSegment) {
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
+    if (!segment) {
+      return NextResponse.json({ error: 'Segment not found' }, { status: 404 });
     }
 
-    // ---- Generate validation code for winners (with retry on collision) ----
+    const typedSegment = segment as WheelSegment;
+
+    // Generate validation code for winners
     let validationCode: string | null = null;
-    if (winningSegment.is_winning) {
+    if (payload.isWinning) {
       for (let attempt = 0; attempt < 5; attempt++) {
         const candidate = generateValidationCode();
         const { count } = await supabase
@@ -123,15 +114,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ---- Insert spin record ----
+    // Insert spin record
     const { error: insertError } = await supabase.from('spins').insert({
-      business_id: body.businessId,
+      business_id: payload.businessId,
       email: body.email.toLowerCase().trim(),
       phone: body.phone || null,
-      segment_id: winningSegment.id,
-      prize_label: winningSegment.label,
-      prize_emoji: winningSegment.emoji,
-      is_winner: winningSegment.is_winning,
+      segment_id: payload.segmentId,
+      prize_label: typedSegment.label,
+      prize_emoji: typedSegment.emoji,
+      is_winner: payload.isWinning,
       claimed: false,
       opted_in_marketing: body.optedInMarketing ?? false,
       confidence_score: body.confidenceScore ?? 0,
@@ -148,32 +139,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Send prize email (fire-and-forget) ----
-    if (winningSegment.is_winning && process.env.RESEND_API_KEY) {
+    // Send prize email (fire-and-forget)
+    if (payload.isWinning && process.env.RESEND_API_KEY) {
       sendPrizeWonEmail({
         to: body.email.toLowerCase().trim(),
         businessName: business.name,
-        prizeEmoji: winningSegment.emoji,
-        prizeLabel: winningSegment.label,
-        promoCode: winningSegment.promo_code,
+        prizeEmoji: typedSegment.emoji,
+        prizeLabel: typedSegment.label,
+        promoCode: typedSegment.promo_code,
         validationCode,
       }).catch((err) => console.error('Prize email error:', err));
     }
 
-    // ---- Return result ----
     return NextResponse.json({
       success: true,
       segment: {
-        id: winningSegment.id,
-        label: winningSegment.label,
-        emoji: winningSegment.emoji,
-        is_winning: winningSegment.is_winning,
-        promo_code: winningSegment.promo_code,
+        id: typedSegment.id,
+        label: typedSegment.label,
+        emoji: typedSegment.emoji,
+        is_winning: payload.isWinning,
+        promo_code: typedSegment.promo_code,
       },
       validation_code: validationCode,
     });
   } catch (error) {
-    console.error('Spin API error:', error);
+    console.error('Spin confirm API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
