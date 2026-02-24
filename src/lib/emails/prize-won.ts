@@ -1,4 +1,4 @@
-import { getResend, EMAIL_FROM } from '@/lib/resend';
+import { getResend } from '@/lib/resend';
 import { APP_URL } from '@/lib/constants';
 
 interface PrizeWonEmailParams {
@@ -67,7 +67,7 @@ export async function sendPrizeWonEmail({
 
   try {
     await resend.emails.send({
-      from: EMAIL_FROM,
+      from: `${businessName} via revieww <hello@revieww.ch>`,
       to,
       subject: `${prizeEmoji} Votre cadeau chez ${businessName}`,
       html,

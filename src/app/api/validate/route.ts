@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,8 +67,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ---- Mark as claimed ----
-    const { error: updateError } = await supabase
+    // ---- Mark as claimed (service client to bypass RLS) ----
+    const serviceClient = await createServiceClient();
+    const { error: updateError } = await serviceClient
       .from('spins')
       .update({ claimed: true, claimed_at: new Date().toISOString() })
       .eq('id', spin.id);
