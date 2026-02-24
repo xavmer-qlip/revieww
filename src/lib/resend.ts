@@ -13,4 +13,4 @@ export function getResend(): Resend {
   return resendInstance;
 }
 
-export const EMAIL_FROM = 'revieww <noreply@revieww.ch>';
+export const EMAIL_FROM = 'revieww <hello@revieww.ch>';
