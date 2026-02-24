@@ -132,22 +132,16 @@ export function WheelCanvas({
     if (targetIndex === -1) return 0;
 
     // Segments are drawn starting from -90deg (top), going clockwise.
-    // The pointer is at top (270deg in standard SVG / -90deg).
-    // We need the target segment's center to end up at the top (at -90 / 270 position).
-    //
-    // Segment i spans from i * anglePerSegment to (i+1) * anglePerSegment
-    // The center of segment i (relative to start) = (i + 0.5) * anglePerSegment
-    //
-    // The wheel is rotated so that segment 0 starts at -90deg.
-    // After full rotation R degrees, the angle at the top (pointer) corresponds to
-    // (-R mod 360) relative to the wheel's reference.
-    //
-    // We want center of target at top: (targetIndex + 0.5) * anglePerSegment == R mod 360
+    // The pointer is fixed at top (-90deg).
+    // When the wheel rotates R degrees clockwise, the point originally
+    // at angle (-90 - R) ends up under the pointer.
+    // Segment i center is at angle: -90 + (i + 0.5) * anglePerSegment
+    // For it to land under pointer: R = 360n - (i + 0.5) * anglePerSegment
     const segCenterAngle = (targetIndex + 0.5) * anglePerSegment;
 
-    // Total spins: random 5-8 full turns
+    // Total spins: random 5-8 full turns + land on target
     const fullTurns = 5 + Math.random() * 3;
-    const totalRotation = fullTurns * 360 + segCenterAngle;
+    const totalRotation = (Math.ceil(fullTurns) + 1) * 360 - segCenterAngle;
 
     return totalRotation;
   }, [targetSegmentId, segments, segmentCount, anglePerSegment]);
