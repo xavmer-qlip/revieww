@@ -753,6 +753,9 @@ export default function OnboardingPage() {
           name: business.name,
         });
         setStep(2);
+
+        // Fire-and-forget: send verification email
+        fetch('/api/send-verification', { method: 'POST' }).catch(() => {});
       } catch (err) {
         console.error('Onboarding error:', err);
         setError('Une erreur est survenue. Réessayez.');
