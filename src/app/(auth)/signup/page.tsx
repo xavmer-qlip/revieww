@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, FormEvent, useMemo } from 'react';
+import { useState, useCallback, FormEvent, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Store, Mail, Lock, ArrowRight, AlertCircle, Check, MailCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, Check, MailCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PlaceSearch } from '@/components/places/place-search';
+import type { PlaceDetails } from '@/components/places/place-search';
 import { createClient } from '@/lib/supabase/client';
 import { APP_URL } from '@/lib/constants';
 
@@ -31,7 +33,17 @@ function getPasswordStrength(password: string): {
 
 export default function SignupPage() {
   const router = useRouter();
+
+  // Business / Google Places state
   const [businessName, setBusinessName] = useState('');
+  const [googleReviewLink, setGoogleReviewLink] = useState('');
+  const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null);
+  const [googleRating, setGoogleRating] = useState<number | null>(null);
+  const [googleReviewCount, setGoogleReviewCount] = useState(0);
+  const [googleCategory, setGoogleCategory] = useState<string | null>(null);
+  const [businessAddress, setBusinessAddress] = useState<string | null>(null);
+
+  // Auth state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -44,9 +56,30 @@ export default function SignupPage() {
     [password]
   );
 
+  const handlePlaceSelect = useCallback((details: PlaceDetails) => {
+    setGooglePlaceId(details.place_id);
+    setGoogleRating(details.rating);
+    setGoogleReviewCount(details.review_count);
+    setGoogleCategory(details.category);
+    setBusinessAddress(details.address);
+  }, []);
+
+  const handlePlaceReset = useCallback(() => {
+    setGooglePlaceId(null);
+    setGoogleRating(null);
+    setGoogleReviewCount(0);
+    setGoogleCategory(null);
+    setBusinessAddress(null);
+  }, []);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+
+    if (!businessName.trim()) {
+      setError('Veuillez rechercher et selectionner votre commerce.');
+      return;
+    }
 
     if (!acceptedTerms) {
       setError('Vous devez accepter les conditions generales d\'utilisation.');
@@ -67,7 +100,13 @@ export default function SignupPage() {
         password,
         options: {
           data: {
-            business_name: businessName,
+            business_name: businessName.trim(),
+            google_place_id: googlePlaceId,
+            google_rating: googleRating,
+            google_review_count: googleReviewCount,
+            google_category: googleCategory,
+            google_review_link: googleReviewLink.trim() || null,
+            business_address: businessAddress,
           },
           emailRedirectTo: `${APP_URL}/auth/callback?next=/onboarding`,
         },
@@ -198,22 +237,20 @@ export default function SignupPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-        {/* Business name */}
+        {/* Google Places search (replaces plain business name input) */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <Input
-            id="businessName"
-            label="Nom du commerce"
-            type="text"
-            placeholder="Cafe du Marche"
-            icon={<Store className="w-4 h-4" />}
-            value={businessName}
-            onChange={(e) => setBusinessName(e.target.value)}
-            required
-            autoComplete="organization"
+          <PlaceSearch
+            compact
+            businessName={businessName}
+            googleReviewLink={googleReviewLink}
+            onNameChange={setBusinessName}
+            onLinkChange={setGoogleReviewLink}
+            onPlaceSelect={handlePlaceSelect}
+            onReset={handlePlaceReset}
           />
         </motion.div>
 

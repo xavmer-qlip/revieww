@@ -39,6 +39,14 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Fallback: if Supabase sends confirmation to /?code=xxx instead of /auth/callback,
+  // redirect to the callback route preserving all query params
+  if (pathname === '/' && request.nextUrl.searchParams.has('code')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/callback';
+    return NextResponse.redirect(url);
+  }
+
   // Public routes that don't need auth
   const publicRoutes = ['/', '/login', '/signup', '/play'];
   const isPublicRoute =
