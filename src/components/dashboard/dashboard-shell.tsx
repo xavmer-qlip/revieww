@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { MailCheck } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { MailCheck, CheckCircle2 } from 'lucide-react';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
 import type { PlanType } from '@/lib/types';
@@ -25,12 +26,23 @@ export function DashboardShell({
   spinsLimit,
   emailVerified,
 }: DashboardShellProps) {
+  const searchParams = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [resending, setResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
+  const [showVerifiedBanner, setShowVerifiedBanner] = useState(false);
 
   const toggleMenu = useCallback(() => setMobileMenuOpen((prev) => !prev), []);
   const closeMenu = useCallback(() => setMobileMenuOpen(false), []);
+
+  // Show success banner when redirected from verify-email
+  useEffect(() => {
+    if (searchParams.get('verified') === 'true' && emailVerified) {
+      setShowVerifiedBanner(true);
+      const timer = setTimeout(() => setShowVerifiedBanner(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, emailVerified]);
 
   const handleResendVerification = async () => {
     setResending(true);
@@ -62,6 +74,16 @@ export function DashboardShell({
       <div className="lg:pl-64">
         {/* Mobile topbar */}
         <Topbar onMenuToggle={toggleMenu} />
+
+        {/* Email verified success banner */}
+        {showVerifiedBanner && (
+          <div className="border-b border-accent/20 bg-accent/10 px-4 py-3 sm:px-6">
+            <div className="mx-auto flex max-w-6xl items-center gap-2 text-sm font-medium text-accent">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              <span>Email vérifié avec succès ! Votre page est maintenant active.</span>
+            </div>
+          </div>
+        )}
 
         {/* Email verification banner */}
         {!emailVerified && (

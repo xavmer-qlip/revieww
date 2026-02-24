@@ -22,10 +22,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('businesses')
     .update({ email_verified: true })
     .eq('id', business.id);
 
-  return NextResponse.redirect(new URL('/dashboard', request.url));
+  if (updateError) {
+    console.error('[verify-email] Update error:', updateError);
+    const url = new URL('/login', request.url);
+    url.searchParams.set('error', 'Erreur lors de la vérification. Réessayez.');
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.redirect(new URL('/dashboard?verified=true', request.url));
 }
