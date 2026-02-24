@@ -427,15 +427,17 @@ function StepQRReady({
         </Button>
       </motion.div>
 
-      {/* Bold message */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+      {/* Email verification reminder */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="text-center text-sm font-display font-bold text-text"
+        className="max-w-sm mx-auto rounded-xl border border-warning/20 bg-warning/5 px-4 py-3"
       >
-        Imprimez-le, collez-le, partagez-le !
-      </motion.p>
+        <p className="text-sm font-body text-text text-center">
+          <span className="font-semibold">Dernière étape :</span> vérifiez votre email pour que vos clients puissent scanner et jouer.
+        </p>
+      </motion.div>
     </div>
   );
 }
