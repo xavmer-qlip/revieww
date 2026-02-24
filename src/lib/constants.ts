@@ -1,5 +1,115 @@
 import { Plan } from './types';
 
+// ---------------------------------------------------------------------------
+// Sector presets for onboarding
+// ---------------------------------------------------------------------------
+
+export type SectorKey = 'restaurant' | 'cafe_bar' | 'coiffeur_beaute' | 'commerce_boutique' | 'hotel' | 'autre';
+
+export interface SectorPreset {
+  emoji: string;
+  label: string;
+  color: string;
+  isWinning: boolean;
+  suggestedStock: number;
+}
+
+export const SECTOR_LABELS: Record<SectorKey, string> = {
+  restaurant: 'Restaurant',
+  cafe_bar: 'Café / Bar',
+  coiffeur_beaute: 'Coiffeur / Beauté',
+  commerce_boutique: 'Commerce / Boutique',
+  hotel: 'Hôtel',
+  autre: 'Autre',
+};
+
+export const SECTOR_PRESETS: Record<SectorKey, SectorPreset[]> = {
+  restaurant: [
+    { emoji: '☕', label: 'Café offert', color: '#6F4E37', isWinning: true, suggestedStock: 15 },
+    { emoji: '🎂', label: 'Dessert offert', color: '#E91E63', isWinning: true, suggestedStock: 10 },
+    { emoji: '💰', label: '-10%', color: '#4CAF50', isWinning: true, suggestedStock: 20 },
+    { emoji: '🍽️', label: 'Repas offert', color: '#FFD700', isWinning: true, suggestedStock: 3 },
+    { emoji: '🍺', label: 'Boisson offerte', color: '#FF9800', isWinning: true, suggestedStock: 15 },
+    { emoji: '❌', label: 'Perdu — retente ta chance !', color: '#78909C', isWinning: false, suggestedStock: 0 },
+  ],
+  cafe_bar: [
+    { emoji: '☕', label: 'Café offert', color: '#6F4E37', isWinning: true, suggestedStock: 20 },
+    { emoji: '🍺', label: 'Boisson offerte', color: '#FF9800', isWinning: true, suggestedStock: 15 },
+    { emoji: '💰', label: '-10%', color: '#4CAF50', isWinning: true, suggestedStock: 20 },
+    { emoji: '🥐', label: 'Croissant offert', color: '#E91E63', isWinning: true, suggestedStock: 10 },
+    { emoji: '❌', label: 'Perdu — retente ta chance !', color: '#78909C', isWinning: false, suggestedStock: 0 },
+  ],
+  coiffeur_beaute: [
+    { emoji: '💰', label: '-10%', color: '#4CAF50', isWinning: true, suggestedStock: 15 },
+    { emoji: '💆', label: 'Soin offert', color: '#9C27B0', isWinning: true, suggestedStock: 5 },
+    { emoji: '🎁', label: 'Produit offert', color: '#E91E63', isWinning: true, suggestedStock: 8 },
+    { emoji: '💰', label: '-20%', color: '#2E7D32', isWinning: true, suggestedStock: 5 },
+    { emoji: '❌', label: 'Perdu — retente ta chance !', color: '#78909C', isWinning: false, suggestedStock: 0 },
+  ],
+  commerce_boutique: [
+    { emoji: '💰', label: '-10%', color: '#4CAF50', isWinning: true, suggestedStock: 20 },
+    { emoji: '💰', label: '-20%', color: '#2E7D32', isWinning: true, suggestedStock: 10 },
+    { emoji: '🎁', label: 'Cadeau surprise', color: '#9C27B0', isWinning: true, suggestedStock: 5 },
+    { emoji: '🚚', label: 'Livraison offerte', color: '#2196F3', isWinning: true, suggestedStock: 10 },
+    { emoji: '❌', label: 'Perdu — retente ta chance !', color: '#78909C', isWinning: false, suggestedStock: 0 },
+  ],
+  hotel: [
+    { emoji: '🥐', label: 'Petit-déjeuner offert', color: '#FF9800', isWinning: true, suggestedStock: 10 },
+    { emoji: '💰', label: '-10%', color: '#4CAF50', isWinning: true, suggestedStock: 15 },
+    { emoji: '⭐', label: 'Surclassement', color: '#FFD700', isWinning: true, suggestedStock: 3 },
+    { emoji: '🍺', label: 'Boisson offerte', color: '#E91E63', isWinning: true, suggestedStock: 15 },
+    { emoji: '❌', label: 'Perdu — retente ta chance !', color: '#78909C', isWinning: false, suggestedStock: 0 },
+  ],
+  autre: [
+    { emoji: '💰', label: '-10%', color: '#4CAF50', isWinning: true, suggestedStock: 20 },
+    { emoji: '💰', label: '-20%', color: '#2E7D32', isWinning: true, suggestedStock: 10 },
+    { emoji: '🎁', label: 'Cadeau surprise', color: '#9C27B0', isWinning: true, suggestedStock: 5 },
+    { emoji: '❌', label: 'Perdu — retente ta chance !', color: '#78909C', isWinning: false, suggestedStock: 0 },
+  ],
+};
+
+const GOOGLE_CATEGORY_MAP: Record<string, SectorKey> = {
+  restaurant: 'restaurant',
+  food: 'restaurant',
+  meal_delivery: 'restaurant',
+  meal_takeaway: 'restaurant',
+  cafe: 'cafe_bar',
+  bar: 'cafe_bar',
+  night_club: 'cafe_bar',
+  bakery: 'cafe_bar',
+  hair_care: 'coiffeur_beaute',
+  beauty_salon: 'coiffeur_beaute',
+  spa: 'coiffeur_beaute',
+  store: 'commerce_boutique',
+  clothing_store: 'commerce_boutique',
+  shopping_mall: 'commerce_boutique',
+  shoe_store: 'commerce_boutique',
+  jewelry_store: 'commerce_boutique',
+  electronics_store: 'commerce_boutique',
+  furniture_store: 'commerce_boutique',
+  book_store: 'commerce_boutique',
+  pet_store: 'commerce_boutique',
+  florist: 'commerce_boutique',
+  lodging: 'hotel',
+  hotel: 'hotel',
+};
+
+export function mapGoogleCategoryToSector(googleCategory: string | null): SectorKey {
+  if (!googleCategory) return 'autre';
+  const lower = googleCategory.toLowerCase().trim();
+  // Try exact match first
+  if (GOOGLE_CATEGORY_MAP[lower]) return GOOGLE_CATEGORY_MAP[lower];
+  // Try partial match
+  for (const [key, sector] of Object.entries(GOOGLE_CATEGORY_MAP)) {
+    if (lower.includes(key) || key.includes(lower)) return sector;
+  }
+  return 'autre';
+}
+
+// ---------------------------------------------------------------------------
+// App constants
+// ---------------------------------------------------------------------------
+
 export const APP_NAME = 'revieww';
 export const APP_TAGLINE = 'review & win';
 export const APP_DOMAIN = 'revieww.ch';
@@ -229,5 +339,10 @@ export const TEXTS = {
     step1Fallback: 'Coller un lien Google Review manuellement',
     step2Title: 'Configurez votre roue',
     step2Subtitle: 'Choisissez des lots pour vos clients',
+    howItWorksTitle: 'Comment ça marche',
+    prizesTitle: 'Configurez vos lots',
+    prizesSubtitle: 'Choisissez les récompenses pour vos clients',
+    summaryTitle: 'Votre QR code est prêt !',
+    summarySubtitle: 'Partagez-le pour commencer à collecter des avis',
   },
 };

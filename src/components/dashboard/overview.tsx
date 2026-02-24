@@ -22,7 +22,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, getQuotaPercentage, getQuotaColor, formatNumber } from '@/lib/utils';
-import { PLANS } from '@/lib/constants';
+import { PLANS, PLAY_URL } from '@/lib/constants';
 import type { Business, Spin, PlanType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -59,6 +59,7 @@ interface DashboardOverviewProps {
   dailyCounts: DailyCount[];
   checklist: ChecklistState;
   checklistComplete: boolean;
+  isFirstTime: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -596,6 +597,109 @@ function OnboardingChecklist({ checklist }: { checklist: ChecklistState }) {
 }
 
 // ---------------------------------------------------------------------------
+// Activation Hero (first-time empty state)
+// ---------------------------------------------------------------------------
+
+function ActivationHero({ business }: { business: Business }) {
+  const playUrl = `${PLAY_URL}/${business.slug}`;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(playUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  const steps = [
+    {
+      emoji: '📱',
+      title: 'Téléchargez votre QR code',
+      description: 'Imprimez-le et placez-le dans votre établissement',
+      href: '/dashboard/qrcode',
+      cta: 'Voir le QR code',
+    },
+    {
+      emoji: '📤',
+      title: 'Partagez avec votre équipe',
+      description: 'Envoyez le lien à vos collaborateurs',
+      action: handleCopy,
+      cta: copied ? 'Copié !' : 'Copier le lien',
+    },
+    {
+      emoji: '🎡',
+      title: 'Testez vous-même',
+      description: 'Essayez l\'expérience client en direct',
+      href: playUrl,
+      external: true,
+      cta: 'Tester la roue',
+    },
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card padding="lg" className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+        {/* Decorative */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+
+        <div className="relative">
+          <div className="text-center mb-6">
+            <span className="text-4xl mb-3 block">🚀</span>
+            <h2 className="text-xl sm:text-2xl font-display font-bold text-text">
+              Activez revieww en 3 étapes
+            </h2>
+            <p className="text-sm text-text-muted font-body mt-1">
+              Commencez à collecter des avis dès aujourd&apos;hui
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {steps.map((step, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
+              >
+                <Card padding="md" hover className="h-full flex flex-col items-center text-center gap-3">
+                  <span className="text-3xl">{step.emoji}</span>
+                  <h3 className="text-sm font-display font-bold text-text">
+                    {step.title}
+                  </h3>
+                  <p className="text-xs font-body text-text-muted flex-1">
+                    {step.description}
+                  </p>
+                  {step.href ? (
+                    <Link
+                      href={step.href}
+                      {...(step.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    >
+                      <Button size="sm" variant="primary">
+                        {step.cta}
+                        <ArrowUpRight size={12} />
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={step.action}>
+                      {step.cta}
+                    </Button>
+                  )}
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -638,6 +742,7 @@ export function DashboardOverview({
   dailyCounts,
   checklist,
   checklistComplete,
+  isFirstTime,
 }: DashboardOverviewProps) {
   const reviewsTrend = calculateTrend(stats.reviewsThisMonth, stats.reviewsPrevMonth);
   const emailsTrend = calculateTrend(stats.emailsThisMonth, stats.emailsPrevMonth);
@@ -660,50 +765,65 @@ export function DashboardOverview({
         </p>
       </motion.div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          icon={Star}
-          iconColor="#FF6B35"
-          value={stats.reviewsThisMonth}
-          label="Avis ce mois"
-          trend={reviewsTrend}
-          delay={0.05}
-        />
-        <StatCard
-          icon={Mail}
-          iconColor="#10B981"
-          value={stats.emailsThisMonth}
-          label="Emails collectés"
-          trend={emailsTrend}
-          delay={0.1}
-        />
-        <StatCard
-          icon={Zap}
-          iconColor="#F59E0B"
-          value={stats.totalSpinsThisMonth}
-          label="Spins ce mois"
-          trend={spinsTrend}
-          delay={0.15}
-        />
-        <StatCard
-          icon={BarChart3}
-          iconColor="#8B5CF6"
-          value={stats.conversionRate}
-          label="Taux de conversion"
-          trend={conversionTrend}
-          suffix="%"
-          delay={0.2}
-        />
-      </div>
+      {/* Activation hero for first-time users */}
+      {isFirstTime && <ActivationHero business={business} />}
 
-      {/* Chart + Recent Activity row */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3">
-          <MiniBarChart data={dailyCounts} />
-        </div>
-        <div className="lg:col-span-2">
-          <RecentActivity spins={recentSpins} />
+      {/* Stats section (blurred when first time) */}
+      <div className={cn(isFirstTime && 'relative')}>
+        {isFirstTime && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl backdrop-blur-[2px]">
+            <p className="text-sm font-display font-semibold text-text-muted bg-surface/80 px-4 py-2 rounded-xl shadow-sm">
+              Vos statistiques apparaîtront après votre premier spin
+            </p>
+          </div>
+        )}
+        <div className={cn('space-y-6', isFirstTime && 'opacity-40 pointer-events-none')}>
+          {/* Stat cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              icon={Star}
+              iconColor="#FF6B35"
+              value={stats.reviewsThisMonth}
+              label="Avis ce mois"
+              trend={reviewsTrend}
+              delay={0.05}
+            />
+            <StatCard
+              icon={Mail}
+              iconColor="#10B981"
+              value={stats.emailsThisMonth}
+              label="Emails collectés"
+              trend={emailsTrend}
+              delay={0.1}
+            />
+            <StatCard
+              icon={Zap}
+              iconColor="#F59E0B"
+              value={stats.totalSpinsThisMonth}
+              label="Spins ce mois"
+              trend={spinsTrend}
+              delay={0.15}
+            />
+            <StatCard
+              icon={BarChart3}
+              iconColor="#8B5CF6"
+              value={stats.conversionRate}
+              label="Taux de conversion"
+              trend={conversionTrend}
+              suffix="%"
+              delay={0.2}
+            />
+          </div>
+
+          {/* Chart + Recent Activity row */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            <div className="lg:col-span-3">
+              <MiniBarChart data={dailyCounts} />
+            </div>
+            <div className="lg:col-span-2">
+              <RecentActivity spins={recentSpins} />
+            </div>
+          </div>
         </div>
       </div>
 

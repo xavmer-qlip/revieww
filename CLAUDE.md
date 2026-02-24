@@ -37,6 +37,9 @@ Merchant gets the customer's email for marketing.
 - **Service client**: `createServiceClient()` for server-side operations that bypass RLS (spin recording)
 - **Anti-cheat**: localStorage cookie — 1 spin per device per business per week
 - **Review verification**: Page Visibility API to detect time on Google, confidence scoring
+- **Monthly stock**: `wheel_segments.monthly_stock` (0 = unlimited). Spin API filters out exhausted segments before picking.
+- **Sector presets**: `SECTOR_PRESETS` in constants.ts — onboarding auto-detects sector from Google category
+- **Dashboard activation**: `isFirstTime` (0 total spins) shows ActivationHero + blurred stats
 
 ## Project Structure
 ```
@@ -49,7 +52,7 @@ src/
 │   │   ├── layout.tsx        # Split-screen auth layout
 │   │   ├── login/page.tsx
 │   │   └── signup/page.tsx
-│   ├── onboarding/page.tsx   # 3-step flow (plan → business → wheel)
+│   ├── onboarding/page.tsx   # 3-step flow (how-it-works → sector presets + stock → QR ready)
 │   ├── dashboard/
 │   │   ├── layout.tsx        # Server layout (fetches user/business)
 │   │   ├── page.tsx          # Overview (server component)
@@ -73,8 +76,8 @@ src/
 │   ├── wheel/                # WheelCanvas, EmojiExplosion
 │   └── play/                 # PlayFlow (3-step mobile flow)
 ├── lib/
-│   ├── types.ts              # Business, WheelSegment, Spin, Plan, PlanType
-│   ├── constants.ts          # PLANS, TEXTS (French), STRIPE_PRICE_IDS
+│   ├── types.ts              # Business, WheelSegment (w/ monthly_stock), Spin, Plan, PlanType
+│   ├── constants.ts          # PLANS, TEXTS, SECTOR_PRESETS, mapGoogleCategoryToSector()
 │   ├── utils.ts              # cn(), pickWeightedSegment(), slugify(), etc.
 │   ├── stripe.ts             # Lazy Stripe init via getStripe()
 │   └── supabase/
@@ -91,7 +94,7 @@ src/
 | Growth  | 39 CHF   | 200         |
 | Pro     | 79 CHF   | Unlimited   |
 
-All plans include 7-day free trial. Note: business model may be changing (user to provide updated details).
+All plans include 7-day free trial. Free plan: 30 spins lifetime, 30 contacts.
 
 ## Two Distinct UIs
 1. **Merchant dashboard** (`/dashboard/*`): Desktop-friendly, feature-rich, sidebar nav

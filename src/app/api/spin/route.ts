@@ -172,12 +172,48 @@ export async function POST(request: NextRequest) {
 
     const typedSegments = segments as WheelSegment[];
 
+    // ---- Filter out segments with exhausted monthly stock ----
+    const startOfMonth = isFree ? '' : new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const eligibleSegments: WheelSegment[] = [];
+
+    for (const seg of typedSegments) {
+      // Losing segments are always eligible
+      if (!seg.is_winning) {
+        eligibleSegments.push(seg);
+        continue;
+      }
+      // Winning segments with monthly_stock = 0 are unlimited
+      if (!seg.monthly_stock || seg.monthly_stock <= 0) {
+        eligibleSegments.push(seg);
+        continue;
+      }
+      // Count wins for this segment this month
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { count: segWins } = await supabase
+        .from('spins')
+        .select('*', { count: 'exact', head: true })
+        .eq('segment_id', seg.id)
+        .eq('is_winner', true)
+        .gte('created_at', monthStart);
+
+      if ((segWins ?? 0) < seg.monthly_stock) {
+        eligibleSegments.push(seg);
+      }
+    }
+
+    if (eligibleSegments.length === 0) {
+      return NextResponse.json(
+        { error: 'all_prizes_exhausted' },
+        { status: 429 }
+      );
+    }
+
     // ---- Pick winning segment (server-side, weighted random) ----
     const winningSegmentId = pickWeightedSegment(
-      typedSegments.map((s) => ({ id: s.id, probability: s.probability }))
+      eligibleSegments.map((s) => ({ id: s.id, probability: s.probability }))
     );
 
-    const winningSegment = typedSegments.find((s) => s.id === winningSegmentId);
+    const winningSegment = eligibleSegments.find((s) => s.id === winningSegmentId);
 
     if (!winningSegment) {
       return NextResponse.json(

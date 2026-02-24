@@ -1,224 +1,624 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
-import { Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Check, ChevronRight, Download, Copy, Send, ArrowRight } from 'lucide-react';
+import QRCode from 'qrcode';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { WHEEL_TEMPLATES, TEXTS, PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS } from '@/lib/constants';
+import {
+  TEXTS,
+  PLAN_SPIN_LIMITS,
+  PLAN_CONTACT_LIMITS,
+  PLAY_URL,
+  SECTOR_PRESETS,
+  SECTOR_LABELS,
+  mapGoogleCategoryToSector,
+} from '@/lib/constants';
+import type { SectorKey, SectorPreset } from '@/lib/constants';
 import { slugify, cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
 // ---------------------------------------------------------------------------
-// Configure Wheel step
+// Types
 // ---------------------------------------------------------------------------
 
-function StepConfigureWheel({
-  selectedSegments,
-  onToggle,
-}: {
-  selectedSegments: number[];
-  onToggle: (index: number) => void;
-}) {
+interface SelectedPreset extends SectorPreset {
+  enabled: boolean;
+  stock: number;
+}
+
+interface CreatedBusiness {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+// ---------------------------------------------------------------------------
+// Step 0 — How it works
+// ---------------------------------------------------------------------------
+
+const HOW_IT_WORKS_CARDS = [
+  {
+    emoji: '📱',
+    title: 'Placez le QR code',
+    description: 'Sur vos tables, au comptoir, dans l\'addition',
+  },
+  {
+    emoji: '⭐',
+    title: 'Vos clients laissent un avis',
+    description: 'Ils scannent et laissent un avis Google',
+  },
+  {
+    emoji: '🎡',
+    title: 'Ils tournent et gagnent',
+    description: 'Un jeu fun avec des lots instantanés',
+  },
+];
+
+function StepHowItWorks() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          {TEXTS.onboarding.step2Title}
+          {TEXTS.onboarding.howItWorksTitle}
         </h2>
         <p className="mt-2 text-text-muted font-body">
-          {TEXTS.onboarding.step2Subtitle}
+          revieww en 3 étapes simples
         </p>
       </div>
 
-      {/* Template grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg mx-auto">
-        {WHEEL_TEMPLATES.map((template, index) => {
-          const isSelected = selectedSegments.includes(index);
-
-          return (
-            <motion.button
-              key={index}
-              type="button"
-              onClick={() => onToggle(index)}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              className={cn(
-                'relative flex items-center gap-2.5 rounded-xl border-2 px-3 py-3 text-left transition-all duration-200 cursor-pointer bg-surface',
-                isSelected
-                  ? 'border-primary bg-primary/5 shadow-sm'
-                  : 'border-border/50 hover:border-primary/30'
-              )}
-            >
-              {/* Checkmark */}
-              {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white"
-                >
-                  <Check size={10} strokeWidth={3} />
-                </motion.div>
-              )}
-
-              <span className="text-xl">{template.emoji}</span>
-              <span className="text-sm font-medium font-body text-text truncate">
-                {template.label}
-              </span>
-            </motion.button>
-          );
-        })}
+      <div className="grid gap-4 max-w-lg mx-auto">
+        {HOW_IT_WORKS_CARDS.map((card, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 + i * 0.12, type: 'spring', stiffness: 300, damping: 25 }}
+          >
+            <Card padding="md" className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-2xl">{card.emoji}</span>
+              </div>
+              <div>
+                <h3 className="text-sm font-display font-bold text-text">
+                  {card.title}
+                </h3>
+                <p className="text-xs font-body text-text-muted mt-0.5">
+                  {card.description}
+                </p>
+              </div>
+            </Card>
+          </motion.div>
+        ))}
       </div>
-
-      {/* Selected pills */}
-      {selectedSegments.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap justify-center gap-2"
-        >
-          {selectedSegments.map((idx) => {
-            const t = WHEEL_TEMPLATES[idx];
-            return (
-              <Badge key={idx} variant="primary" size="md">
-                {t.emoji} {t.label}
-              </Badge>
-            );
-          })}
-        </motion.div>
-      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Main Onboarding Page (single step: wheel config)
+// Step 1 — Configure prizes with sector presets
+// ---------------------------------------------------------------------------
+
+function StepConfigurePrizes({
+  detectedSector,
+  currentSector,
+  onSectorChange,
+  presets,
+  onToggle,
+  onStockChange,
+  validation,
+}: {
+  detectedSector: SectorKey;
+  currentSector: SectorKey;
+  onSectorChange: (sector: SectorKey) => void;
+  presets: SelectedPreset[];
+  onToggle: (index: number) => void;
+  onStockChange: (index: number, stock: number) => void;
+  validation: { valid: boolean; message: string };
+}) {
+  const sectorKeys = Object.keys(SECTOR_LABELS) as SectorKey[];
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
+          {TEXTS.onboarding.prizesTitle}
+        </h2>
+        <p className="mt-2 text-text-muted font-body">
+          {TEXTS.onboarding.prizesSubtitle}
+        </p>
+      </div>
+
+      {/* Sector badge + selector */}
+      <div className="flex flex-col items-center gap-3">
+        <Badge variant="primary" size="md">
+          {SECTOR_LABELS[detectedSector]} détecté
+        </Badge>
+        <div className="flex flex-wrap justify-center gap-2">
+          {sectorKeys.map((key) => (
+            <button
+              key={key}
+              onClick={() => onSectorChange(key)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-display font-medium transition-all',
+                currentSector === key
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-background text-text-muted hover:bg-primary/10 border border-border/50'
+              )}
+            >
+              {SECTOR_LABELS[key]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Preset grid */}
+      <div className="space-y-3 max-w-lg mx-auto">
+        {presets.map((preset, index) => (
+          <motion.div
+            key={`${currentSector}-${index}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+          >
+            <Card
+              padding="sm"
+              className={cn(
+                'transition-all duration-200',
+                preset.enabled
+                  ? 'border-primary/30 bg-primary/5'
+                  : 'opacity-60'
+              )}
+            >
+              <div className="flex items-center gap-3">
+                {/* Toggle checkbox */}
+                <button
+                  onClick={() => onToggle(index)}
+                  className={cn(
+                    'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all',
+                    preset.enabled
+                      ? 'border-primary bg-primary'
+                      : 'border-border hover:border-primary/40'
+                  )}
+                >
+                  {preset.enabled && <Check size={12} className="text-white" strokeWidth={3} />}
+                </button>
+
+                {/* Emoji + label */}
+                <span className="text-xl">{preset.emoji}</span>
+                <div
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: preset.color }}
+                />
+                <span className="text-sm font-medium font-body text-text flex-1 truncate">
+                  {preset.label}
+                </span>
+
+                {/* Stock input or "Illimité" */}
+                {preset.isWinning && preset.enabled ? (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <input
+                      type="number"
+                      min={0}
+                      value={preset.stock}
+                      onChange={(e) => onStockChange(index, Math.max(0, parseInt(e.target.value) || 0))}
+                      className="w-16 px-2 py-1 text-xs font-body rounded-lg bg-background border border-border/50 text-text text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                    <span className="text-[10px] text-text-muted font-body">/mois</span>
+                  </div>
+                ) : !preset.isWinning ? (
+                  <span className="text-[10px] text-text-muted font-body shrink-0">Illimité</span>
+                ) : null}
+              </div>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Validation message */}
+      {!validation.valid && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center text-xs text-warning font-body"
+        >
+          {validation.message}
+        </motion.p>
+      )}
+
+      {/* Auto-probability hint */}
+      <p className="text-center text-[10px] text-text-muted/70 font-body">
+        Les probabilités sont calculées automatiquement : 30% perdant, 70% répartis entre les gagnants
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 2 — QR code ready
+// ---------------------------------------------------------------------------
+
+function StepQRReady({
+  business,
+  qrDataUrl,
+  playUrl,
+}: {
+  business: CreatedBusiness;
+  qrDataUrl: string | null;
+  playUrl: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleDownload = useCallback(() => {
+    if (!qrDataUrl) return;
+    const link = document.createElement('a');
+    link.download = `qr-${business.slug}.png`;
+    link.href = qrDataUrl;
+    link.click();
+  }, [qrDataUrl, business.slug]);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(playUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }, [playUrl]);
+
+  const handleWhatsApp = useCallback(() => {
+    const text = encodeURIComponent(
+      `Laissez un avis sur ${business.name} et gagnez un cadeau ! ${playUrl}`
+    );
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+  }, [business.name, playUrl]);
+
+  const handleEmail = useCallback(() => {
+    const subject = encodeURIComponent(`Donnez votre avis sur ${business.name}`);
+    const body = encodeURIComponent(
+      `Bonjour,\n\nLaissez un avis et gagnez un cadeau !\n${playUrl}\n\nMerci !`
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+  }, [business.name, playUrl]);
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        {/* Success animation */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+          className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/10 flex items-center justify-center"
+        >
+          <Check className="w-8 h-8 text-accent" />
+        </motion.div>
+
+        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
+          {TEXTS.onboarding.summaryTitle}
+        </h2>
+        <p className="mt-2 text-text-muted font-body">
+          {TEXTS.onboarding.summarySubtitle}
+        </p>
+      </div>
+
+      {/* QR Code */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2 }}
+        className="flex flex-col items-center gap-3"
+      >
+        {qrDataUrl ? (
+          <div className="p-4 bg-white rounded-2xl shadow-lg border border-border/30">
+            <img
+              src={qrDataUrl}
+              alt="QR Code"
+              className="w-[200px] h-[200px]"
+            />
+          </div>
+        ) : (
+          <div className="w-[200px] h-[200px] bg-border/20 rounded-xl animate-pulse" />
+        )}
+
+        <p className="text-xs font-mono text-text-muted">{playUrl}</p>
+      </motion.div>
+
+      {/* Action buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="grid grid-cols-2 gap-3 max-w-sm mx-auto"
+      >
+        <Button variant="primary" size="sm" onClick={handleDownload}>
+          <Download size={14} />
+          Télécharger
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleWhatsApp}>
+          <Send size={14} />
+          WhatsApp
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleCopy}>
+          <Copy size={14} />
+          {copied ? 'Copié !' : 'Copier le lien'}
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleEmail}>
+          <Send size={14} />
+          Email
+        </Button>
+      </motion.div>
+
+      {/* Bold message */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="text-center text-sm font-display font-bold text-text"
+      >
+        Imprimez-le, collez-le, partagez-le !
+      </motion.p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step indicator
+// ---------------------------------------------------------------------------
+
+function StepIndicator({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
+  return (
+    <div className="flex items-center justify-center gap-2">
+      {Array.from({ length: totalSteps }).map((_, i) => (
+        <motion.div
+          key={i}
+          animate={{
+            width: i === currentStep ? 24 : 8,
+            backgroundColor: i === currentStep ? '#FF6B35' : i < currentStep ? '#10B981' : '#D1D5DB',
+          }}
+          transition={{ duration: 0.3 }}
+          className="h-2 rounded-full"
+        />
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Onboarding Page
 // ---------------------------------------------------------------------------
 
 export default function OnboardingPage() {
   const router = useRouter();
 
-  // Wheel config
-  const [selectedSegments, setSelectedSegments] = useState<number[]>([0, 1, 2, 3, 6]);
-
-  // Loading
+  // Step state
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Toggle segment ---
-  const toggleSegment = useCallback((index: number) => {
-    setSelectedSegments((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+  // Business metadata from user
+  const [businessName, setBusinessName] = useState('');
+  const [googleCategory, setGoogleCategory] = useState<string | null>(null);
+
+  // Sector & presets
+  const [detectedSector, setDetectedSector] = useState<SectorKey>('autre');
+  const [currentSector, setCurrentSector] = useState<SectorKey>('autre');
+  const [presets, setPresets] = useState<SelectedPreset[]>([]);
+
+  // Created business (after step 1 completes)
+  const [createdBusiness, setCreatedBusiness] = useState<CreatedBusiness | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  // --- Load user metadata on mount ---
+  useEffect(() => {
+    async function loadUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const meta = user.user_metadata ?? {};
+      setBusinessName((meta.business_name as string) || '');
+      const cat = (meta.google_category as string) || null;
+      setGoogleCategory(cat);
+
+      const sector = mapGoogleCategoryToSector(cat);
+      setDetectedSector(sector);
+      setCurrentSector(sector);
+      initPresets(sector);
+    }
+    loadUser();
+  }, []);
+
+  // --- Initialize presets from a sector ---
+  const initPresets = useCallback((sector: SectorKey) => {
+    const sectorPresets = SECTOR_PRESETS[sector];
+    setPresets(
+      sectorPresets.map((p) => ({
+        ...p,
+        enabled: true,
+        stock: p.suggestedStock,
+      }))
     );
   }, []);
 
-  const canFinish = selectedSegments.length >= 3;
+  // --- Change sector ---
+  const handleSectorChange = useCallback((sector: SectorKey) => {
+    setCurrentSector(sector);
+    initPresets(sector);
+  }, [initPresets]);
 
-  // --- Complete onboarding ---
-  const handleComplete = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  // --- Toggle preset ---
+  const togglePreset = useCallback((index: number) => {
+    setPresets((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, enabled: !p.enabled } : p))
+    );
+  }, []);
 
-    try {
-      const supabase = createClient();
+  // --- Update stock ---
+  const updateStock = useCallback((index: number, stock: number) => {
+    setPresets((prev) =>
+      prev.map((p, i) => (i === index ? { ...p, stock } : p))
+    );
+  }, []);
 
-      // Get current user
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+  // --- Validation ---
+  const enabledPresets = useMemo(() => presets.filter((p) => p.enabled), [presets]);
+  const validation = useMemo(() => {
+    const total = enabledPresets.length;
+    const winners = enabledPresets.filter((p) => p.isWinning).length;
+    const losers = enabledPresets.filter((p) => !p.isWinning).length;
 
-      if (authError || !user) {
-        setError('Session expirée. Veuillez vous reconnecter.');
+    if (total < 3) return { valid: false, message: 'Sélectionnez au moins 3 lots' };
+    if (winners < 1) return { valid: false, message: 'Il faut au moins 1 lot gagnant' };
+    if (losers < 1) return { valid: false, message: 'Il faut au moins 1 lot perdant' };
+    return { valid: true, message: '' };
+  }, [enabledPresets]);
+
+  // --- Play URL ---
+  const playUrl = createdBusiness ? `${PLAY_URL}/${createdBusiness.slug}` : '';
+
+  // --- Generate QR code when business is created ---
+  useEffect(() => {
+    if (!createdBusiness) return;
+    const url = `${PLAY_URL}/${createdBusiness.slug}`;
+    QRCode.toDataURL(url, {
+      width: 512,
+      margin: 2,
+      color: { dark: '#1B2A4A', light: '#FFFFFF' },
+      errorCorrectionLevel: 'H',
+    })
+      .then(setQrDataUrl)
+      .catch(() => {});
+  }, [createdBusiness]);
+
+  // --- Step navigation ---
+  const handleNext = useCallback(async () => {
+    if (step === 0) {
+      setStep(1);
+      return;
+    }
+
+    if (step === 1) {
+      // Create business + segments
+      if (!validation.valid) return;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const supabase = createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+          setError('Session expirée. Veuillez vous reconnecter.');
+          setLoading(false);
+          return;
+        }
+
+        const meta = user.user_metadata ?? {};
+        const name = (meta.business_name as string) || '';
+
+        if (!name.trim()) {
+          setError('Données du commerce introuvables. Veuillez vous réinscrire.');
+          setLoading(false);
+          return;
+        }
+
+        // Create business
+        const spinLimit = PLAN_SPIN_LIMITS.free;
+        const contactLimit = PLAN_CONTACT_LIMITS.free;
+
+        const { data: business, error: bizError } = await supabase
+          .from('businesses')
+          .insert({
+            user_id: user.id,
+            name: name.trim(),
+            slug: slugify(name.trim()) + '-' + Date.now().toString(36),
+            google_review_link: (meta.google_review_link as string) || null,
+            google_place_id: (meta.google_place_id as string) || null,
+            google_rating: (meta.google_rating as number) ?? null,
+            google_review_count: (meta.google_review_count as number) ?? 0,
+            google_business_category: (meta.google_category as string) || null,
+            address: (meta.business_address as string) || null,
+            plan_type: 'free',
+            monthly_spin_limit: spinLimit,
+            contact_limit: contactLimit,
+            subscription_status: 'free',
+            trial_ends_at: new Date().toISOString(),
+            primary_color: '#FF6B35',
+            secondary_color: '#1B2A4A',
+            onboarding_completed: true,
+          })
+          .select()
+          .single();
+
+        if (bizError || !business) {
+          console.error('Business creation error:', bizError);
+          setError('Erreur lors de la création du commerce. Réessayez.');
+          setLoading(false);
+          return;
+        }
+
+        // Calculate probabilities: 30% for losers, 70% for winners
+        const winners = enabledPresets.filter((p) => p.isWinning);
+        const losers = enabledPresets.filter((p) => !p.isWinning);
+        const loserProb = losers.length > 0 ? Math.floor(30 / losers.length) : 0;
+        const winnerProb = winners.length > 0 ? Math.floor(70 / winners.length) : 0;
+
+        // Adjust for remainder
+        const totalCalc = loserProb * losers.length + winnerProb * winners.length;
+        const remainder = 100 - totalCalc;
+
+        const segmentsToInsert = enabledPresets.map((preset, position) => {
+          const isLoser = !preset.isWinning;
+          const prob = isLoser ? loserProb : winnerProb;
+
+          return {
+            business_id: business.id,
+            label: preset.label,
+            emoji: preset.emoji,
+            color: preset.color,
+            is_winning: preset.isWinning,
+            probability: prob + (position === 0 ? remainder : 0),
+            position,
+            monthly_stock: preset.isWinning ? preset.stock : 0,
+          };
+        });
+
+        const { error: segError } = await supabase
+          .from('wheel_segments')
+          .insert(segmentsToInsert);
+
+        if (segError) {
+          console.error('Segments insertion error:', segError);
+        }
+
+        setCreatedBusiness({
+          id: business.id,
+          slug: business.slug,
+          name: business.name,
+        });
+        setStep(2);
+      } catch (err) {
+        console.error('Onboarding error:', err);
+        setError('Une erreur est survenue. Réessayez.');
+      } finally {
         setLoading(false);
-        return;
       }
+      return;
+    }
 
-      // Read business data from user_metadata (set during signup)
-      const meta = user.user_metadata ?? {};
-      const businessName = (meta.business_name as string) || '';
-
-      if (!businessName.trim()) {
-        setError('Données du commerce introuvables. Veuillez vous réinscrire.');
-        setLoading(false);
-        return;
-      }
-
-      // Free plan: 30 spins, 30 contacts
-      const spinLimit = PLAN_SPIN_LIMITS.free;
-      const contactLimit = PLAN_CONTACT_LIMITS.free;
-
-      // Create business
-      const { data: business, error: bizError } = await supabase
-        .from('businesses')
-        .insert({
-          user_id: user.id,
-          name: businessName.trim(),
-          slug: slugify(businessName.trim()) + '-' + Date.now().toString(36),
-          google_review_link: (meta.google_review_link as string) || null,
-          google_place_id: (meta.google_place_id as string) || null,
-          google_rating: (meta.google_rating as number) ?? null,
-          google_review_count: (meta.google_review_count as number) ?? 0,
-          google_business_category: (meta.google_category as string) || null,
-          address: (meta.business_address as string) || null,
-          plan_type: 'free',
-          monthly_spin_limit: spinLimit,
-          contact_limit: contactLimit,
-          subscription_status: 'free',
-          trial_ends_at: new Date().toISOString(),
-          primary_color: '#FF6B35',
-          secondary_color: '#1B2A4A',
-          onboarding_completed: true,
-        })
-        .select()
-        .single();
-
-      if (bizError || !business) {
-        console.error('Business creation error:', bizError);
-        setError('Erreur lors de la création du commerce. Réessayez.');
-        setLoading(false);
-        return;
-      }
-
-      // Insert wheel segments
-      const segmentsToInsert = selectedSegments.map((idx, position) => {
-        const template = WHEEL_TEMPLATES[idx];
-        const totalSelected = selectedSegments.length;
-        const baseProbability = Math.floor(100 / totalSelected);
-        const remainder = 100 - baseProbability * totalSelected;
-
-        return {
-          business_id: business.id,
-          label: template.label,
-          emoji: template.emoji,
-          color: template.color,
-          is_winning: template.isWinning,
-          probability: baseProbability + (position < remainder ? 1 : 0),
-          position,
-        };
-      });
-
-      const { error: segError } = await supabase
-        .from('wheel_segments')
-        .insert(segmentsToInsert);
-
-      if (segError) {
-        console.error('Segments insertion error:', segError);
-        // Non-blocking — business is created, segments can be added later
-      }
-
-      // Redirect to dashboard
+    if (step === 2) {
       router.push('/dashboard');
       router.refresh();
-    } catch (err) {
-      console.error('Onboarding error:', err);
-      setError('Une erreur est survenue. Réessayez.');
-      setLoading(false);
     }
-  }, [selectedSegments, router]);
+  }, [step, validation, enabledPresets, router]);
+
+  // --- Button label ---
+  const buttonLabel = step === 2 ? 'Aller au dashboard' : 'Suivant';
+  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 2;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -227,32 +627,68 @@ export default function OnboardingPage() {
         <Logo size="md" showTagline />
       </header>
 
+      {/* Step indicator */}
+      <div className="py-3">
+        <StepIndicator currentStep={step} totalSteps={3} />
+      </div>
+
       {/* Content */}
-      <div className="flex-1 flex items-start justify-center px-4 pb-12 pt-6">
+      <div className="flex-1 flex items-start justify-center px-4 pb-12 pt-2">
         <Card
           padding="lg"
           className="w-full max-w-2xl relative overflow-hidden"
         >
-          {/* Step indicator label */}
-          <div className="text-center mb-2">
-            <span className="text-xs font-display font-semibold text-text-muted uppercase tracking-widest">
-              Derniere etape
-            </span>
-          </div>
+          {/* Step content */}
+          <div className="min-h-[400px]">
+            <AnimatePresence mode="wait">
+              {step === 0 && (
+                <motion.div
+                  key="step-0"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <StepHowItWorks />
+                </motion.div>
+              )}
 
-          {/* Wheel config */}
-          <div className="min-h-[400px] flex items-start justify-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="w-full"
-            >
-              <StepConfigureWheel
-                selectedSegments={selectedSegments}
-                onToggle={toggleSegment}
-              />
-            </motion.div>
+              {step === 1 && (
+                <motion.div
+                  key="step-1"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <StepConfigurePrizes
+                    detectedSector={detectedSector}
+                    currentSector={currentSector}
+                    onSectorChange={handleSectorChange}
+                    presets={presets}
+                    onToggle={togglePreset}
+                    onStockChange={updateStock}
+                    validation={validation}
+                  />
+                </motion.div>
+              )}
+
+              {step === 2 && createdBusiness && (
+                <motion.div
+                  key="step-2"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <StepQRReady
+                    business={createdBusiness}
+                    qrDataUrl={qrDataUrl}
+                    playUrl={playUrl}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Error */}
@@ -266,26 +702,28 @@ export default function OnboardingPage() {
             </motion.p>
           )}
 
-          {/* Footer actions */}
+          {/* Footer action */}
           <div className="mt-6 flex flex-col items-center gap-3">
             <Button
               size="lg"
-              onClick={handleComplete}
-              disabled={!canFinish}
+              onClick={handleNext}
+              disabled={!canProceed}
               loading={loading}
               className="w-full sm:w-auto min-w-[200px]"
             >
-              <Check size={16} />
-              Terminer
+              {step === 2 ? (
+                <>
+                  {buttonLabel}
+                  <ArrowRight size={16} />
+                </>
+              ) : (
+                <>
+                  {buttonLabel}
+                  <ChevronRight size={16} />
+                </>
+              )}
             </Button>
           </div>
-
-          {/* Minimum segments hint */}
-          {selectedSegments.length < 3 && (
-            <p className="text-center text-xs text-text-muted font-body mt-2">
-              Selectionnez au moins 3 lots pour votre roue
-            </p>
-          )}
         </Card>
       </div>
     </div>

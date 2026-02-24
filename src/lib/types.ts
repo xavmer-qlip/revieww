@@ -35,6 +35,7 @@ export interface WheelSegment {
   position: number;
   is_winning: boolean;
   promo_code: string | null;
+  monthly_stock: number;
   created_at: string;
 }
 

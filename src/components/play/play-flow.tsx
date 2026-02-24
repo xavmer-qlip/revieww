@@ -270,6 +270,8 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
       if (!res.ok || data.error) {
         if (data.error === 'quota_reached') {
           setApiError(TEXTS.play.quotaReached);
+        } else if (data.error === 'all_prizes_exhausted') {
+          setApiError('Tous les lots ont été distribués ce mois. Revenez bientôt !');
         } else if (data.error === 'subscription_inactive') {
           setApiError(TEXTS.play.paused);
         } else {

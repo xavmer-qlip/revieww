@@ -61,6 +61,7 @@ interface LocalSegment {
   position: number;
   is_winning: boolean;
   promo_code: string | null;
+  monthly_stock: number;
 }
 
 interface Toast {
@@ -442,6 +443,24 @@ function SegmentCard({
                 style={{ backgroundColor: segment.color }}
               />
             </div>
+
+            {/* Monthly stock (winning segments only) */}
+            {segment.is_winning && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium font-display text-text-muted whitespace-nowrap">
+                  Stock mensuel :
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  value={segment.monthly_stock}
+                  onChange={(e) => onUpdate(segment.id, { monthly_stock: Math.max(0, parseInt(e.target.value) || 0) })}
+                  className="w-20 px-2 py-1 text-sm font-body rounded-lg bg-background border border-border/50 text-text focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-center"
+                />
+                <span className="text-xs text-text-muted font-body">/mois</span>
+                <span className="text-[10px] text-text-muted/60 font-body">(0 = illimité)</span>
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -597,6 +616,7 @@ export default function WheelEditorPage() {
               position: s.position,
               is_winning: s.is_winning,
               promo_code: s.promo_code,
+              monthly_stock: s.monthly_stock ?? 0,
             })),
           );
         } else {
@@ -611,6 +631,7 @@ export default function WheelEditorPage() {
               position: i,
               is_winning: s.isWinning,
               promo_code: null,
+              monthly_stock: 0,
             })),
           );
         }
@@ -671,6 +692,7 @@ export default function WheelEditorPage() {
         position: prev.length,
         is_winning: true,
         promo_code: null,
+        monthly_stock: 0,
       },
     ]);
   }, []);
@@ -687,6 +709,7 @@ export default function WheelEditorPage() {
         position: prev.length,
         is_winning: template.isWinning,
         promo_code: null,
+        monthly_stock: 0,
       },
     ]);
   }, []);
@@ -702,6 +725,7 @@ export default function WheelEditorPage() {
         position: i,
         is_winning: s.isWinning,
         promo_code: null,
+        monthly_stock: 0,
       })),
     );
   }, []);
@@ -747,6 +771,7 @@ export default function WheelEditorPage() {
         position: i,
         is_winning: seg.is_winning,
         promo_code: seg.promo_code,
+        monthly_stock: seg.is_winning ? seg.monthly_stock : 0,
       }));
 
       const { data: inserted, error: insertError } = await supabase
@@ -768,6 +793,7 @@ export default function WheelEditorPage() {
             position: s.position,
             is_winning: s.is_winning,
             promo_code: s.promo_code,
+            monthly_stock: s.monthly_stock ?? 0,
           })),
         );
       }
@@ -821,6 +847,7 @@ export default function WheelEditorPage() {
         position: s.position,
         is_winning: s.is_winning,
         promo_code: s.promo_code,
+        monthly_stock: s.monthly_stock,
         created_at: '',
       })),
     [segments, businessId],

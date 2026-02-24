@@ -139,6 +139,13 @@ export default async function DashboardPage() {
     });
   }
 
+  // ---- Check if first time (0 total spins ever) ----
+  const { count: totalSpinsEver } = await supabase
+    .from('spins')
+    .select('*', { count: 'exact', head: true })
+    .eq('business_id', business.id);
+  const isFirstTime = (totalSpinsEver ?? 0) === 0;
+
   // ---- Onboarding checklist ----
   const checklist = {
     accountCreated: true,
@@ -167,6 +174,7 @@ export default async function DashboardPage() {
       dailyCounts={dailyCounts}
       checklist={checklist}
       checklistComplete={checklistComplete}
+      isFirstTime={isFirstTime}
     />
   );
 }
