@@ -7,7 +7,6 @@ import { Mail, Lock, ArrowRight, AlertCircle, Check, MailCheck } from 'lucide-re
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { OAuthButtons } from '@/components/ui/oauth-buttons';
 import { PlaceSearch } from '@/components/places/place-search';
 import type { PlaceDetails } from '@/components/places/place-search';
 import { createClient } from '@/lib/supabase/client';
@@ -423,42 +422,6 @@ export default function SignupPage() {
         </span>
         <div className="flex-1 h-px bg-border" />
       </div>
-
-      {/* OAuth buttons */}
-      <motion.div
-        className="mt-6"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
-      >
-        <OAuthButtons
-          mode="signup"
-          onBeforeRedirect={() => {
-            if (!businessName.trim()) {
-              setError('Veuillez d\'abord rechercher votre commerce.');
-              return false;
-            }
-            if (!acceptedTerms) {
-              setError('Vous devez accepter les conditions générales d\'utilisation.');
-              return false;
-            }
-            // Save business data for onboarding (OAuth loses form state)
-            localStorage.setItem(
-              'oauth_business_data',
-              JSON.stringify({
-                business_name: businessName.trim(),
-                google_review_link: googleReviewLink.trim() || null,
-                google_place_id: googlePlaceId,
-                google_rating: googleRating,
-                google_review_count: googleReviewCount,
-                google_category: googleCategory,
-                business_address: businessAddress,
-              })
-            );
-            return true;
-          }}
-        />
-      </motion.div>
 
       {/* Login link */}
       <motion.p

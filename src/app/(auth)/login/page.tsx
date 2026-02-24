@@ -7,7 +7,6 @@ import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { OAuthButtons } from '@/components/ui/oauth-buttons';
 import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
@@ -181,16 +180,6 @@ function LoginForm() {
         </span>
         <div className="flex-1 h-px bg-border" />
       </div>
-
-      {/* OAuth buttons */}
-      <motion.div
-        className="mt-6"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
-      >
-        <OAuthButtons mode="login" />
-      </motion.div>
 
       {/* Sign up link */}
       <motion.p
