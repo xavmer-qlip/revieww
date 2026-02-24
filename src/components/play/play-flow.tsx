@@ -23,7 +23,7 @@ interface PlayFlowProps {
   segments: WheelSegment[];
 }
 
-type Step = 'welcome' | 'verification' | 'email' | 'wheel' | 'result';
+type Step = 'welcome' | 'email' | 'wheel' | 'result';
 
 interface SpinResult {
   id: string;
@@ -104,11 +104,13 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   const [direction, setDirection] = useState(1);
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
 
-  // Step 1.5 – verification
-  const [googleClickTime, setGoogleClickTime] = useState<number | null>(null);
-  const [timeOnGoogle, setTimeOnGoogle] = useState(0);
-  const [showWaitMessage, setShowWaitMessage] = useState(false);
+  // Waiting state after Google click
+  const [googleClicked, setGoogleClicked] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [countdownDone, setCountdownDone] = useState(false);
   const [selectedStars, setSelectedStars] = useState(0);
+  const [timeOnGoogle, setTimeOnGoogle] = useState(0);
+  const googleClickTimeRef = useRef<number | null>(null);
   const visibilityRef = useRef<number | null>(null);
 
   // Step 2 – email
@@ -169,7 +171,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     (next: Step) => {
       const order: Step[] = [
         'welcome',
-        'verification',
         'email',
         'wheel',
         'result',
@@ -182,16 +183,35 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     [step]
   );
 
+  // ---- Countdown timer after Google click ----
+  useEffect(() => {
+    if (!googleClicked) return;
+    if (countdown <= 0) {
+      setCountdownDone(true);
+      return;
+    }
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setCountdownDone(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleClicked]);
+
   // ---- Visibility API for Google review time tracking ----
   useEffect(() => {
     function handleVisibilityChange() {
-      if (!googleClickTime) return;
+      if (!googleClicked) return;
 
       if (document.hidden) {
-        // User left the tab
         visibilityRef.current = Date.now();
       } else {
-        // User returned
         if (visibilityRef.current) {
           const awaySeconds = Math.round(
             (Date.now() - visibilityRef.current) / 1000
@@ -199,11 +219,8 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
           setTimeOnGoogle(awaySeconds);
           visibilityRef.current = null;
 
-          if (awaySeconds < MIN_GOOGLE_SECONDS) {
-            setShowWaitMessage(true);
-          } else {
-            setShowWaitMessage(false);
-            goTo('verification');
+          if (awaySeconds >= MIN_GOOGLE_SECONDS) {
+            setCountdownDone(true);
           }
         }
       }
@@ -212,14 +229,15 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () =>
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [googleClickTime, goTo]);
+  }, [googleClicked]);
 
   // ---- Handlers ----
 
   function handleGoogleClick() {
     if (!business.google_review_link) return;
-    setGoogleClickTime(Date.now());
+    googleClickTimeRef.current = Date.now();
     visibilityRef.current = Date.now();
+    setGoogleClicked(true);
     window.open(business.google_review_link, '_blank', 'noopener');
   }
 
@@ -229,13 +247,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
 
   function calculateConfidenceScore(): number {
     let score = 0;
-    // Clicked the Google review link
-    if (googleClickTime) score += 20;
-    // Time on Google >= 30 seconds
+    if (googleClickTimeRef.current) score += 20;
     if (timeOnGoogle >= GOOD_GOOGLE_SECONDS) score += 30;
-    // Confirmed they left a review
     score += 30;
-    // Selected star rating
     if (selectedStars > 0) score += 20;
     return score;
   }
@@ -398,7 +412,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
       <div className="w-full max-w-md mx-auto px-5 py-16 relative z-10">
         <AnimatePresence mode="wait" custom={direction}>
           {/* ================================================================
-              STEP 1: WELCOME
+              STEP 1: WELCOME (initial + waiting state after Google click)
               ================================================================ */}
           {step === 'welcome' && (
             <motion.div
@@ -448,171 +462,196 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 {business.name}
               </motion.h1>
 
-              {/* Welcome text */}
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="text-white/80 font-body text-base sm:text-lg mb-8 max-w-xs leading-relaxed"
-              >
-                {TEXTS.play.welcome} 🎁
-              </motion.p>
-
-              {/* CTA Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-                className="w-full"
-              >
-                <button
-                  onClick={handleGoogleClick}
-                  className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
-                    flex items-center justify-center gap-3
-                    hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
-                  style={{
-                    background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
-                    boxShadow: `0 8px 32px ${business.primary_color}66`,
-                  }}
-                >
-                  <Star className="w-5 h-5 fill-current" />
-                  {TEXTS.play.cta}
-                </button>
-              </motion.div>
-
-              {/* Small text */}
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6, duration: 0.5 }}
-                className="mt-5 text-white/50 font-body text-xs max-w-xs leading-relaxed"
-              >
-                Apres avoir laisse votre avis, revenez ici pour tourner la roue
-              </motion.p>
-
-              {/* Wait message */}
-              <AnimatePresence>
-                {showWaitMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="mt-4 overflow-hidden"
+              {!googleClicked ? (
+                /* ---- Initial state: CTA to leave Google review ---- */
+                <>
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    className="text-white/80 font-body text-base sm:text-lg mb-8 max-w-xs leading-relaxed"
                   >
-                    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
-                      <p className="text-white/90 font-body text-sm">
-                        {TEXTS.play.waitMessage}
-                      </p>
+                    {TEXTS.play.welcome} 🎁
+                  </motion.p>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="w-full"
+                  >
+                    <button
+                      onClick={handleGoogleClick}
+                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
+                        flex items-center justify-center gap-3
+                        hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
+                      style={{
+                        background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
+                        boxShadow: `0 8px 32px ${business.primary_color}66`,
+                      }}
+                    >
+                      <Star className="w-5 h-5 fill-current" />
+                      {TEXTS.play.cta}
+                    </button>
+                  </motion.div>
+
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6, duration: 0.5 }}
+                    className="mt-5 text-white/50 font-body text-xs max-w-xs leading-relaxed"
+                  >
+                    Après avoir laissé votre avis, revenez ici pour tourner la roue
+                  </motion.p>
+                </>
+              ) : (
+                /* ---- Waiting state: countdown ring + micro-copy + stars ---- */
+                <>
+                  {/* Progress ring */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className="relative w-32 h-32 mb-6"
+                  >
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                      {/* Background circle */}
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="52"
+                        fill="none"
+                        stroke="rgba(255,255,255,0.15)"
+                        strokeWidth="8"
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="52"
+                        fill="none"
+                        stroke={countdownDone ? '#10B981' : 'white'}
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 52}
+                        strokeDashoffset={2 * Math.PI * 52 * (countdown / 30)}
+                        className="transition-all duration-1000 ease-linear"
+                      />
+                    </svg>
+                    {/* Center content */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      {countdownDone ? (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                        >
+                          <Check className="w-8 h-8 text-accent" />
+                        </motion.div>
+                      ) : (
+                        <>
+                          <span className="text-2xl font-display font-bold text-white">
+                            {countdown}
+                          </span>
+                          <span className="text-white/60 font-body text-[10px]">
+                            {TEXTS.play.waitingStatus}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          )}
 
-          {/* ================================================================
-              STEP 1.5: VERIFICATION (star rating)
-              ================================================================ */}
-          {step === 'verification' && (
-            <motion.div
-              key="verification"
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={slideTransition}
-              className="flex flex-col items-center text-center"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-                className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-6"
-              >
-                <Check className="w-8 h-8 text-accent" />
-              </motion.div>
+                  {/* Rotating micro-copy */}
+                  <div className="h-12 mb-6 flex items-center justify-center">
+                    <AnimatePresence mode="wait">
+                      <motion.p
+                        key={
+                          countdown > 22 ? 0 :
+                          countdown > 14 ? 1 :
+                          countdown > 6 ? 2 : 3
+                        }
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="text-white/80 font-body text-sm max-w-xs"
+                      >
+                        {TEXTS.play.waitingMessages[
+                          countdown > 22 ? 0 :
+                          countdown > 14 ? 1 :
+                          countdown > 6 ? 2 : 3
+                        ]}
+                      </motion.p>
+                    </AnimatePresence>
+                  </div>
 
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.5 }}
-                className="text-xl sm:text-2xl font-display font-bold text-white mb-2"
-              >
-                {TEXTS.play.starsQuestion}
-              </motion.h2>
-
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-white/60 font-body text-sm mb-8"
-              >
-                Cela nous aide a nous ameliorer
-              </motion.p>
-
-              {/* Star rating */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
-                className="flex items-center gap-3 mb-8"
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <motion.button
-                    key={star}
-                    onClick={() => setSelectedStars(star)}
-                    whileTap={{ scale: 0.85 }}
-                    animate={
-                      selectedStars >= star
-                        ? { scale: [1, 1.3, 1], rotate: [0, -10, 10, 0] }
-                        : { scale: 1 }
-                    }
-                    transition={{ duration: 0.3 }}
-                    className="cursor-pointer focus:outline-none"
+                  {/* Inline star rating */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.4 }}
+                    className="mb-2"
                   >
-                    <Star
-                      className={cn(
-                        'w-10 h-10 sm:w-12 sm:h-12 transition-colors duration-200',
-                        selectedStars >= star
-                          ? 'text-yellow-400 fill-yellow-400'
-                          : 'text-white/30'
-                      )}
-                    />
-                  </motion.button>
-                ))}
-              </motion.div>
+                    <p className="text-white/60 font-body text-xs mb-3">
+                      {TEXTS.play.starsQuestion}
+                    </p>
+                    <div className="flex items-center justify-center gap-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <motion.button
+                          key={star}
+                          onClick={() => setSelectedStars(star)}
+                          whileTap={{ scale: 0.85 }}
+                          animate={
+                            selectedStars >= star
+                              ? { scale: [1, 1.3, 1], rotate: [0, -10, 10, 0] }
+                              : { scale: 1 }
+                          }
+                          transition={{ duration: 0.3 }}
+                          className="cursor-pointer focus:outline-none"
+                        >
+                          <Star
+                            className={cn(
+                              'w-8 h-8 sm:w-10 sm:h-10 transition-colors duration-200',
+                              selectedStars >= star
+                                ? 'text-yellow-400 fill-yellow-400'
+                                : 'text-white/30'
+                            )}
+                          />
+                        </motion.button>
+                      ))}
+                    </div>
+                  </motion.div>
 
-              {/* Confirm button */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.5 }}
-                className="w-full"
-              >
-                <button
-                  onClick={handleConfirmReview}
-                  disabled={selectedStars === 0}
-                  className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
-                    flex items-center justify-center gap-3 transition-all duration-200 cursor-pointer
-                    disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
-                    hover:scale-[1.02] active:scale-[0.98]"
-                  style={{
-                    background:
-                      selectedStars > 0
-                        ? `linear-gradient(135deg, #10B981, #059669)`
-                        : 'rgba(255,255,255,0.1)',
-                    boxShadow:
-                      selectedStars > 0
-                        ? '0 8px 32px rgba(16,185,129,0.4)'
-                        : 'none',
-                  }}
-                >
-                  {TEXTS.play.confirmButton} ✅
-                </button>
-              </motion.div>
+                  {/* Confirm button */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.4 }}
+                    className="w-full mt-6"
+                  >
+                    <motion.button
+                      onClick={handleConfirmReview}
+                      disabled={!countdownDone}
+                      animate={countdownDone ? { scale: [1, 1.05, 1] } : {}}
+                      transition={countdownDone ? { duration: 0.4, repeat: 2 } : {}}
+                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
+                        flex items-center justify-center gap-3 transition-all duration-200 cursor-pointer
+                        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
+                        hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        background: countdownDone
+                          ? 'linear-gradient(135deg, #10B981, #059669)'
+                          : 'rgba(255,255,255,0.1)',
+                        boxShadow: countdownDone
+                          ? '0 8px 32px rgba(16,185,129,0.4)'
+                          : 'none',
+                      }}
+                    >
+                      {TEXTS.play.confirmButton} ✅
+                    </motion.button>
+                  </motion.div>
+                </>
+              )}
             </motion.div>
           )}
 
