@@ -211,6 +211,10 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   const [direction, setDirection] = useState(1);
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
 
+  // PIN
+  const [pin, setPin] = useState('');
+  const [pinError, setPinError] = useState('');
+
   // Reservation token + prize
   const [reserveToken, setReserveToken] = useState<string | null>(null);
   const [lockedPrize, setLockedPrize] = useState<{
@@ -287,18 +291,28 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
   async function handleReserveSpin() {
     setSubmitting(true);
     setApiError(null);
+    setPinError('');
 
     try {
+      const body: Record<string, string> = { businessId: business.id };
+      if (business.require_pin && pin) {
+        body.pin = pin;
+      }
+
       const res = await fetch('/api/spin/reserve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ businessId: business.id }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        if (data.error === 'quota_reached') {
+        if (data.error === 'pin_required' || data.error === 'invalid_pin') {
+          setPinError('Code incorrect');
+          setSubmitting(false);
+          return;
+        } else if (data.error === 'quota_reached') {
           setApiError(TEXTS.play.quotaReached);
         } else if (data.error === 'all_prizes_exhausted') {
           setApiError('Tous les lots ont été distribués ce mois. Revenez bientôt !');
@@ -615,10 +629,89 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
-                className="text-white/80 font-body text-base sm:text-lg mb-8 max-w-xs leading-relaxed"
+                className="text-white/80 font-body text-base sm:text-lg mb-6 max-w-xs leading-relaxed"
               >
                 {TEXTS.play.welcome} 🎁
               </motion.p>
+
+              {/* PIN input (only if require_pin) */}
+              {business.require_pin && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35, duration: 0.5 }}
+                  className="w-full max-w-xs mb-6"
+                >
+                  <p className="text-white/60 font-body text-xs text-center mb-3">
+                    Code fourni par le commerce
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    {[0, 1, 2, 3].map((i) => (
+                      <input
+                        key={i}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={pin[i] || ''}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          if (!val && pin[i]) {
+                            // Delete character
+                            setPin((prev) => prev.slice(0, i) + prev.slice(i + 1));
+                            return;
+                          }
+                          if (!val) return;
+                          const newPin = pin.split('');
+                          newPin[i] = val[0];
+                          const joined = newPin.join('').slice(0, 4);
+                          setPin(joined);
+                          setPinError('');
+                          // Auto-focus next input
+                          if (i < 3) {
+                            const next = e.target.parentElement?.children[i + 1] as HTMLInputElement;
+                            next?.focus();
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Backspace' && !pin[i] && i > 0) {
+                            const prev = (e.target as HTMLElement).parentElement?.children[i - 1] as HTMLInputElement;
+                            prev?.focus();
+                            setPin((p) => p.slice(0, i - 1) + p.slice(i));
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+                          if (pasted) {
+                            setPin(pasted);
+                            setPinError('');
+                            // Focus last filled input
+                            const target = (e.target as HTMLElement).parentElement?.children[Math.min(pasted.length, 3)] as HTMLInputElement;
+                            target?.focus();
+                          }
+                        }}
+                        className={cn(
+                          'w-14 h-16 text-center text-2xl font-display font-bold rounded-xl border-2 bg-white/10 text-white backdrop-blur-sm transition-all focus:outline-none',
+                          pinError
+                            ? 'border-red-400 bg-red-400/10'
+                            : pin[i]
+                              ? 'border-white/40'
+                              : 'border-white/20 focus:border-white/50'
+                        )}
+                      />
+                    ))}
+                  </div>
+                  {pinError && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-red-300 text-xs font-body text-center mt-2"
+                    >
+                      {pinError}
+                    </motion.p>
+                  )}
+                </motion.div>
+              )}
 
               {/* API error in welcome */}
               <AnimatePresence>
@@ -645,16 +738,32 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
               >
                 <button
                   onClick={handleReserveSpin}
-                  disabled={submitting}
-                  className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
-                    flex items-center justify-center gap-3
-                    hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer
-                    disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={submitting || (business.require_pin && pin.length < 4)}
+                  className={cn(
+                    'relative w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white overflow-hidden',
+                    'flex items-center justify-center gap-3',
+                    'active:scale-[0.96] transition-all duration-200 cursor-pointer',
+                    (submitting || (business.require_pin && pin.length < 4))
+                      ? 'opacity-50 cursor-not-allowed grayscale'
+                      : 'hover:scale-[1.02] hover:shadow-3xl'
+                  )}
                   style={{
-                    background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
-                    boxShadow: `0 8px 32px ${business.primary_color}66`,
+                    background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}cc, ${business.primary_color})`,
+                    boxShadow: (submitting || (business.require_pin && pin.length < 4))
+                      ? 'none'
+                      : `0 8px 40px ${business.primary_color}80, 0 2px 12px ${business.primary_color}40`,
                   }}
                 >
+                  {/* Shimmer effect */}
+                  {!submitting && !(business.require_pin && pin.length < 4) && (
+                    <span
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.25) 50%, transparent 60%)',
+                        animation: 'shimmer 2.5s infinite',
+                      }}
+                    />
+                  )}
                   {submitting ? (
                     <motion.div
                       animate={{ rotate: 360 }}
@@ -663,7 +772,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     />
                   ) : (
                     <>
-                      🎡 {TEXTS.play.cta}
+                      <span className="text-2xl">🎡</span>
+                      <span>{TEXTS.play.cta}</span>
+                      <ChevronRight size={20} className="ml-1" />
                     </>
                   )}
                 </button>

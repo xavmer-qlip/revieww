@@ -31,6 +31,9 @@ export interface Business {
   prize_validity_days: number;
   onboarding_completed: boolean;
   email_verified: boolean;
+  require_pin: boolean;
+  daily_pin: string | null;
+  pin_updated_at: string | null;
 }
 
 export interface WheelSegment {

@@ -28,6 +28,8 @@ import {
   Share2,
   X,
   Maximize2,
+  Shield,
+  RefreshCw,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -603,6 +605,159 @@ function OnboardingChecklist({ checklist }: { checklist: ChecklistState }) {
             return <div key={item.key}>{content}</div>;
           })}
         </div>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Daily PIN Card
+// ---------------------------------------------------------------------------
+
+function DailyPinCard({ business }: { business: Business }) {
+  const [pin, setPin] = useState(business.daily_pin || '----');
+  const [pinUpdatedAt, setPinUpdatedAt] = useState(business.pin_updated_at);
+  const [regenerating, setRegenerating] = useState(false);
+  const [toggling, setToggling] = useState(false);
+  const [requirePin, setRequirePin] = useState(business.require_pin);
+
+  // Fetch fresh PIN on mount
+  useEffect(() => {
+    fetch('/api/pin')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.pin) {
+          setPin(data.pin);
+          setPinUpdatedAt(data.pin_updated_at);
+          setRequirePin(data.require_pin);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const expiresAt = pinUpdatedAt
+    ? new Date(new Date(pinUpdatedAt).getTime() + 24 * 60 * 60 * 1000)
+    : null;
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      const res = await fetch('/api/pin', { method: 'POST' });
+      const data = await res.json();
+      if (data.pin) {
+        setPin(data.pin);
+        setPinUpdatedAt(data.pin_updated_at);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  const handleToggle = async () => {
+    setToggling(true);
+    const newValue = !requirePin;
+    try {
+      const supabase = (await import('@/lib/supabase/client')).createClient();
+      await supabase
+        .from('businesses')
+        .update({ require_pin: newValue })
+        .eq('id', business.id);
+      setRequirePin(newValue);
+    } catch {
+      // ignore
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card padding="md" className="border-primary/20 bg-primary/[0.03]">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Shield size={20} className="text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-display font-semibold text-text">
+                Code du jour
+              </h3>
+              <p className="text-xs text-text-muted font-body">
+                A communiquer a vos clients
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle */}
+          <button
+            onClick={handleToggle}
+            disabled={toggling}
+            className="flex items-center gap-2 text-xs font-display font-medium text-text-muted hover:text-text transition-colors"
+          >
+            <div
+              className={cn(
+                'w-9 h-5 rounded-full flex items-center transition-colors duration-200 px-0.5',
+                requirePin ? 'bg-primary' : 'bg-border'
+              )}
+            >
+              <motion.div
+                animate={{ x: requirePin ? 16 : 0 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className="w-4 h-4 rounded-full bg-white shadow-sm"
+              />
+            </div>
+            {requirePin ? 'Activé' : 'Désactivé'}
+          </button>
+        </div>
+
+        {requirePin && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-4"
+          >
+            <div className="flex items-center gap-4">
+              {/* PIN display */}
+              <div className="flex gap-2">
+                {pin.split('').map((digit, i) => (
+                  <div
+                    key={i}
+                    className="w-12 h-14 flex items-center justify-center rounded-xl bg-surface border border-border text-2xl font-mono font-bold text-text shadow-sm"
+                  >
+                    {digit}
+                  </div>
+                ))}
+              </div>
+
+              {/* Regenerate button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRegenerate}
+                disabled={regenerating}
+                loading={regenerating}
+              >
+                <RefreshCw size={14} />
+                Regénérer
+              </Button>
+            </div>
+
+            {/* Expiry info */}
+            {expiresAt && (
+              <p className="text-xs text-text-muted font-body mt-3 flex items-center gap-1.5">
+                <Clock size={12} />
+                Valable jusqu&apos;a {expiresAt.toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            )}
+          </motion.div>
+        )}
       </Card>
     </motion.div>
   );
@@ -1197,6 +1352,9 @@ export function DashboardOverview({
           Bienvenue, voici un résumé de votre activité
         </p>
       </motion.div>
+
+      {/* Daily PIN card (only when PIN is enabled) */}
+      {business.require_pin && <DailyPinCard business={business} />}
 
       {/* Activation hero for first-time users */}
       {isFirstTime && <ActivationHero business={business} />}

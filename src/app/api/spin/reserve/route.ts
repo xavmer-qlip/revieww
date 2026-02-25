@@ -10,7 +10,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const { businessId } = await request.json();
+    const { businessId, pin } = await request.json();
 
     // Validate business
     const bizResult = await validateBusinessForSpin(businessId);
@@ -22,6 +22,22 @@ export async function POST(request: NextRequest) {
     }
 
     const { business, supabase } = bizResult;
+
+    // PIN validation
+    if (business.require_pin) {
+      if (!pin) {
+        return NextResponse.json(
+          { error: 'pin_required' },
+          { status: 403 }
+        );
+      }
+      if (pin !== business.daily_pin) {
+        return NextResponse.json(
+          { error: 'invalid_pin' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Check quotas
     const quotaError = await checkSpinQuotas(supabase, business);

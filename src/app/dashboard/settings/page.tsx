@@ -24,6 +24,7 @@ import {
   Instagram,
   Facebook,
   Share2,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -226,6 +227,7 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [flowType] = useState<FlowType>('lottery_first');
   const [requireReview] = useState(false);
+  const [requirePin, setRequirePin] = useState(true);
   const [prizeValidityDays, setPrizeValidityDays] = useState(7);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
@@ -270,6 +272,7 @@ export default function SettingsPage() {
           setSecondaryColor(data.secondary_color);
           setLogoUrl(data.logo_url);
           setPrizeValidityDays(data.prize_validity_days ?? 7);
+          setRequirePin(data.require_pin ?? true);
           setPhoneNumber(data.phone || '');
           setWebsiteUrl(data.website_url || '');
           setInstagramUrl(data.instagram_url || '');
@@ -374,6 +377,7 @@ export default function SettingsPage() {
           logo_url: newLogoUrl,
           flow_type: 'lottery_first',
           require_review: false,
+          require_pin: requirePin,
           prize_validity_days: prizeValidityDays,
           phone: phoneNumber.trim() || null,
           website_url: websiteUrl.trim() || null,
@@ -410,6 +414,7 @@ export default function SettingsPage() {
     logoFile,
     flowType,
     requireReview,
+    requirePin,
     prizeValidityDays,
     phoneNumber,
     websiteUrl,
@@ -810,6 +815,66 @@ export default function SettingsPage() {
             </div>
             <p className="text-[11px] font-body text-text-muted pl-1">
               Après ce délai, le lot sera marqué comme expiré. Entre 1 et 90 jours.
+            </p>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* ================================================================
+          SECTION 5: Code PIN anti-triche
+          ================================================================ */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.25 }}
+      >
+        <Card padding="lg">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Shield size={20} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-base font-display font-semibold text-text">
+                Code PIN anti-triche
+              </h2>
+              <p className="text-xs font-body text-text-muted">
+                Protegez votre loterie contre les abus
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Toggle */}
+            <div className="flex items-center justify-between p-4 bg-background rounded-xl border border-border/50">
+              <div className="flex-1 mr-4">
+                <p className="text-sm font-display font-medium text-text">
+                  Exiger un code PIN
+                </p>
+                <p className="text-xs font-body text-text-muted mt-1">
+                  Si active, vos clients devront entrer un code a 4 chiffres pour jouer. Le code change tous les jours.
+                </p>
+              </div>
+              <button
+                onClick={() => setRequirePin(!requirePin)}
+                className="shrink-0"
+              >
+                <div
+                  className={cn(
+                    'w-11 h-6 rounded-full flex items-center transition-colors duration-200 px-0.5',
+                    requirePin ? 'bg-primary' : 'bg-border'
+                  )}
+                >
+                  <motion.div
+                    animate={{ x: requirePin ? 20 : 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    className="w-5 h-5 rounded-full bg-white shadow-sm"
+                  />
+                </div>
+              </button>
+            </div>
+
+            <p className="text-[11px] font-body text-text-muted pl-1">
+              Le code est visible dans votre tableau de bord. Communiquez-le a vos clients sur place.
             </p>
           </div>
         </Card>

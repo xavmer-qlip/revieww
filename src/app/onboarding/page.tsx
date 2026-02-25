@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X, MailCheck, ExternalLink } from 'lucide-react';
+import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X, MailCheck, ExternalLink, Shield } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import {
 import type { SectorKey, SectorPreset } from '@/lib/constants';
 import { slugify, cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { generatePin } from '@/lib/pin';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -84,6 +85,8 @@ function StepConfigurePrizes({
   onAddPreset,
   onDeletePreset,
   validation,
+  requirePin,
+  onRequirePinChange,
 }: {
   detectedSector: SectorKey;
   currentSector: SectorKey;
@@ -96,6 +99,8 @@ function StepConfigurePrizes({
   onAddPreset: () => void;
   onDeletePreset: (index: number) => void;
   validation: { valid: boolean; message: string };
+  requirePin: boolean;
+  onRequirePinChange: (value: boolean) => void;
 }) {
   const sectorKeys = Object.keys(SECTOR_LABELS) as SectorKey[];
   const [openEmojiIndex, setOpenEmojiIndex] = useState<number | null>(null);
@@ -271,6 +276,58 @@ function StepConfigurePrizes({
           {validation.message}
         </motion.p>
       )}
+
+      {/* PIN anti-triche section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="max-w-lg mx-auto"
+      >
+        <Card
+          padding="sm"
+          className={cn(
+            'transition-all duration-200 p-4',
+            requirePin ? 'border-primary/30 bg-primary/5' : ''
+          )}
+        >
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+              <Shield size={18} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-display font-semibold text-text">
+                  Code PIN anti-triche
+                </h3>
+                <button
+                  onClick={() => onRequirePinChange(!requirePin)}
+                  className="shrink-0"
+                >
+                  <div
+                    className={cn(
+                      'w-10 h-5.5 rounded-full flex items-center transition-colors duration-200 px-0.5',
+                      requirePin ? 'bg-primary' : 'bg-border'
+                    )}
+                  >
+                    <motion.div
+                      animate={{ x: requirePin ? 18 : 0 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className="w-4.5 h-4.5 rounded-full bg-white shadow-sm"
+                    />
+                  </div>
+                </button>
+              </div>
+              <p className="text-xs font-body text-text-muted mt-1 leading-relaxed">
+                Un code a 4 chiffres change chaque jour. Donnez-le a vos clients sur place pour qu&apos;ils puissent jouer. Cela empeche les abus a distance.
+              </p>
+              <p className="text-[10px] font-body text-text-muted/70 mt-1.5">
+                Modifiable a tout moment dans les parametres
+              </p>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
 
     </div>
   );
@@ -576,6 +633,9 @@ export default function OnboardingPage() {
   const [currentSector, setCurrentSector] = useState<SectorKey>('autre');
   const [presets, setPresets] = useState<SelectedPreset[]>([]);
 
+  // PIN anti-triche
+  const [requirePin, setRequirePin] = useState(true);
+
   // Created business (after step 1 completes)
   const [createdBusiness, setCreatedBusiness] = useState<CreatedBusiness | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -782,6 +842,9 @@ export default function OnboardingPage() {
             onboarding_completed: true,
             flow_type: 'lottery_first',
             require_review: false,
+            require_pin: requirePin,
+            daily_pin: requirePin ? generatePin() : null,
+            pin_updated_at: requirePin ? new Date().toISOString() : null,
           })
           .select()
           .single();
@@ -898,6 +961,8 @@ export default function OnboardingPage() {
                     onAddPreset={addPreset}
                     onDeletePreset={deletePreset}
                     validation={validation}
+                    requirePin={requirePin}
+                    onRequirePinChange={setRequirePin}
                   />
                 </motion.div>
               )}
