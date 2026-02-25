@@ -740,7 +740,13 @@ function ActivationHero({ business }: { business: Business }) {
         <div className="flex flex-col sm:flex-row gap-4 items-center">
           {/* Business info + photo */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            {googlePhotoUrl ? (
+            {business.logo_url ? (
+              <img
+                src={business.logo_url}
+                alt={business.name}
+                className="w-14 h-14 rounded-xl object-cover shrink-0 border border-border/30"
+              />
+            ) : googlePhotoUrl ? (
               <img
                 src={googlePhotoUrl}
                 alt={business.name}
@@ -776,7 +782,7 @@ function ActivationHero({ business }: { business: Business }) {
             )}
             <button onClick={handleDownloadQR} className="text-[10px] font-body text-primary hover:underline flex items-center gap-1">
               <Download size={10} />
-              T\u00e9l\u00e9charger
+              {'T\u00e9l\u00e9charger'}
             </button>
           </div>
         </div>
@@ -925,14 +931,33 @@ function ActivationHero({ business }: { business: Business }) {
                       </div>
                     )}
 
-                    {/* Step 1: Share with team — editable message */}
+                    {/* Step 1: Share with team — QR download + editable message */}
                     {step.num === 1 && (
                       <div className="space-y-3">
+                        {/* QR download prompt */}
+                        <div className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-3">
+                          {qrDataUrl && (
+                            <img src={qrDataUrl} alt="QR" className="w-14 h-14 rounded-lg shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-display font-semibold text-text">
+                              {'T\u00e9l\u00e9chargez le QR code'}
+                            </p>
+                            <p className="text-[10px] font-body text-text-muted mt-0.5">
+                              {'Joignez-le \u00e0 votre message pour que l\u2019\u00e9quipe puisse le partager aux clients'}
+                            </p>
+                          </div>
+                          <Button variant="primary" size="sm" onClick={handleDownloadQR} className="shrink-0">
+                            <Download size={13} />
+                            QR
+                          </Button>
+                        </div>
+
                         {/* Editable message preview */}
                         <div className="rounded-xl bg-background border border-border/50 overflow-hidden">
                           <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
                             <span className="text-[11px] font-display font-semibold text-text-muted">
-                              Message pour votre \u00e9quipe
+                              {'Message pour votre \u00e9quipe'}
                             </span>
                             <button
                               onClick={() => setEditingMessage(!editingMessage)}
@@ -971,6 +996,9 @@ function ActivationHero({ business }: { business: Business }) {
                             {copied ? 'Copi\u00e9 !' : 'Copier'}
                           </Button>
                         </div>
+                        <p className="text-[10px] font-body text-text-muted/60">
+                          {"N\u2019oubliez pas de joindre le QR code en pi\u00e8ce jointe \u00e0 votre message"}
+                        </p>
                         {!isDone && (
                           <button
                             onClick={() => markDone(1)}

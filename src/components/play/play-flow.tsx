@@ -69,6 +69,30 @@ function saveSpin(slug: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Revieww footer tagline (reusable)
+// ---------------------------------------------------------------------------
+
+function ReviewwFooter({ variant = 'light', className = '' }: { variant?: 'light' | 'dark'; className?: string }) {
+  const colors = variant === 'light'
+    ? 'text-white/40 hover:text-white/70'
+    : 'text-text-muted/50 hover:text-text-muted';
+  const heartColor = variant === 'light' ? 'text-red-400' : 'text-red-500';
+  return (
+    <a
+      href="https://revieww.ch"
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`font-body text-[10px] transition-colors inline-flex items-center gap-1 ${colors} ${className}`}
+    >
+      Chaque avis fait vivre un commerce local <span className={heartColor}>&#10084;</span> revieww.ch
+    </a>
+  );
+}
+
+// Export for use in other components
+export { ReviewwFooter };
+
+// ---------------------------------------------------------------------------
 // Slide variants for AnimatePresence transitions
 // ---------------------------------------------------------------------------
 
@@ -541,7 +565,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
               transition={slideTransition}
               className="flex flex-col items-center text-center"
             >
-              {/* Business logo / initials */}
+              {/* Business photo / logo / initials */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -556,6 +580,26 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                       width={96}
                       height={96}
                       className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : business.google_place_id ? (
+                  <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/places/photo?placeId=${business.google_place_id}`}
+                      alt={business.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to initials if photo fails
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.className = 'w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl border-4 border-white/20 text-white font-display font-bold text-2xl';
+                          parent.style.backgroundColor = business.primary_color;
+                          parent.textContent = getInitials(business.name);
+                        }
+                      }}
                     />
                   </div>
                 ) : (
@@ -1406,24 +1450,15 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
               )}
 
               {/* Powered by footer */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1 }}
-                className="mt-8"
-              >
-                <a
-                  href="https://revieww.ch"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-white/40 hover:text-white/70 font-body text-xs transition-colors inline-flex items-center gap-1"
-                >
-                  Chaque avis fait vivre un commerce local <span className="text-red-400">&#10084;</span> revieww.ch
-                </a>
-              </motion.div>
+              <ReviewwFooter variant="light" className="mt-8" />
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+
+      {/* Persistent footer on all steps */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10">
+        <ReviewwFooter variant="light" />
       </div>
     </div>
   );
