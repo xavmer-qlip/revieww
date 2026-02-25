@@ -376,7 +376,21 @@ export default function SignupPage() {
                 className="text-primary hover:text-primary-dark transition-colors duration-200 underline underline-offset-2"
                 onClick={(e) => e.stopPropagation()}
               >
-                conditions generales d&apos;utilisation
+                CGU
+              </Link>,{' '}
+              <Link
+                href="/cgv"
+                className="text-primary hover:text-primary-dark transition-colors duration-200 underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                CGV
+              </Link>{' '}et la{' '}
+              <Link
+                href="/confidentialite"
+                className="text-primary hover:text-primary-dark transition-colors duration-200 underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                politique de confidentialité
               </Link>
             </span>
           </label>

@@ -1262,14 +1262,14 @@ function Footer() {
           </div>
           {[
             { title: 'Produit', links: [{ label: 'Fonctionnement', id: 'how' }, { label: 'Tarifs', id: 'pricing' }, { label: 'FAQ', id: 'faq' }] },
-            { title: 'Légal', links: [{ label: 'CGU', id: '#' }, { label: 'Confidentialité', id: '#' }, { label: 'Mentions légales', id: '#' }] },
+            { title: 'Légal', links: [{ label: 'CGU', href: '/cgu' }, { label: 'CGV', href: '/cgv' }, { label: 'Confidentialité', href: '/confidentialite' }] },
           ].map((col) => (
             <div key={col.title}>
               <h4 className="font-display font-bold text-[11px] uppercase tracking-wider mb-4" style={{ color: C.muted }}>{col.title}</h4>
               <ul className="flex flex-col gap-2.5">
-                {col.links.map((l) => (
+                {col.links.map((l: { label: string; id?: string; href?: string }) => (
                   <li key={l.label}>
-                    <a href={`#${l.id}`} className="font-body text-[13px] transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                    <a href={l.href || `#${l.id}`} className="font-body text-[13px] transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.25)' }}>
                       {l.label}
                     </a>
                   </li>
