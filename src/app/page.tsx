@@ -55,7 +55,7 @@ const C = {
    ═══════════════════════════════════════════════════════════════════════════ */
 function useCountUp(target: number, duration = 2) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-100px' });
+  const inView = useInView(ref, { once: true });
   const mv = useMotionValue(0);
   const rounded = useTransform(mv, (v) => Math.round(v));
   useEffect(() => {
@@ -459,7 +459,7 @@ function HeroSection() {
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
+              transition={{ duration: 0.5, delay: 0.08 }}
               className="font-body text-[17px] leading-relaxed mb-8 max-w-md"
               style={{ color: C.muted }}
             >
@@ -470,7 +470,7 @@ function HeroSection() {
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.25 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
               className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border mb-8"
               style={{ borderColor: 'rgba(255,235,59,0.2)', background: 'rgba(255,235,59,0.06)' }}
             >
@@ -480,7 +480,7 @@ function HeroSection() {
                     key={i}
                     initial={{ opacity: 0, scale: 0, rotateZ: -30 }}
                     animate={{ opacity: 1, scale: 1, rotateZ: 0 }}
-                    transition={{ delay: 0.4 + i * 0.1, type: 'spring', stiffness: 400, damping: 15 }}
+                    transition={{ delay: 0.15 + i * 0.07, type: 'spring', stiffness: 400, damping: 15 }}
                   >
                     <Star className="w-4 h-4" style={{ fill: C.yellow, color: C.yellow }} />
                   </motion.span>
@@ -490,7 +490,7 @@ function HeroSection() {
               <span className="font-body text-xs" style={{ color: C.muted }}>c&apos;est le but</span>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.3 }} className="flex flex-wrap gap-3 items-center mb-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }} className="flex flex-wrap gap-3 items-center mb-8">
               <Link
                 href="/signup"
                 className="group inline-flex items-center gap-2.5 px-7 py-3.5 font-display font-bold text-sm rounded-full transition-all hover:scale-[1.03] active:scale-[0.97] text-white shadow-lg"
@@ -509,7 +509,7 @@ function HeroSection() {
               </button>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex flex-wrap items-center gap-5 text-[13px] font-body" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex flex-wrap items-center gap-5 text-[13px] font-body" style={{ color: 'rgba(255,255,255,0.3)' }}>
               {['Sans carte bancaire', 'Prêt en 1 minute', 'Annulable à tout moment'].map((t) => (
                 <span key={t} className="flex items-center gap-1.5">
                   <div className="w-1 h-1 rounded-full" style={{ background: C.green }} />
@@ -523,7 +523,7 @@ function HeroSection() {
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
             <CyclingPhones />
           </motion.div>
@@ -564,7 +564,7 @@ function HowItWorksSection() {
   return (
     <section id="how" className="py-28 sm:py-36" style={{ background: C.bg }}>
       <div className="max-w-6xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.6 }} className="text-center mb-20">
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-20">
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Comment ça marche</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl" style={{ color: C.text }}>
             Trois étapes.{' '}
@@ -578,7 +578,7 @@ function HowItWorksSection() {
               key={s.num}
               initial={{ opacity: 0, y: 40, scale: 0.92 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, margin: '-60px' }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.6, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: 1.03, y: -4 }}
             >
@@ -628,7 +628,7 @@ function ReviewCounterSection() {
         <motion.div
           initial={{ opacity: 0, y: 30, scale: 0.9 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, margin: '-80px' }}
+          viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-6" style={{ color: C.coral }}>En temps réel</p>
@@ -688,7 +688,7 @@ function FeaturesSection() {
   return (
     <section className="py-28 sm:py-36" style={{ background: C.bg }}>
       <div className="max-w-6xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.6 }} className="text-center mb-16">
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-16">
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.sky }}>Fonctionnalités</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
             Tout ce qu&apos;il faut.{' '}
@@ -705,7 +705,7 @@ function FeaturesSection() {
               key={f.title}
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, margin: '-60px' }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: 1.02, y: -3 }}
             >
@@ -764,7 +764,7 @@ function LocalVisionSection() {
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             <span
@@ -791,7 +791,7 @@ function LocalVisionSection() {
           <motion.div
             initial={{ opacity: 0, x: 30, scale: 0.95 }}
             whileInView={{ opacity: 1, x: 0, scale: 1 }}
-            viewport={{ once: true, margin: '-80px' }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
             className="flex justify-center"
           >
@@ -899,7 +899,7 @@ function DemoSection() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Wheel */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.7 }} className="flex justify-center order-2 lg:order-1">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.7 }} className="flex justify-center order-2 lg:order-1">
             <div className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px]">
               <div className="absolute inset-[-10%] rounded-full blur-[50px]" style={{ background: C.coralGlow }} />
               <div
@@ -947,7 +947,7 @@ function DemoSection() {
           </motion.div>
 
           {/* Copy */}
-          <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.6 }} className="order-1 lg:order-2">
+          <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="order-1 lg:order-2">
             <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Essayez maintenant</p>
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
               Votre client voit{' '}
@@ -1000,7 +1000,7 @@ function PricingSection() {
   return (
     <section id="pricing" className="py-28 sm:py-36" style={{ background: C.surface }}>
       <div className="max-w-6xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.6 }} className="text-center mb-16">
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-16">
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.yellow }}>Tarifs</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
             Simple.{' '}
@@ -1015,7 +1015,7 @@ function PricingSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.5 }}
           className="max-w-lg mx-auto mb-10"
         >
@@ -1044,7 +1044,7 @@ function PricingSection() {
               key={plan.id}
               initial={{ opacity: 0, y: 30, scale: 0.92 }}
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, margin: '-60px' }}
+              viewport={{ once: true, amount: 0.1 }}
               transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: plan.popular ? 1.04 : 1.02, y: -6 }}
             >
@@ -1188,7 +1188,7 @@ function FAQSection() {
   return (
     <section id="faq" className="py-28 sm:py-36" style={{ background: C.bg }}>
       <div className="max-w-3xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.6 }} className="text-center mb-14">
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-14">
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.yellow }}>FAQ</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl" style={{ color: C.text }}>
             Questions{' '}
@@ -1198,7 +1198,7 @@ function FAQSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
+          viewport={{ once: true, amount: 0.1 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
           {faqs.map((faq) => (
@@ -1221,7 +1221,7 @@ function FinalCTASection() {
         <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[300px] h-[300px] rounded-full blur-[100px]" style={{ background: C.skyGlow }} />
       </div>
       <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
-        <motion.div initial={{ opacity: 0, y: 40, scale: 0.92 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+        <motion.div initial={{ opacity: 0, y: 40, scale: 0.92 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl mb-6 leading-tight" style={{ color: C.text }}>
             Prêt à récolter{' '}
             <span style={{ color: C.coral }}>des avis ?</span>
