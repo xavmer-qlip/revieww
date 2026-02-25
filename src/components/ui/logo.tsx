@@ -18,28 +18,65 @@ const sizes = {
   xl: 'text-6xl',
 };
 
-// Timeline (duration: 6s):
-// 0.00 - 0.10 : idle "woopla"
-// 0.10 - 0.20 : Os grow + spacing increases → "w O O pla"
-// 0.20 - 0.50 : triangle spins (fast → decelerate)
-// 0.50 - 0.60 : Os shrink + spacing back → "woopla"
-// 0.60 - 1.00 : idle "woopla"
+// ---------------------------------------------------------------
+// Timeline (6s total):
+//   0–10%  idle "woopla"
+//  10–18%  o fades out → wheel fades in, scale grows, spacing opens
+//  18–45%  wheel spins (fast → decelerate → stop)
+//  45–52%  wheel fades out → o fades back in, scale/spacing shrink
+//  52–100% idle "woopla"
+// ---------------------------------------------------------------
+const T = [0, 0.10, 0.18, 0.25, 0.33, 0.40, 0.45, 0.52, 1];
+const oAlpha = [1, 1, 0, 0, 0, 0, 0, 1, 1];
+const wAlpha = [0, 0, 1, 1, 1, 1, 1, 0, 0];
+const wSpin = [0, 0, 0, 720, 1440, 1980, 2160, 2160, 2160];
+const cScale = [1, 1, 1.4, 1.4, 1.4, 1.35, 1.3, 1, 1];
+const cMargin = [0, 0, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0];
 
-const letterScale = [1, 1, 1.4, 1.4, 1.4, 1.4, 1, 1];
-const letterSpacing = [0, 0, 0.15, 0.15, 0.15, 0.15, 0, 0]; // in em
-const phaseTimes = [0, 0.10, 0.20, 0.25, 0.40, 0.50, 0.60, 1];
-
-// Triangle spin starts at phase 0.20, peaks, decelerates, stops at 0.50
-const triRotation = [0, 0, 0, 360, 1080, 1800, 1800, 1800];
-const triOpacity = [0, 0, 1, 1, 0.8, 0.3, 0, 0];
-
-const transition = {
+const anim = {
   duration: 6,
   repeat: Infinity,
   ease: 'linear' as const,
-  times: phaseTimes,
+  times: T,
 };
 
+// ---------------------------------------------------------------
+// Mini wheel-of-fortune SVG
+// ---------------------------------------------------------------
+const COLORS = ['#FF6B35', '#4CAF50', '#1B2A4A', '#E91E63', '#FFD700', '#82C8E5'];
+
+function MiniWheel() {
+  const n = COLORS.length;
+  const r = 45;
+  const paths = COLORS.map((color, i) => {
+    const a1 = ((i * 360) / n - 90) * (Math.PI / 180);
+    const a2 = (((i + 1) * 360) / n - 90) * (Math.PI / 180);
+    const x1 = 50 + r * Math.cos(a1);
+    const y1 = 50 + r * Math.sin(a1);
+    const x2 = 50 + r * Math.cos(a2);
+    const y2 = 50 + r * Math.sin(a2);
+    return (
+      <path
+        key={i}
+        d={`M50,50 L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`}
+        fill={color}
+        stroke="rgba(255,255,255,0.25)"
+        strokeWidth={0.5}
+      />
+    );
+  });
+
+  return (
+    <svg viewBox="0 0 100 100" className="block w-full h-full">
+      {paths}
+      <circle cx={50} cy={50} r={7} fill="#1B2A4A" stroke="white" strokeWidth={1} />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------
+// Logo
+// ---------------------------------------------------------------
 export function Logo({
   size = 'md',
   className,
@@ -58,8 +95,8 @@ export function Logo({
         {shouldAnimate ? (
           <>
             <span>w</span>
-            <SpinningO delay={0} />
-            <SpinningO delay={0.15} />
+            <AnimatedO delay={0} />
+            <AnimatedO delay={0.15} />
             <span>pla</span>
           </>
         ) : (
@@ -70,37 +107,50 @@ export function Logo({
   );
 }
 
-function SpinningO({ delay }: { delay: number }) {
+// ---------------------------------------------------------------
+// Single animated "o" ↔ mini wheel
+// ---------------------------------------------------------------
+function AnimatedO({ delay }: { delay: number }) {
   return (
     <motion.span
-      className="relative inline-flex items-center justify-center origin-center"
+      className="relative inline-block origin-center"
       style={{ color: 'inherit' }}
       animate={{
-        scale: letterScale,
-        marginInline: letterSpacing.map((s) => `${s}em`),
+        scale: cScale,
+        marginInline: cMargin.map((m) => `${m}em`),
       }}
-      transition={{ ...transition, delay }}
+      transition={{ ...anim, delay }}
     >
-      {/* The letter */}
-      <span>o</span>
-
-      {/* Triangle orbiting around — visible only during spin phase */}
+      {/* "o" letter — keeps layout, fades out during wheel phase */}
       <motion.span
-        className="absolute pointer-events-none"
-        style={{
-          inset: '-25%',
-          color: 'inherit',
-        }}
-        animate={{
-          rotate: triRotation,
-          opacity: triOpacity,
-        }}
-        transition={{ ...transition, delay }}
+        className="inline-block"
+        style={{ color: 'inherit' }}
+        animate={{ opacity: oAlpha }}
+        transition={{ ...anim, delay }}
       >
-        <svg viewBox="0 0 100 100" className="w-full h-full" overflow="visible">
-          <polygon points="50,15 44,2 56,2" fill="currentColor" />
-        </svg>
+        o
       </motion.span>
+
+      {/* Mini wheel — centered on the "o", spins, then disappears */}
+      <span
+        className="absolute top-1/2 left-1/2 pointer-events-none"
+        style={{
+          width: '1.3em',
+          height: '1.3em',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <motion.span
+          className="block w-full h-full rounded-full overflow-hidden"
+          animate={{
+            opacity: wAlpha,
+            rotate: wSpin,
+          }}
+          transition={{ ...anim, delay }}
+        >
+          <MiniWheel />
+        </motion.span>
+      </span>
     </motion.span>
   );
 }
