@@ -5,9 +5,6 @@ import Link from 'next/link';
 import {
   motion,
   useInView,
-  useMotionValue,
-  useTransform,
-  animate,
   AnimatePresence,
 } from 'motion/react';
 import {
@@ -19,10 +16,11 @@ import {
   Play,
   Menu,
   X,
-  BarChart3,
   ChevronDown,
-  Clock,
-  Target,
+  Star,
+  Heart,
+  Store,
+  Users,
   Globe,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
@@ -48,40 +46,6 @@ const C = {
   sand: '#E6D8C4',
   green: '#34d399',
 };
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   COUNTER HOOK
-   ═══════════════════════════════════════════════════════════════════════════ */
-function useCountUp(target: number, duration = 2) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true });
-  const mv = useMotionValue(0);
-  const rounded = useTransform(mv, (v) => Math.round(v));
-  useEffect(() => {
-    if (inView) animate(mv, target, { duration, ease: 'easeOut' });
-  }, [inView, target, duration, mv]);
-  useEffect(() => {
-    const u = rounded.on('change', (v) => {
-      if (ref.current) ref.current.textContent = v.toLocaleString('fr-CH');
-    });
-    return u;
-  }, [rounded]);
-  return ref;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   LIVE COUNTER HOOK — increments randomly to simulate activity
-   ═══════════════════════════════════════════════════════════════════════════ */
-function useLiveCounter(base: number) {
-  const [count, setCount] = useState(base);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCount((c) => c + Math.floor(Math.random() * 3) + 1);
-    }, 4000 + Math.random() * 6000);
-    return () => clearInterval(interval);
-  }, []);
-  return count;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PHONE MOCKUP
@@ -554,81 +518,92 @@ function HowItWorksSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   REVIEW COUNTER — wow effect
+   LOCAL MERCHANTS — Value props for shop owners
    ═══════════════════════════════════════════════════════════════════════════ */
-function ReviewCounterSection() {
-  const baseCount = 12847;
-  const liveCount = useLiveCounter(baseCount);
-  const countRef = useCountUp(baseCount, 3);
+function LocalMerchantsSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(sectionRef, { once: true, amount: 0.1 });
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
+  const cards = [
+    {
+      icon: Star,
+      title: 'Gagnez des avis Google',
+      desc: 'Vos clients laissent un avis naturellement après avoir joué. Plus d\'avis = plus de visibilité sur Google Maps.',
+      color: C.yellow,
+    },
+    {
+      icon: Users,
+      title: 'Construisez votre fichier clients',
+      desc: 'Chaque spin = un email qualifié. Exportez vers Mailchimp, Brevo ou utilisez directement.',
+      color: C.sky,
+    },
+    {
+      icon: Heart,
+      title: 'Donnez envie de revenir',
+      desc: 'Un client qui gagne revient. La gamification crée l\'habitude et la fidélité.',
+      color: C.coral,
+    },
+    {
+      icon: Store,
+      title: 'Favorisez les commerces du quartier',
+      desc: 'Offrez un billet de cinéma dans le cinéma du quartier. Tout le quartier y gagne.',
+      color: C.green,
+    },
+  ];
 
   return (
-    <section className="py-20 relative overflow-hidden" style={{ background: C.surface }}>
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[150px]" style={{ background: C.coralGlow }} />
-      </div>
-      <div ref={sectionRef} className="max-w-4xl mx-auto px-6 text-center relative z-10">
+    <section className="py-28 sm:py-36" style={{ background: C.surface }}>
+      <div ref={sectionRef} className="max-w-6xl mx-auto px-6">
         <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.9 }}
-          animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.9 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
         >
-          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-6" style={{ color: C.coral }}>En temps réel</p>
-          <div className="font-display font-extrabold text-6xl sm:text-7xl lg:text-8xl tracking-tight mb-4" style={{ color: C.text }}>
-            <motion.span
-              key={liveCount}
-              initial={{ opacity: 0.8, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              {liveCount.toLocaleString('fr-CH')}
-            </motion.span>
-          </div>
-          <p className="font-body text-lg mb-2" style={{ color: C.muted }}>
-            participations via <span className="font-display font-bold" style={{ color: C.text }}>woopla</span>
-          </p>
-          <p className="font-body text-sm" style={{ color: `${C.muted}80` }}>
-            et ça continue de grimper
+          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Pour les commerçants</p>
+          <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
+            Conçu pour les{' '}
+            <span style={{ color: C.coral }}>commerçants locaux.</span>
+          </h2>
+          <p className="font-body text-lg max-w-lg mx-auto" style={{ color: C.muted }}>
+            Plus qu&apos;un jeu. Un outil concret pour développer votre commerce.
           </p>
         </motion.div>
+
+        <div className="grid sm:grid-cols-2 gap-6">
+          {cards.map((card, i) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.95 }}
+              transition={{ duration: 0.6, delay: inView ? i * 0.1 : 0, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ scale: 1.02, y: -3 }}
+            >
+              <div
+                className="rounded-2xl p-7 h-full border transition-all duration-300"
+                style={{ background: C.bg, borderColor: C.border }}
+                onMouseOver={(e) => (e.currentTarget.style.borderColor = `${card.color}30`)}
+                onMouseOut={(e) => (e.currentTarget.style.borderColor = C.border)}
+              >
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style={{ background: `${card.color}15` }}>
+                  <card.icon className="w-5 h-5" style={{ color: card.color }} />
+                </div>
+                <h3 className="font-display font-bold text-base mb-2" style={{ color: C.text }}>{card.title}</h3>
+                <p className="font-body text-[14px] leading-relaxed" style={{ color: C.muted }}>{card.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FEATURES / PILLARS
+   DASHBOARD MOCKUP — Show the product
    ═══════════════════════════════════════════════════════════════════════════ */
-function FeaturesSection() {
+function DashboardMockupSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, amount: 0.05 });
-  const features = [
-    {
-      icon: Clock,
-      title: 'Onboarding en 1 minute',
-      desc: 'Entrez le nom de votre établissement. On récupère automatiquement votre fiche Google My Business, vos horaires, votre adresse. C\'est tout.',
-      color: C.coral,
-    },
-    {
-      icon: Target,
-      title: 'Lots guidés par l\'IA',
-      desc: 'Notre outil vous recommande les bons lots et la bonne fréquence de gain. Vous gardez le contrôle, on vous guide.',
-      color: C.yellow,
-    },
-    {
-      icon: Mail,
-      title: 'Collecte emails & SMS',
-      desc: 'Chaque spin = un contact qualifié. Lancez des campagnes email ou SMS directement, ou exportez vers Mailchimp, Brevo, Klaviyo ou via Zapier.',
-      color: C.sky,
-    },
-    {
-      icon: BarChart3,
-      title: 'Dashboard complet',
-      desc: 'Contacts, spins, lots gagnés, taux de conversion. Tout est mesuré. Vous savez exactement ce que woopla vous rapporte.',
-      color: C.green,
-    },
-  ];
 
   return (
     <section className="py-28 sm:py-36" style={{ background: C.bg }}>
@@ -639,57 +614,104 @@ function FeaturesSection() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.sky }}>Fonctionnalités</p>
+          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.sky }}>Dashboard</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
-            Tout ce qu&apos;il faut.{' '}
-            <span style={{ color: C.coral }}>Rien de trop.</span>
+            Suivez vos résultats{' '}
+            <span style={{ color: C.sky }}>en temps réel.</span>
           </h2>
           <p className="font-body text-lg max-w-lg mx-auto" style={{ color: C.muted }}>
-            Un outil simple qui fait le job. Pas de usine à gaz.
+            Contacts, spins, lots gagnés. Tout est mesuré. Vous savez exactement ce que woopla vous rapporte.
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 gap-6">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.95 }}
-              transition={{ duration: 0.6, delay: inView ? i * 0.1 : 0, ease: [0.16, 1, 0.3, 1] }}
-              whileHover={{ scale: 1.02, y: -3 }}
-            >
-              <div className="rounded-2xl p-7 h-full border transition-all duration-300" style={{ background: C.surface, borderColor: C.border }}
-                onMouseOver={(e) => (e.currentTarget.style.borderColor = `${f.color}30`)}
-                onMouseOut={(e) => (e.currentTarget.style.borderColor = C.border)}
-              >
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5" style={{ background: `${f.color}15` }}>
-                  <f.icon className="w-5 h-5" style={{ color: f.color }} />
-                </div>
-                <h3 className="font-display font-bold text-base mb-2" style={{ color: C.text }}>{f.title}</h3>
-                <p className="font-body text-[14px] leading-relaxed" style={{ color: C.muted }}>{f.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Integration logos bar */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.6, delay: inView ? 0.4 : 0 }}
-          className="mt-12 text-center"
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 0.95 }}
+          transition={{ duration: 0.8, delay: inView ? 0.15 : 0, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-4xl mx-auto"
         >
-          <p className="font-body text-[13px] mb-4" style={{ color: `${C.muted}60` }}>S&apos;intègre avec vos outils</p>
-          <div className="flex flex-wrap justify-center gap-4">
-            {['Mailchimp', 'Brevo', 'Klaviyo', 'Zapier', 'HubSpot'].map((tool) => (
-              <span
-                key={tool}
-                className="px-4 py-2 rounded-full text-[12px] font-display font-semibold border"
-                style={{ borderColor: C.border, color: `${C.muted}80` }}
-              >
-                {tool}
-              </span>
-            ))}
+          {/* Browser chrome */}
+          <div className="rounded-2xl border overflow-hidden shadow-2xl" style={{ borderColor: C.border, boxShadow: '0 25px 80px rgba(0,0,0,0.4)' }}>
+            <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ background: '#0F1729', borderColor: 'rgba(255,255,255,0.06)' }}>
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full" style={{ background: '#ff5f57' }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: '#febc2e' }} />
+                <div className="w-3 h-3 rounded-full" style={{ background: '#28c840' }} />
+              </div>
+              <div className="flex-1 flex justify-center">
+                <div className="px-4 py-1 rounded-full text-[11px] font-display" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>
+                  woopla.ch/dashboard
+                </div>
+              </div>
+            </div>
+
+            {/* Dashboard content */}
+            <div className="p-5 sm:p-8" style={{ background: '#f8fafc' }}>
+              {/* Stats cards */}
+              <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-5">
+                {[
+                  { label: 'Spins ce mois', value: '847', trend: '+23%', color: C.coral },
+                  { label: 'Contacts', value: '312', trend: '+18%', color: C.sky },
+                  { label: 'Taux de conversion', value: '68%', trend: '+5%', color: C.green },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100">
+                    <p className="font-body text-[10px] sm:text-[11px] text-gray-400 mb-1">{stat.label}</p>
+                    <div className="flex items-baseline gap-1 sm:gap-2">
+                      <span className="font-display font-extrabold text-lg sm:text-xl text-gray-900">{stat.value}</span>
+                      <span className="font-display font-semibold text-[10px] sm:text-[11px]" style={{ color: stat.color }}>{stat.trend}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Chart */}
+              <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 mb-5">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="font-display font-bold text-xs sm:text-sm text-gray-900">Spins par jour</p>
+                  <span className="font-body text-[10px] sm:text-[11px] text-gray-400">7 derniers jours</span>
+                </div>
+                <svg viewBox="0 0 400 100" className="w-full h-16 sm:h-20">
+                  <defs>
+                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={C.coral} stopOpacity={0.2} />
+                      <stop offset="100%" stopColor={C.coral} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,80 L57,65 L114,70 L171,45 L228,50 L285,30 L342,35 L400,15 L400,100 L0,100Z" fill="url(#chartGrad)" />
+                  <path d="M0,80 L57,65 L114,70 L171,45 L228,50 L285,30 L342,35 L400,15" fill="none" stroke={C.coral} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  {[[0, 80], [57, 65], [114, 70], [171, 45], [228, 50], [285, 30], [342, 35], [400, 15]].map(([x, y], i) => (
+                    <circle key={i} cx={x} cy={y} r="3" fill="white" stroke={C.coral} strokeWidth="2" />
+                  ))}
+                </svg>
+              </div>
+
+              {/* Recent spins table */}
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <div className="px-4 sm:px-5 py-3 border-b border-gray-50">
+                  <p className="font-display font-bold text-xs sm:text-sm text-gray-900">Derniers spins</p>
+                </div>
+                {[
+                  { email: 'marie@email.ch', prize: 'Café offert', emoji: '☕', time: 'Il y a 2 min', won: true },
+                  { email: 'lucas@email.ch', prize: 'Dessert offert', emoji: '🎂', time: 'Il y a 8 min', won: true },
+                  { email: 'sophie@email.ch', prize: 'Pas de chance', emoji: '❌', time: 'Il y a 15 min', won: false },
+                ].map((spin, i) => (
+                  <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 border-b border-gray-50 last:border-0">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                        <span className="font-display font-bold text-[10px] text-gray-400">{spin.email[0].toUpperCase()}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-body text-[12px] sm:text-[13px] text-gray-700 truncate">{spin.email}</p>
+                        <p className="font-body text-[10px] sm:text-[11px] text-gray-400">{spin.time}</p>
+                      </div>
+                    </div>
+                    <span className={cn('font-display font-semibold text-[11px] sm:text-[12px] shrink-0 ml-2', spin.won ? 'text-green-600' : 'text-gray-400')}>
+                      {spin.emoji} {spin.prize}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -1264,10 +1286,10 @@ export default function LandingPage() {
       <HeroSection />
       <SocialProofBar />
       <HowItWorksSection />
-      <ReviewCounterSection />
-      <FeaturesSection />
-      <DemoSection />
+      <LocalMerchantsSection />
+      <DashboardMockupSection />
       <LocalVisionSection />
+      <DemoSection />
       <PricingSection />
       <FAQSection />
       <FinalCTASection />
