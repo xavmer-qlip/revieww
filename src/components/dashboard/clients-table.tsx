@@ -67,7 +67,7 @@ function ToastNotification({
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border font-body text-sm',
         toast.type === 'success'
-          ? 'bg-accent/10 border-accent/20 text-accent'
+          ? 'bg-sky/10 border-sky/20 text-sky'
           : 'bg-danger/10 border-danger/20 text-danger'
       )}
     >
@@ -569,7 +569,7 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
                               onClick={() => handleToggleClaimed(spin.id)}
                               className={cn(
                                 'relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 cursor-pointer',
-                                claimedMap[spin.id] ? 'bg-accent' : 'bg-border'
+                                claimedMap[spin.id] ? 'bg-sky' : 'bg-border'
                               )}
                             >
                               <span

@@ -77,8 +77,8 @@ export function DashboardShell({
 
         {/* Email verified success banner */}
         {showVerifiedBanner && (
-          <div className="border-b border-accent/20 bg-accent/10 px-4 py-3 sm:px-6">
-            <div className="mx-auto flex max-w-6xl items-center gap-2 text-sm font-medium text-accent">
+          <div className="border-b border-sky/20 bg-sky/10 px-4 py-3 sm:px-6">
+            <div className="mx-auto flex max-w-6xl items-center gap-2 text-sm font-medium text-sky">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
               <span>Email vérifié avec succès ! Votre page est maintenant active.</span>
             </div>

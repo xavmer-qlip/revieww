@@ -10,7 +10,7 @@ interface BadgeProps {
 const badgeVariants = {
   default: 'bg-border/50 text-text',
   primary: 'bg-primary/10 text-primary',
-  success: 'bg-accent/10 text-accent',
+  success: 'bg-sky/15 text-sky',
   warning: 'bg-warning/10 text-warning',
   danger: 'bg-danger/10 text-danger',
   muted: 'bg-text-muted/10 text-text-muted',

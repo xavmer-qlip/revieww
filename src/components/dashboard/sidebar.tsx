@@ -150,7 +150,7 @@ function SpinQuota({
       <div className="flex items-center justify-between text-[11px] font-medium text-white/50 mb-2">
         <span>Spins ce mois</span>
         {isPro ? (
-          <span className="text-accent">Illimit\u00e9 \u2728</span>
+          <span className="text-sky">Illimit\u00e9 \u2728</span>
         ) : (
           <span>
             {spinsUsed} / {spinsLimit}

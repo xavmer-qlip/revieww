@@ -118,7 +118,7 @@ function ToastNotification({
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border font-body text-sm',
         toast.type === 'success'
-          ? 'bg-accent/10 border-accent/20 text-accent'
+          ? 'bg-sky/10 border-sky/20 text-sky'
           : 'bg-danger/10 border-danger/20 text-danger'
       )}
     >
@@ -530,7 +530,7 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
                 {isFree ? 'Spins utilises' : 'Spins ce mois'}
               </span>
               {isPro ? (
-                <span className="text-sm font-display font-semibold text-accent flex items-center gap-1">
+                <span className="text-sm font-display font-semibold text-sky flex items-center gap-1">
                   <Sparkles size={14} />
                   Illimite
                 </span>
@@ -613,7 +613,7 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
         className="flex items-center justify-center gap-6 py-4 text-xs font-body text-text-muted"
       >
         <span className="flex items-center gap-1.5">
-          <Shield size={14} className="text-accent" />
+          <Shield size={14} className="text-sky" />
           Paiement securise
         </span>
         <span className="w-px h-4 bg-border" />

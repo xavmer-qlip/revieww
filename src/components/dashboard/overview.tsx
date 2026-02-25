@@ -401,8 +401,8 @@ function SubscriptionStatus({ business }: { business: Business }) {
         )}
 
         {isActive && (
-          <div className="mt-3 rounded-xl bg-accent/10 border border-accent/20 px-3 py-2">
-            <p className="text-xs font-body text-accent font-medium">
+          <div className="mt-3 rounded-xl bg-sky/10 border border-sky/20 px-3 py-2">
+            <p className="text-xs font-body text-sky font-medium">
               Votre abonnement est actif
             </p>
           </div>
@@ -440,8 +440,8 @@ function SpinQuotaBar({ business, spinsUsed }: { business: Business; spinsUsed: 
 
         {isPro ? (
           <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-accent" />
-            <span className="text-sm font-display font-bold text-accent">
+            <Sparkles size={16} className="text-sky" />
+            <span className="text-sm font-display font-bold text-sky">
               Illimité
             </span>
             <span className="text-xs text-text-muted font-body">
@@ -544,7 +544,7 @@ function OnboardingChecklist({ checklist }: { checklist: ChecklistState }) {
         {/* Mini progress bar */}
         <div className="h-1.5 w-full rounded-full bg-border/40 overflow-hidden mb-4">
           <motion.div
-            className="h-full rounded-full bg-accent"
+            className="h-full rounded-full bg-sky"
             initial={{ width: 0 }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.8, delay: 0.7, ease: 'easeOut' }}
@@ -562,7 +562,7 @@ function OnboardingChecklist({ checklist }: { checklist: ChecklistState }) {
                 )}
               >
                 {item.done ? (
-                  <CheckCircle2 size={16} className="text-accent shrink-0" />
+                  <CheckCircle2 size={16} className="text-sky shrink-0" />
                 ) : (
                   <Circle size={16} className="text-border shrink-0" />
                 )}
@@ -643,7 +643,7 @@ function ActivationHero({ business }: { business: Business }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Card padding="lg" className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
+      <Card padding="lg" className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-sky/5">
         {/* Decorative */}
         <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 

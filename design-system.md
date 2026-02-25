@@ -33,9 +33,9 @@
 | `--color-primary-light` | `#fab5af` | Coral clair — hover states, backgrounds légers |
 | `--color-primary-dark` | `#e66a5f`  | Coral foncé — hover sur boutons primaires    |
 | `--color-secondary`  | `#1B2A4A`  | Bleu nuit — sidebar, éléments structurels    |
-| `--color-accent`     | `#FFEB3B`  | Jaune vif — badges, étoiles, highlights      |
-| `--color-accent-light` | `#fff176` | Jaune clair — backgrounds subtils            |
-| `--color-sky`        | `#82C8E5`  | Bleu ciel — éléments de confiance, tertiaire |
+| `--color-accent`     | `#FFEB3B`  | Jaune vif — landing page uniquement (fond sombre) |
+| `--color-accent-light` | `#fff176` | Jaune clair — landing page backgrounds       |
+| `--color-sky`        | `#82C8E5`  | Bleu ciel — accent dashboard & onboarding (fond clair) |
 | `--color-sand`       | `#E6D8C4`  | Sable/beige — warmth subtile                 |
 
 ### Couleurs fonctionnelles
@@ -78,6 +78,15 @@ const C = {
 ```
 
 Les couleurs d'accent (coral, yellow, sky, sand) sont **identiques** entre les deux thèmes. Seuls les fonds et textes changent.
+
+### Règle accent par contexte
+
+| Contexte | Couleur accent | Token | Raison |
+|----------|---------------|-------|--------|
+| Landing page (fond sombre) | Jaune `#FFEB3B` | `accent` | Très contrasté sur fond `#0b0f1a` |
+| Dashboard & Onboarding (fond clair) | Sky Blue `#82C8E5` | `sky` | Lisible sur fond `#FAFAF8`, le jaune est invisible |
+
+Dans les composants dashboard et onboarding, utiliser `sky` (pas `accent`) pour les badges success, progress bars, et highlights.
 
 ---
 

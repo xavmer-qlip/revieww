@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X } from 'lucide-react';
+import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X, MailCheck, ExternalLink } from 'lucide-react';
 import QRCode from 'qrcode';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
@@ -93,77 +93,87 @@ function StepHowItWorks({
   flowType: FlowType;
   onFlowChange: (ft: FlowType) => void;
 }) {
-  const cards = flowType === 'lottery_first' ? HOW_IT_WORKS_LOTTERY : HOW_IT_WORKS_REVIEW;
+  const FLOW_OPTIONS: {
+    key: FlowType;
+    label: string;
+    recommended: boolean;
+    steps: { emoji: string; title: string }[];
+  }[] = [
+    {
+      key: 'lottery_first',
+      label: 'Loterie d\'abord',
+      recommended: true,
+      steps: HOW_IT_WORKS_LOTTERY.map((s) => ({ emoji: s.emoji, title: s.title })),
+    },
+    {
+      key: 'review_first',
+      label: 'Avis d\'abord',
+      recommended: false,
+      steps: HOW_IT_WORKS_REVIEW.map((s) => ({ emoji: s.emoji, title: s.title })),
+    },
+  ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
           {TEXTS.onboarding.howItWorksTitle}
         </h2>
         <p className="mt-2 text-text-muted font-body">
-          revieww en 3 étapes simples
+          Choisissez le parcours de vos clients
         </p>
       </div>
 
-      {/* Flow type toggle */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="inline-flex rounded-xl bg-background border border-border/50 p-1">
-          {([
-            { key: 'lottery_first' as FlowType, label: 'Loterie d\'abord', recommended: true },
-            { key: 'review_first' as FlowType, label: 'Avis d\'abord', recommended: false },
-          ]).map((option) => (
-            <button
+      {/* Two flow options side by side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+        {FLOW_OPTIONS.map((option) => {
+          const isSelected = flowType === option.key;
+          return (
+            <motion.button
               key={option.key}
               onClick={() => onFlowChange(option.key)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               className={cn(
-                'px-4 py-2 rounded-lg text-sm font-display font-medium transition-all duration-200 cursor-pointer flex items-center gap-1.5',
-                flowType === option.key
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-text-muted hover:text-text'
+                'relative rounded-2xl border-2 p-4 text-left transition-all duration-200 cursor-pointer',
+                isSelected
+                  ? 'border-primary bg-primary/5 shadow-sm'
+                  : 'border-border/50 opacity-60 hover:opacity-80 hover:border-border'
               )}
             >
-              {option.label}
-              {option.recommended && flowType === option.key && (
-                <Badge variant="success" size="sm" className="text-[9px] px-1.5 py-0">
+              {/* Recommended badge */}
+              {option.recommended && (
+                <Badge variant="success" size="sm" className="absolute -top-2.5 right-3 text-[9px] px-2 py-0.5">
                   Recommandé
                 </Badge>
               )}
-            </button>
-          ))}
-        </div>
-        <p className="text-[11px] text-text-muted/60 font-body">
-          Modifiable à tout moment dans les paramètres
-        </p>
-      </div>
 
-      {/* Dynamic cards based on flow type */}
-      <div className="grid gap-4 max-w-lg mx-auto">
-        <AnimatePresence mode="wait">
-          {cards.map((card, i) => (
-            <motion.div
-              key={`${flowType}-${i}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ delay: 0.05 + i * 0.1, type: 'spring', stiffness: 300, damping: 25 }}
-            >
-              <Card padding="md" className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <span className="text-2xl">{card.emoji}</span>
-                </div>
-                <div>
-                  <h3 className="text-sm font-display font-bold text-text">
-                    {card.title}
-                  </h3>
-                  <p className="text-xs font-body text-text-muted mt-0.5">
-                    {card.description}
-                  </p>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              <h3 className="text-sm font-display font-bold text-text mb-3">
+                {option.label}
+              </h3>
+
+              <div className="space-y-2">
+                {option.steps.map((step, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="text-base shrink-0">{step.emoji}</span>
+                    <span className="text-xs font-body text-text-muted">{step.title}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Selection indicator */}
+              {isSelected && (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute top-3 left-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                >
+                  <Check size={12} className="text-white" strokeWidth={3} />
+                </motion.div>
+              )}
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );
@@ -246,71 +256,73 @@ function StepConfigurePrizes({
             <Card
               padding="sm"
               className={cn(
-                'transition-all duration-200',
+                'transition-all duration-200 p-3',
                 preset.enabled
                   ? 'border-primary/30 bg-primary/5'
                   : 'opacity-60'
               )}
             >
-              <div className="flex items-center gap-3">
-                {/* Toggle checkbox */}
-                <button
-                  onClick={() => onToggle(index)}
-                  className={cn(
-                    'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all',
-                    preset.enabled
-                      ? 'border-primary bg-primary'
-                      : 'border-border hover:border-primary/40'
-                  )}
-                >
-                  {preset.enabled && <Check size={12} className="text-white" strokeWidth={3} />}
-                </button>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                {/* Row 1 mobile / inline desktop: checkbox + emoji + label */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <button
+                    onClick={() => onToggle(index)}
+                    className={cn(
+                      'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all',
+                      preset.enabled
+                        ? 'border-primary bg-primary'
+                        : 'border-border hover:border-primary/40'
+                    )}
+                  >
+                    {preset.enabled && <Check size={12} className="text-white" strokeWidth={3} />}
+                  </button>
 
-                {/* Emoji button */}
-                <button
-                  onClick={() => setOpenEmojiIndex(openEmojiIndex === index ? null : index)}
-                  className="text-xl hover:scale-110 transition-transform shrink-0"
-                  title="Changer l'emoji"
-                >
-                  {preset.emoji}
-                </button>
-                <div
-                  className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ backgroundColor: preset.color }}
-                />
+                  <button
+                    onClick={() => setOpenEmojiIndex(openEmojiIndex === index ? null : index)}
+                    className="text-xl hover:scale-110 transition-transform shrink-0"
+                    title="Changer l'emoji"
+                  >
+                    {preset.emoji}
+                  </button>
 
-                {/* Editable label */}
-                <input
-                  type="text"
-                  value={preset.label}
-                  onChange={(e) => onLabelChange(index, e.target.value)}
-                  className="text-sm font-medium font-body text-text flex-1 min-w-0 px-2 py-1 rounded-lg bg-transparent border border-transparent focus:border-primary/30 focus:bg-background focus:outline-none transition-all"
-                />
+                  <input
+                    type="text"
+                    value={preset.label}
+                    onChange={(e) => onLabelChange(index, e.target.value)}
+                    className="text-xs sm:text-sm font-medium font-body text-text flex-1 min-w-0 px-2 py-1 rounded-lg bg-transparent border border-transparent focus:border-primary/30 focus:bg-background focus:outline-none transition-all"
+                  />
+                </div>
 
-                {/* Delete button */}
-                <button
-                  onClick={() => onDeletePreset(index)}
-                  className="p-1 rounded-lg text-text-muted/40 hover:text-danger hover:bg-danger/10 transition-all shrink-0"
-                  title="Supprimer"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {/* Row 2 mobile / inline desktop: color dot + stock + delete */}
+                <div className="flex items-center gap-2 justify-end pl-8 sm:pl-0">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: preset.color }}
+                  />
 
-                {/* Stock input or "Illimité" */}
-                {preset.isWinning && preset.enabled ? (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <input
-                      type="number"
-                      min={0}
-                      value={preset.stock}
-                      onChange={(e) => onStockChange(index, Math.max(0, parseInt(e.target.value) || 0))}
-                      className="w-16 px-2 py-1 text-xs font-body rounded-lg bg-background border border-border/50 text-text text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                    <span className="text-[10px] text-text-muted font-body">/mois</span>
-                  </div>
-                ) : !preset.isWinning ? (
-                  <span className="text-[10px] text-text-muted font-body shrink-0">Illimité</span>
-                ) : null}
+                  {preset.isWinning && preset.enabled ? (
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <input
+                        type="number"
+                        min={0}
+                        value={preset.stock}
+                        onChange={(e) => onStockChange(index, Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-14 px-2 py-1 text-xs font-body rounded-lg bg-background border border-border/50 text-text text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                      <span className="text-[10px] text-text-muted font-body">/mois</span>
+                    </div>
+                  ) : !preset.isWinning ? (
+                    <span className="text-[10px] text-text-muted font-body shrink-0">Illimité</span>
+                  ) : null}
+
+                  <button
+                    onClick={() => onDeletePreset(index)}
+                    className="p-1 rounded-lg text-text-muted/40 hover:text-danger hover:bg-danger/10 transition-all shrink-0"
+                    title="Supprimer"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
 
               {/* Inline emoji picker */}
@@ -376,7 +388,117 @@ function StepConfigurePrizes({
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 — QR code ready
+// Step 2 — Verify email
+// ---------------------------------------------------------------------------
+
+function StepVerifyEmail({
+  businessId,
+  onVerified,
+}: {
+  businessId: string;
+  onVerified: () => void;
+}) {
+  const [resending, setResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
+  // Poll for email verification every 4 seconds
+  useEffect(() => {
+    const supabase = createClient();
+    const interval = setInterval(async () => {
+      const { data } = await supabase
+        .from('businesses')
+        .select('email_verified')
+        .eq('id', businessId)
+        .single();
+
+      if (data?.email_verified) {
+        clearInterval(interval);
+        onVerified();
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [businessId, onVerified]);
+
+  const handleResend = useCallback(async () => {
+    setResending(true);
+    setResendSuccess(false);
+    try {
+      const res = await fetch('/api/send-verification', { method: 'POST' });
+      if (res.ok) {
+        setResendSuccess(true);
+        setTimeout(() => setResendSuccess(false), 3000);
+      }
+    } finally {
+      setResending(false);
+    }
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        {/* Animated mail icon */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+          className="w-16 h-16 mx-auto mb-4 rounded-full bg-sky/10 flex items-center justify-center"
+        >
+          <motion.div
+            animate={{ y: [0, -4, 0] }}
+            transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+          >
+            <MailCheck className="w-8 h-8 text-sky" />
+          </motion.div>
+        </motion.div>
+
+        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
+          Vérifiez votre email
+        </h2>
+        <p className="mt-2 text-text-muted font-body max-w-sm mx-auto">
+          Nous avons envoyé un lien de vérification à votre adresse email. Cliquez dessus pour activer votre page.
+        </p>
+      </div>
+
+      {/* Resend button */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex justify-center"
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleResend}
+          disabled={resending}
+          loading={resending}
+        >
+          <MailCheck size={14} />
+          {resendSuccess ? 'Email envoyé !' : 'Renvoyer l\'email'}
+        </Button>
+      </motion.div>
+
+      {/* Polling indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+        className="flex items-center justify-center gap-2 text-text-muted"
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+          className="w-3 h-3 rounded-full border-2 border-sky/30 border-t-sky"
+        />
+        <span className="text-xs font-body">En attente de vérification...</span>
+      </motion.div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 3 — QR code ready + sharing
 // ---------------------------------------------------------------------------
 
 function StepQRReady({
@@ -429,16 +551,16 @@ function StepQRReady({
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-          className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/10 flex items-center justify-center"
+          className="w-16 h-16 mx-auto mb-4 rounded-full bg-sky/10 flex items-center justify-center"
         >
-          <Check className="w-8 h-8 text-accent" />
+          <Check className="w-8 h-8 text-sky" />
         </motion.div>
 
         <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          {TEXTS.onboarding.summaryTitle}
+          Votre roue est active !
         </h2>
         <p className="mt-2 text-text-muted font-body">
-          {TEXTS.onboarding.summarySubtitle}
+          Partagez votre QR code pour commencer à collecter des avis
         </p>
       </div>
 
@@ -454,22 +576,20 @@ function StepQRReady({
             <img
               src={qrDataUrl}
               alt="QR Code"
-              className="w-[200px] h-[200px]"
+              className="w-[180px] h-[180px]"
             />
           </div>
         ) : (
-          <div className="w-[200px] h-[200px] bg-border/20 rounded-xl animate-pulse" />
+          <div className="w-[180px] h-[180px] bg-border/20 rounded-xl animate-pulse" />
         )}
-
-        <p className="text-xs font-mono text-text-muted">{playUrl}</p>
       </motion.div>
 
-      {/* Action buttons */}
+      {/* Share grid */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="grid grid-cols-2 gap-3 max-w-sm mx-auto"
+        className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-w-sm mx-auto"
       >
         <Button variant="primary" size="sm" onClick={handleDownload}>
           <Download size={14} />
@@ -487,17 +607,37 @@ function StepQRReady({
           <Send size={14} />
           Email
         </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.open(playUrl, '_blank')}
+        >
+          <ExternalLink size={14} />
+          Ouvrir le lien
+        </Button>
       </motion.div>
 
-      {/* Email verification reminder */}
+      {/* Team sharing section */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="max-w-sm mx-auto rounded-xl border border-warning/20 bg-warning/5 px-4 py-3"
+        className="max-w-sm mx-auto"
       >
-        <p className="text-sm font-body text-text text-center">
-          <span className="font-semibold">Dernière étape :</span> vérifiez votre email pour que vos clients puissent scanner et jouer.
+        <p className="text-xs font-display font-semibold text-text mb-2">
+          Partagez avec votre équipe
+        </p>
+        <div
+          onClick={handleCopy}
+          className="flex items-center gap-2 rounded-xl border border-border/50 bg-background px-3 py-2.5 cursor-pointer hover:border-primary/30 transition-all"
+        >
+          <span className="flex-1 min-w-0 truncate text-xs font-mono text-text-muted">
+            {playUrl}
+          </span>
+          <ExternalLink size={14} className="text-text-muted shrink-0" />
+        </div>
+        <p className="text-[11px] text-text-muted/60 font-body mt-1">
+          Envoyez le lien à vos collaborateurs
         </p>
       </motion.div>
     </div>
@@ -693,6 +833,11 @@ export default function OnboardingPage() {
       .catch(() => {});
   }, [createdBusiness]);
 
+  // --- Email verified callback ---
+  const handleEmailVerified = useCallback(() => {
+    setStep(3);
+  }, []);
+
   // --- Step navigation ---
   const handleNext = useCallback(async () => {
     if (step === 0) {
@@ -813,14 +958,17 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (step === 2) {
+    // Step 2 is polling/auto — no button action needed
+
+    if (step === 3) {
       window.location.href = '/dashboard';
     }
   }, [step, validation, enabledPresets, flowType, router]);
 
-  // --- Button label ---
-  const buttonLabel = step === 2 ? 'Aller au dashboard' : 'Suivant';
-  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 2;
+  // --- Button visibility & label ---
+  const showButton = step !== 2; // Step 2 (verify email) has no main CTA
+  const buttonLabel = step === 3 ? 'Aller au dashboard' : 'Suivant';
+  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 3;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -831,7 +979,7 @@ export default function OnboardingPage() {
 
       {/* Step indicator */}
       <div className="py-3">
-        <StepIndicator currentStep={step} totalSteps={3} />
+        <StepIndicator currentStep={step} totalSteps={4} />
       </div>
 
       {/* Content */}
@@ -887,6 +1035,21 @@ export default function OnboardingPage() {
                   exit={{ opacity: 0, x: -50 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 >
+                  <StepVerifyEmail
+                    businessId={createdBusiness.id}
+                    onVerified={handleEmailVerified}
+                  />
+                </motion.div>
+              )}
+
+              {step === 3 && createdBusiness && (
+                <motion.div
+                  key="step-3"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
                   <StepQRReady
                     business={createdBusiness}
                     qrDataUrl={qrDataUrl}
@@ -909,27 +1072,29 @@ export default function OnboardingPage() {
           )}
 
           {/* Footer action */}
-          <div className="mt-6 flex flex-col items-center gap-3">
-            <Button
-              size="lg"
-              onClick={handleNext}
-              disabled={!canProceed}
-              loading={loading}
-              className="w-full sm:w-auto min-w-[200px]"
-            >
-              {step === 2 ? (
-                <>
-                  {buttonLabel}
-                  <ArrowRight size={16} />
-                </>
-              ) : (
-                <>
-                  {buttonLabel}
-                  <ChevronRight size={16} />
-                </>
-              )}
-            </Button>
-          </div>
+          {showButton && (
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <Button
+                size="lg"
+                onClick={handleNext}
+                disabled={!canProceed}
+                loading={loading}
+                className="w-full sm:w-auto min-w-[200px]"
+              >
+                {step === 3 ? (
+                  <>
+                    {buttonLabel}
+                    <ArrowRight size={16} />
+                  </>
+                ) : (
+                  <>
+                    {buttonLabel}
+                    <ChevronRight size={16} />
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     </div>
