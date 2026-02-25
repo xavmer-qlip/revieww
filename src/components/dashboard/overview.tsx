@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   TrendingUp,
   TrendingDown,
@@ -25,6 +25,9 @@ import {
   Copy,
   ExternalLink,
   Download,
+  Share2,
+  X,
+  Maximize2,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -611,10 +614,11 @@ function OnboardingChecklist({ checklist }: { checklist: ChecklistState }) {
 
 function ActivationHero({ business }: { business: Business }) {
   const playUrl = `${PLAY_URL}/${business.slug}`;
-  const validateUrl = '/dashboard/validate';
+  const validateUrl = '/validate';
   const [copied, setCopied] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [googlePhotoUrl, setGooglePhotoUrl] = useState<string | null>(null);
+  const [qrZoomed, setQrZoomed] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
     try {
       const stored = localStorage.getItem(`activation_${business.id}`);
@@ -706,6 +710,22 @@ function ActivationHero({ business }: { business: Business }) {
     link.click();
   };
 
+  const handleShareQR = async () => {
+    if (!qrDataUrl) return;
+    try {
+      const res = await fetch(qrDataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `qr-${business.slug}.png`, { type: 'image/png' });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `QR Code - ${business.name}` });
+      } else {
+        handleDownloadQR();
+      }
+    } catch {
+      handleDownloadQR();
+    }
+  };
+
   const allDone = completedSteps.size >= 3;
 
   const STEPS = [
@@ -772,18 +792,21 @@ function ActivationHero({ business }: { business: Business }) {
             </div>
           </div>
 
-          {/* QR Code — always visible */}
+          {/* QR Code — tap to zoom */}
           <div className="flex flex-col items-center gap-2 shrink-0">
             {qrDataUrl ? (
-              <div className="p-2 bg-white rounded-xl shadow-sm border border-border/30 cursor-pointer hover:shadow-md transition-shadow" onClick={handleDownloadQR}>
+              <button onClick={() => setQrZoomed(true)} className="p-2 bg-white rounded-xl shadow-sm border border-border/30 cursor-pointer hover:shadow-md transition-shadow relative group">
                 <img src={qrDataUrl} alt="QR Code" className="w-24 h-24 sm:w-28 sm:h-28" />
-              </div>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 rounded-xl transition-colors flex items-center justify-center">
+                  <Maximize2 size={18} className="text-gray-600 opacity-0 group-hover:opacity-60 transition-opacity" />
+                </div>
+              </button>
             ) : (
               <div className="w-24 h-24 sm:w-28 sm:h-28 bg-border/20 rounded-xl animate-pulse" />
             )}
-            <button onClick={handleDownloadQR} className="text-[10px] font-body text-primary hover:underline flex items-center gap-1">
-              <Download size={10} />
-              {'T\u00e9l\u00e9charger'}
+            <button onClick={() => setQrZoomed(true)} className="text-[10px] font-body text-primary hover:underline flex items-center gap-1">
+              <Maximize2 size={10} />
+              Agrandir
             </button>
           </div>
         </div>
@@ -927,23 +950,32 @@ function ActivationHero({ business }: { business: Business }) {
                     {/* Step 1: Share with team — QR download + editable message */}
                     {step.num === 1 && (
                       <div className="space-y-3">
-                        {/* QR download prompt */}
+                        {/* QR code — tap to enlarge */}
                         <div className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-3">
                           {qrDataUrl && (
-                            <img src={qrDataUrl} alt="QR" className="w-14 h-14 rounded-lg shrink-0" />
+                            <button onClick={() => setQrZoomed(true)} className="shrink-0 cursor-pointer relative group">
+                              <img src={qrDataUrl} alt="QR" className="w-14 h-14 rounded-lg" />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded-lg transition-colors flex items-center justify-center">
+                                <Maximize2 size={14} className="text-white opacity-0 group-hover:opacity-80 transition-opacity drop-shadow" />
+                              </div>
+                            </button>
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-display font-semibold text-text">
-                              {'T\u00e9l\u00e9chargez le QR code'}
+                              QR code de votre commerce
                             </p>
                             <p className="text-[10px] font-body text-text-muted mt-0.5">
-                              {'Pour imprimer ou afficher dans votre commerce'}
+                              Appuyez pour agrandir ou sauvegarder
                             </p>
                           </div>
-                          <Button variant="primary" size="sm" onClick={handleDownloadQR} className="shrink-0">
-                            <Download size={13} />
-                            QR
-                          </Button>
+                          <div className="flex gap-1.5 shrink-0">
+                            <Button variant="outline" size="sm" onClick={handleShareQR}>
+                              <Share2 size={13} />
+                            </Button>
+                            <Button variant="primary" size="sm" onClick={handleDownloadQR}>
+                              <Download size={13} />
+                            </Button>
+                          </div>
                         </div>
 
                         {/* Editable message preview */}
@@ -1048,6 +1080,54 @@ function ActivationHero({ business }: { business: Business }) {
           </motion.div>
         );
       })}
+
+      {/* QR Fullscreen Modal */}
+      <AnimatePresence>
+        {qrZoomed && qrDataUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-6"
+            onClick={() => setQrZoomed(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="relative bg-white rounded-3xl p-6 shadow-2xl max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setQrZoomed(false)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                <X size={16} className="text-gray-500" />
+              </button>
+
+              <div className="text-center">
+                <p className="font-display font-bold text-text text-lg mb-1">{business.name}</p>
+                <p className="font-body text-text-muted text-xs mb-5">Scannez pour laisser un avis et gagner un cadeau</p>
+                <img src={qrDataUrl} alt="QR Code" className="w-64 h-64 mx-auto rounded-xl" />
+                <p className="font-mono text-[10px] text-text-muted/60 mt-3 truncate">{playUrl}</p>
+              </div>
+
+              <div className="flex gap-2 mt-5">
+                <Button variant="primary" size="sm" className="flex-1" onClick={handleShareQR}>
+                  <Share2 size={14} />
+                  Partager
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={handleDownloadQR}>
+                  <Download size={14} />
+                  Sauvegarder
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

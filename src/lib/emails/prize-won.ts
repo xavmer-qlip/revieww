@@ -101,7 +101,7 @@ export async function sendPrizeWonEmail({
       ${socialSection}
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
       <p style="font-size:11px;color:#9ca3af;text-align:center;">
-        Envoye par <a href="https://revieww.ch" style="color:#FF6B35;text-decoration:none;">revieww.ch</a>
+        Chaque avis positif aide un commerce local &#10084; <a href="https://revieww.ch" style="color:#FF6B35;text-decoration:none;">revieww.ch</a>
       </p>
     </div>
   `;
