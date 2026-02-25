@@ -84,7 +84,7 @@ function ReviewwFooter({ variant = 'light', className = '' }: { variant?: 'light
       rel="noopener noreferrer"
       className={`font-body text-[10px] transition-colors inline-flex items-center gap-1 ${colors} ${className}`}
     >
-      Chaque avis fait vivre un commerce local <span className={heartColor}>&#10084;</span> revieww.ch
+      Chaque avis positif aide un commerce local <span className={heartColor}>&#10084;</span> revieww.ch
     </a>
   );
 }
@@ -1550,8 +1550,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 </motion.div>
               )}
 
-              {/* Powered by footer */}
-              <ReviewwFooter variant="light" className="mt-8" />
             </motion.div>
           )}
         </AnimatePresence>
