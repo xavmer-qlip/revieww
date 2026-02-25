@@ -788,34 +788,6 @@ function ActivationHero({ business }: { business: Business }) {
           </div>
         </div>
 
-        {/* Quick actions row */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/30">
-          <Link href={playUrl} target="_blank" rel="noopener noreferrer" onClick={() => markDone(0)}>
-            <Button variant="primary" size="sm">
-              <ExternalLink size={13} />
-              Tester la roue
-            </Button>
-          </Link>
-          <Button variant="outline" size="sm" onClick={handleCopyLink}>
-            <Copy size={13} />
-            {copied ? 'Copi\u00e9 !' : 'Copier le lien'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleDownloadQR}>
-            <Download size={13} />
-            QR Code
-          </Button>
-        </div>
-
-        {/* Direct link display */}
-        <div
-          onClick={handleCopyLink}
-          className="flex items-center gap-2 mt-3 rounded-lg bg-background border border-border/50 px-3 py-2 cursor-pointer hover:border-primary/30 transition-all"
-        >
-          <span className="flex-1 min-w-0 truncate text-xs font-mono text-text-muted">
-            {playUrl}
-          </span>
-          {copied ? <CheckCircle2 size={14} className="text-success shrink-0" /> : <ExternalLink size={14} className="text-text-muted shrink-0" />}
-        </div>
       </Card>
 
       {/* Progress bar */}
@@ -914,12 +886,32 @@ function ActivationHero({ business }: { business: Business }) {
                               Tester la roue
                             </Button>
                           </Link>
+                          <Button variant="outline" size="sm" className="flex-1" onClick={handleCopyLink}>
+                            <Copy size={14} />
+                            {copied ? 'Copié !' : 'Copier le lien'}
+                          </Button>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button variant="outline" size="sm" className="flex-1" onClick={handleDownloadQR}>
+                            <Download size={14} />
+                            Télécharger le QR
+                          </Button>
                           <Link href="/dashboard/qrcode" className="flex-1">
                             <Button variant="outline" size="sm" className="w-full">
                               <QrCode size={14} />
                               Page QR Code
                             </Button>
                           </Link>
+                        </div>
+                        {/* Direct link display */}
+                        <div
+                          onClick={handleCopyLink}
+                          className="flex items-center gap-2 rounded-lg bg-background border border-border/50 px-3 py-2 cursor-pointer hover:border-primary/30 transition-all"
+                        >
+                          <span className="flex-1 min-w-0 truncate text-xs font-mono text-text-muted">
+                            {playUrl}
+                          </span>
+                          {copied ? <CheckCircle2 size={14} className="text-success shrink-0" /> : <ExternalLink size={14} className="text-text-muted shrink-0" />}
                         </div>
                         {!isDone && (
                           <button
