@@ -26,7 +26,7 @@ export async function sendTrialExpiringEmail({
       </p>
       <div style="background:#FFF7ED;border:1px solid #FFEDD5;border-radius:16px;padding:24px;text-align:center;">
         <p style="margin:0;font-size:14px;color:#6b7280;">
-          Pour continuer a collecter des avis et faire tourner la roue, choisissez un plan.
+          Pour continuer a animer votre commerce et faire tourner la roue, choisissez un plan.
         </p>
       </div>
       <div style="text-align:center;margin-top:24px;">

@@ -14,9 +14,9 @@ interface ConfirmRequestBody {
   email: string;
   phone: string | null;
   optedInMarketing: boolean;
-  confidenceScore: number;
-  timeOnGoogleSeconds: number | null;
-  selfReportedStars: number | null;
+  confidenceScore?: number;
+  timeOnGoogleSeconds?: number | null;
+  selfReportedStars?: number | null;
 }
 
 export async function POST(request: NextRequest) {

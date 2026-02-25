@@ -50,7 +50,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: Home, label: 'Vue d\u2019ensemble', href: '/dashboard' },
   { icon: Disc3, label: 'Ma Roue', href: '/dashboard/wheel' },
   { icon: QrCode, label: 'Mon QR Code', href: '/dashboard/qrcode' },
-  { icon: Users, label: 'Avis & Contacts', href: '/dashboard/clients' },
+  { icon: Users, label: 'Fichier client', href: '/dashboard/clients' },
   { icon: ShieldCheck, label: 'Valider un lot', href: '/dashboard/validate' },
   {
     icon: MessageSquare,

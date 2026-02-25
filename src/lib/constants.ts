@@ -111,7 +111,7 @@ export function mapGoogleCategoryToSector(googleCategory: string | null): Sector
 // ---------------------------------------------------------------------------
 
 export const APP_NAME = 'revieww';
-export const APP_TAGLINE = 'review & win';
+export const APP_TAGLINE = 'play & win';
 export const APP_DOMAIN = 'revieww.ch';
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://revieww.ch';
 export const PLAY_URL = process.env.NEXT_PUBLIC_PLAY_URL || 'https://play.revieww.ch';
@@ -144,7 +144,7 @@ export const PAID_PLANS: Plan[] = [
     spinsLabel: '50 spins/mois',
     contactsLimit: 200,
     contactsLabel: '200 contacts',
-    description: 'Pour lancer votre collecte',
+    description: 'Pour lancer votre animation',
     features: [
       'Tout du plan Free',
       '50 spins/mois',
@@ -252,21 +252,21 @@ export const COLORS = {
 
 export const TEXTS = {
   hero: {
-    title: 'Boostez vos avis Google.',
+    title: 'Fidélisez vos clients.',
     subtitle: 'Vos clients adorent jouer.',
-    description: 'revieww transforme chaque avis en une chance de gagner',
+    description: 'revieww transforme chaque visite en une chance de gagner',
     cta: 'Commencer gratuitement',
   },
   howItWorks: {
     title: 'Comment ça marche',
     steps: [
       { title: 'Placez le QR code', description: 'Sur vos tables, au comptoir, dans l\'addition' },
-      { title: 'Vos clients laissent un avis', description: 'Ils scannent et laissent un avis Google en 30 secondes' },
-      { title: 'Ils tournent la roue et gagnent', description: 'Un jeu fun avec des lots instantanés' },
+      { title: 'Vos clients tournent la roue', description: 'Un jeu engageant, directement depuis leur téléphone' },
+      { title: 'Ils gagnent et vous laissent leur email', description: 'Lots instantanés + contacts qualifiés pour votre commerce' },
     ],
   },
   stats: {
-    reviews: 'Avis déposés via revieww',
+    reviews: 'Participations via revieww',
     retention: 'Commerçants actifs',
     emails: 'Emails collectés',
   },
@@ -285,19 +285,14 @@ export const TEXTS = {
     copyright: `© ${new Date().getFullYear()} revieww.ch`,
   },
   play: {
-    welcome: 'Donnez-nous votre avis et gagnez un cadeau !',
-    cta: 'Laisser un avis Google',
-    waitMessage: 'Prenez le temps de laisser votre avis, nous vous attendons !',
-    waitingMessages: [
-      '📝 Écrivez quelques mots sur votre expérience...',
-      '⭐ N\'oubliez pas de choisir vos étoiles !',
-      '👍 Presque fini...',
-      '✨ Parfait, vous pouvez revenir !',
-    ],
-    waitingStatus: 'En cours...',
-    starsQuestion: 'Combien d\'étoiles avez-vous donné ?',
-    confirmButton: 'J\'ai laissé mon avis',
-    emailTitle: 'Merci pour votre avis !',
+    welcome: 'Tournez la roue et tentez de gagner un cadeau !',
+    cta: 'Tourner la roue !',
+    waitMessage: '',
+    waitingMessages: [],
+    waitingStatus: '',
+    starsQuestion: '',
+    confirmButton: '',
+    emailTitle: 'Entrez votre email pour recevoir votre cadeau',
     emailPlaceholder: 'Entrez votre email pour recevoir votre cadeau',
     phonePlaceholder: 'Téléphone (optionnel)',
     optIn: 'J\'accepte de recevoir des offres de',
@@ -313,13 +308,13 @@ export const TEXTS = {
     alreadyPlayed: 'Vous avez déjà participé récemment !',
     lotteryWelcome: 'Tournez la roue et tentez de gagner un cadeau !',
     lotteryCta: 'Tourner la roue !',
-    lockedTitle: 'Vous avez gagné !',
-    lockedSubtitle: 'Laissez un avis Google pour débloquer votre cadeau !',
-    lockedCta: 'Laisser un avis Google',
-    lostLockedTitle: 'Pas de chance cette fois...',
-    lostLockedSubtitle: 'Mais vous pouvez quand même nous aider !',
-    lostLockedCta: 'Laisser un avis Google',
-    lostLockedSkip: 'Continuer sans avis',
+    lockedTitle: '',
+    lockedSubtitle: '',
+    lockedCta: '',
+    lostLockedTitle: '',
+    lostLockedSubtitle: '',
+    lostLockedCta: '',
+    lostLockedSkip: '',
     lostEmailTitle: 'Merci !',
     lostEmailSubtitle: 'Laissez votre email pour être informé de nos prochaines offres',
     lostEmailCta: 'Valider',
@@ -330,7 +325,7 @@ export const TEXTS = {
     overview: 'Vue d\'ensemble',
     wheel: 'Ma Roue',
     qrcode: 'Mon QR Code',
-    clients: 'Avis & Contacts',
+    clients: 'Fichier client',
     messages: 'Messages',
     settings: 'Paramètres',
     billing: 'Abonnement',
@@ -366,13 +361,13 @@ export const TEXTS = {
     prizesTitle: 'Configurez vos lots',
     prizesSubtitle: 'Choisissez les récompenses pour vos clients',
     summaryTitle: 'Votre QR code est prêt !',
-    summarySubtitle: 'Partagez-le pour commencer à collecter des avis',
-    flowTitle: 'Choisissez le mode de jeu',
-    flowSubtitle: 'Comment vos clients interagissent avec la roue',
-    flowLotteryFirstLabel: 'Loterie d\'abord',
-    flowLotteryFirstDesc: 'Le client tourne la roue, puis laisse un avis Google pour débloquer son lot.',
-    flowReviewFirstLabel: 'Avis d\'abord',
-    flowReviewFirstDesc: 'Le client laisse un avis Google, puis tourne la roue pour découvrir son lot.',
-    flowRecommended: 'Recommandé',
+    summarySubtitle: 'Partagez-le pour commencer à animer votre commerce',
+    flowTitle: '',
+    flowSubtitle: '',
+    flowLotteryFirstLabel: '',
+    flowLotteryFirstDesc: '',
+    flowReviewFirstLabel: '',
+    flowReviewFirstDesc: '',
+    flowRecommended: '',
   },
 };

@@ -21,7 +21,6 @@ import {
 import type { SectorKey, SectorPreset } from '@/lib/constants';
 import { slugify, cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import type { FlowType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,7 +41,7 @@ interface CreatedBusiness {
 // Step 0 — How it works
 // ---------------------------------------------------------------------------
 
-const HOW_IT_WORKS_LOTTERY: { emoji: string; title: string; description: string }[] = [
+const HOW_IT_WORKS: { emoji: string; title: string; description: string }[] = [
   {
     emoji: '📱',
     title: 'Votre client scanne le QR code',
@@ -51,30 +50,12 @@ const HOW_IT_WORKS_LOTTERY: { emoji: string; title: string; description: string 
   {
     emoji: '🎡',
     title: 'Il tourne la roue',
-    description: 'Un jeu fun et engageant — il découvre son lot',
+    description: 'Il découvre son lot en quelques secondes',
   },
   {
-    emoji: '⭐',
-    title: 'Il laisse un avis pour débloquer',
-    description: 'Avis Google + email = lot débloqué',
-  },
-];
-
-const HOW_IT_WORKS_REVIEW: { emoji: string; title: string; description: string }[] = [
-  {
-    emoji: '📱',
-    title: 'Votre client scanne le QR code',
-    description: 'Sur vos tables, au comptoir, dans l\'addition',
-  },
-  {
-    emoji: '⭐',
-    title: 'Il laisse un avis Google',
-    description: 'En 30 secondes, directement depuis son téléphone',
-  },
-  {
-    emoji: '🎡',
-    title: 'Il tourne la roue et gagne',
-    description: 'Un jeu fun avec des lots instantanés',
+    emoji: '📧',
+    title: 'Il laisse son email',
+    description: 'Vous récupérez un contact qualifié',
   },
 ];
 
@@ -86,118 +67,6 @@ const EMOJI_GRID = [
   '🍿', '🥤', '🍷', '🍸', '🍓', '🍫',
 ];
 
-function StepChooseFlow({
-  flowType,
-  onFlowChange,
-}: {
-  flowType: FlowType;
-  onFlowChange: (ft: FlowType) => void;
-}) {
-  const FLOW_OPTIONS: {
-    key: FlowType;
-    label: string;
-    recommended: boolean;
-    description: string;
-    steps: { emoji: string; label: string }[];
-  }[] = [
-    {
-      key: 'lottery_first',
-      label: 'Loterie d\'abord',
-      recommended: true,
-      description: 'Le jeu attire le client, l\'avis vient ensuite',
-      steps: [
-        { emoji: '📱', label: 'Scan' },
-        { emoji: '🎡', label: 'Roue' },
-        { emoji: '⭐', label: 'Avis' },
-      ],
-    },
-    {
-      key: 'review_first',
-      label: 'Avis d\'abord',
-      recommended: false,
-      description: 'L\'avis est garanti, le jeu est la récompense',
-      steps: [
-        { emoji: '📱', label: 'Scan' },
-        { emoji: '⭐', label: 'Avis' },
-        { emoji: '🎡', label: 'Roue' },
-      ],
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          Parcours client
-        </h2>
-        <p className="mt-2 text-text-muted font-body">
-          Dans quel ordre vos clients participent ?
-        </p>
-      </div>
-
-      <div className="space-y-3 max-w-md mx-auto">
-        {FLOW_OPTIONS.map((option) => {
-          const isSelected = flowType === option.key;
-          return (
-            <motion.button
-              key={option.key}
-              onClick={() => onFlowChange(option.key)}
-              whileTap={{ scale: 0.98 }}
-              className={cn(
-                'w-full rounded-2xl px-4 py-4 text-left transition-all duration-200 cursor-pointer',
-                isSelected
-                  ? 'bg-primary/5 ring-2 ring-primary'
-                  : 'bg-background ring-1 ring-border/50 hover:ring-border'
-              )}
-            >
-              {/* Header: radio + label + recommended */}
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    isSelected ? 'border-primary bg-primary' : 'border-border'
-                  )}
-                >
-                  {isSelected && (
-                    <div className="w-2 h-2 rounded-full bg-white" />
-                  )}
-                </div>
-                <span className="text-sm font-display font-bold text-text">
-                  {option.label}
-                </span>
-                {option.recommended && (
-                  <span className="text-[10px] font-display font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                    Recommandé
-                  </span>
-                )}
-              </div>
-
-              {/* Visual flow: emoji → emoji → emoji */}
-              <div className="flex items-center justify-center gap-2 mt-3 py-2">
-                {option.steps.map((s, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <span className="text-2xl">{s.emoji}</span>
-                      <span className="text-[10px] font-body text-text-muted">{s.label}</span>
-                    </div>
-                    {i < option.steps.length - 1 && (
-                      <ChevronRight size={14} className="text-text-muted/40 shrink-0 mt-[-12px]" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Description */}
-              <p className="text-xs font-body text-text-muted mt-1 pl-8">
-                {option.description}
-              </p>
-            </motion.button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Step 1 — Configure prizes with sector presets
@@ -550,15 +419,15 @@ function StepQRReady({
 
   const handleWhatsApp = useCallback(() => {
     const text = encodeURIComponent(
-      `Laissez un avis sur ${business.name} et gagnez un cadeau ! ${playUrl}`
+      `Jouez à la roue de la fortune chez ${business.name} et gagnez un cadeau ! ${playUrl}`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
   }, [business.name, playUrl]);
 
   const handleEmail = useCallback(() => {
-    const subject = encodeURIComponent(`Donnez votre avis sur ${business.name}`);
+    const subject = encodeURIComponent(`Gagnez un cadeau chez ${business.name}`);
     const body = encodeURIComponent(
-      `Bonjour,\n\nLaissez un avis et gagnez un cadeau !\n${playUrl}\n\nMerci !`
+      `Bonjour,\n\nJouez à la roue de la fortune et gagnez un cadeau !\n${playUrl}\n\nMerci !`
     );
     window.open(`mailto:?subject=${subject}&body=${body}`);
   }, [business.name, playUrl]);
@@ -580,7 +449,7 @@ function StepQRReady({
           Votre roue est active !
         </h2>
         <p className="mt-2 text-text-muted font-body">
-          Partagez votre QR code pour commencer à collecter des avis
+          Partagez votre QR code pour commencer à animer votre commerce
         </p>
       </div>
 
@@ -707,10 +576,7 @@ export default function OnboardingPage() {
   const [currentSector, setCurrentSector] = useState<SectorKey>('autre');
   const [presets, setPresets] = useState<SelectedPreset[]>([]);
 
-  // Flow type (step 2)
-  const [flowType, setFlowType] = useState<FlowType>('lottery_first');
-
-  // Created business (after step 2 completes)
+  // Created business (after step 1 completes)
   const [createdBusiness, setCreatedBusiness] = useState<CreatedBusiness | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
@@ -857,19 +723,15 @@ export default function OnboardingPage() {
 
   // --- Email verified callback ---
   const handleEmailVerified = useCallback(() => {
-    setStep(3);
+    setStep(2);
   }, []);
 
   // --- Step navigation ---
   const handleNext = useCallback(async () => {
     if (step === 0) {
       if (!validation.valid) return;
-      setStep(1);
-      return;
-    }
 
-    if (step === 1) {
-      // Create business + segments (prizes from step 0, flow_type from step 1)
+      // Create business + segments directly (no flow choice step)
       setLoading(true);
       setError(null);
 
@@ -918,7 +780,8 @@ export default function OnboardingPage() {
             primary_color: '#FF6B35',
             secondary_color: '#1B2A4A',
             onboarding_completed: true,
-            flow_type: flowType,
+            flow_type: 'lottery_first',
+            require_review: false,
           })
           .select()
           .single();
@@ -969,7 +832,7 @@ export default function OnboardingPage() {
           slug: business.slug,
           name: business.name,
         });
-        setStep(2);
+        setStep(1);
 
         // Fire-and-forget: send verification email
         fetch('/api/send-verification', { method: 'POST' }).catch(() => {});
@@ -982,17 +845,17 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Step 2 is polling/auto — no button action needed
+    // Step 1 is polling/auto — no button action needed
 
-    if (step === 3) {
+    if (step === 2) {
       window.location.href = '/dashboard';
     }
-  }, [step, validation, enabledPresets, flowType, router]);
+  }, [step, validation, enabledPresets, router]);
 
   // --- Button visibility & label ---
-  const showButton = step !== 2; // Step 2 (verify email) has no main CTA
-  const buttonLabel = step === 3 ? 'Aller au dashboard' : 'Suivant';
-  const canProceed = (step === 0 && validation.valid) || step === 1 || step === 3;
+  const showButton = step !== 1; // Step 1 (verify email) has no main CTA
+  const buttonLabel = step === 2 ? 'Aller au dashboard' : 'Suivant';
+  const canProceed = (step === 0 && validation.valid) || step === 2;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -1003,7 +866,7 @@ export default function OnboardingPage() {
 
       {/* Step indicator */}
       <div className="py-3">
-        <StepIndicator currentStep={step} totalSteps={4} />
+        <StepIndicator currentStep={step} totalSteps={3} />
       </div>
 
       {/* Content */}
@@ -1039,21 +902,9 @@ export default function OnboardingPage() {
                 </motion.div>
               )}
 
-              {step === 1 && (
+              {step === 1 && createdBusiness && (
                 <motion.div
                   key="step-1"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                >
-                  <StepChooseFlow flowType={flowType} onFlowChange={setFlowType} />
-                </motion.div>
-              )}
-
-              {step === 2 && createdBusiness && (
-                <motion.div
-                  key="step-2"
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -50 }}
@@ -1066,9 +917,9 @@ export default function OnboardingPage() {
                 </motion.div>
               )}
 
-              {step === 3 && createdBusiness && (
+              {step === 2 && createdBusiness && (
                 <motion.div
-                  key="step-3"
+                  key="step-2"
                   initial={{ opacity: 0, x: 50 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -50 }}
@@ -1105,7 +956,7 @@ export default function OnboardingPage() {
                 loading={loading}
                 className="w-full sm:w-auto min-w-[200px]"
               >
-                {step === 3 ? (
+                {step === 2 ? (
                   <>
                     {buttonLabel}
                     <ArrowRight size={16} />

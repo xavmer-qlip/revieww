@@ -307,8 +307,7 @@ export default function QRCodePage() {
           Mon QR Code
         </h1>
         <p className="text-sm font-body text-text-muted mt-1">
-          Partagez ce QR code pour que vos clients laissent un avis et jouent a
-          la roue
+          Partagez ce QR code pour que vos clients jouent à la roue et gagnent un cadeau
         </p>
       </motion.div>
 
@@ -522,7 +521,7 @@ export default function QRCodePage() {
                           {business.name}
                         </p>
                         <p className="text-[9px] text-gray-500 font-body leading-relaxed">
-                          Donnez-nous votre avis et gagnez un cadeau !
+                          Jouez et gagnez un cadeau !
                         </p>
                       </div>
 
@@ -531,7 +530,7 @@ export default function QRCodePage() {
                         className="px-4 py-2 rounded-full text-white text-[10px] font-semibold font-display"
                         style={{ backgroundColor: qrColor }}
                       >
-                        Laisser un avis Google
+                        Tourner la roue !
                       </div>
 
                       <p className="text-[8px] text-gray-400 font-body text-center mt-2">

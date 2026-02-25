@@ -35,10 +35,10 @@ export async function generateMetadata({
 
   return {
     title: `${business.name} - Tournez la roue ! | ${APP_NAME}`,
-    description: `Laissez un avis pour ${business.name} et tentez de gagner un cadeau !`,
+    description: `Jouez à la roue de la fortune chez ${business.name} et tentez de gagner un cadeau !`,
     openGraph: {
       title: `${business.name} - Tournez la roue !`,
-      description: `Laissez un avis pour ${business.name} et tentez de gagner un cadeau !`,
+      description: `Jouez à la roue de la fortune chez ${business.name} et tentez de gagner un cadeau !`,
       type: 'website',
     },
   };

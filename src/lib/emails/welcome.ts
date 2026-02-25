@@ -20,7 +20,7 @@ export async function sendWelcomeEmail({
         Bienvenue sur revieww !
       </h1>
       <p style="font-size:16px;text-align:center;color:#6b7280;margin:0 0 24px;">
-        <strong style="color:#1A1A2E;">${businessName}</strong> est pret a collecter des avis
+        <strong style="color:#1A1A2E;">${businessName}</strong> est pret a animer votre commerce
       </p>
       <div style="background:#f8f9fa;border-radius:16px;padding:24px;">
         <h2 style="font-size:16px;font-weight:bold;color:#1A1A2E;margin:0 0 16px;">
@@ -33,7 +33,7 @@ export async function sendWelcomeEmail({
           <p style="margin:0;font-size:14px;"><strong>2.</strong> Placez-le sur vos tables ou au comptoir</p>
         </div>
         <div>
-          <p style="margin:0;font-size:14px;"><strong>3.</strong> Regardez les avis arriver !</p>
+          <p style="margin:0;font-size:14px;"><strong>3.</strong> Lancez votre première animation !</p>
         </div>
       </div>
       <div style="text-align:center;margin-top:24px;">

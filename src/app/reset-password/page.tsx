@@ -207,7 +207,7 @@ export default function ResetPasswordPage() {
           rel="noopener noreferrer"
           className="font-body text-[10px] text-text-muted/50 hover:text-text-muted transition-colors inline-flex items-center gap-1"
         >
-          Chaque avis fait vivre un commerce local <span className="text-red-500">&#10084;</span> revieww.ch
+          Fait avec <span className="text-red-500">&#10084;</span> en Suisse &middot; revieww.ch
         </a>
       </div>
     </div>

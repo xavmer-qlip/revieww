@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!business) return {};
 
-  const title = `${business.name} — Laissez un avis et gagnez !`;
-  const description = `Scannez le QR code, laissez un avis Google pour ${business.name} et tentez de gagner un cadeau !`;
+  const title = `${business.name} — Jouez et gagnez !`;
+  const description = `Scannez le QR code chez ${business.name}, tournez la roue et tentez de gagner un cadeau !`;
   const ogImageUrl = `${APP_URL}/api/qr/${slug}`;
 
   return {

@@ -18,7 +18,6 @@ import {
   Globe,
   Lock,
   Image as ImageIcon,
-  Gamepad2,
   ChevronRight,
   Clock,
   Phone,
@@ -225,8 +224,8 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [flowType, setFlowType] = useState<FlowType>('lottery_first');
-  const [requireReview, setRequireReview] = useState(true);
+  const [flowType] = useState<FlowType>('lottery_first');
+  const [requireReview] = useState(false);
   const [prizeValidityDays, setPrizeValidityDays] = useState(7);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
@@ -270,8 +269,6 @@ export default function SettingsPage() {
           setPrimaryColor(data.primary_color);
           setSecondaryColor(data.secondary_color);
           setLogoUrl(data.logo_url);
-          setFlowType(data.flow_type || 'lottery_first');
-          setRequireReview(data.require_review ?? true);
           setPrizeValidityDays(data.prize_validity_days ?? 7);
           setPhoneNumber(data.phone || '');
           setWebsiteUrl(data.website_url || '');
@@ -375,8 +372,8 @@ export default function SettingsPage() {
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           logo_url: newLogoUrl,
-          flow_type: flowType,
-          require_review: requireReview,
+          flow_type: 'lottery_first',
+          require_review: false,
           prize_validity_days: prizeValidityDays,
           phone: phoneNumber.trim() || null,
           website_url: websiteUrl.trim() || null,
@@ -535,7 +532,7 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* ================================================================
-          SECTION 2: Lien Google Review
+          SECTION 2: Lien Google Business
           ================================================================ */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -549,10 +546,10 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1">
               <h2 className="text-base font-display font-semibold text-text">
-                Lien Google Review
+                Lien Google Business
               </h2>
               <p className="text-xs font-body text-text-muted">
-                Le lien vers lequel vos clients seront rediriges
+                Facultatif — vos clients verront ce lien parmi vos réseaux sociaux
               </p>
             </div>
             <GoogleReviewHelp />
@@ -773,138 +770,7 @@ export default function SettingsPage() {
       </motion.div>
 
       {/* ================================================================
-          SECTION 4: Mode de jeu
-          ================================================================ */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.22 }}
-      >
-        <Card padding="lg">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Gamepad2 size={20} className="text-primary" />
-            </div>
-            <div>
-              <h2 className="text-base font-display font-semibold text-text">
-                Mode de jeu
-              </h2>
-              <p className="text-xs font-body text-text-muted">
-                Comment vos clients interagissent avec la roue
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {([
-              {
-                key: 'lottery_first' as FlowType,
-                label: TEXTS.onboarding.flowLotteryFirstLabel,
-                desc: TEXTS.onboarding.flowLotteryFirstDesc,
-                flow: '🎡 → 🔒 → ⭐ → 🎁',
-                recommended: true,
-              },
-              {
-                key: 'review_first' as FlowType,
-                label: TEXTS.onboarding.flowReviewFirstLabel,
-                desc: TEXTS.onboarding.flowReviewFirstDesc,
-                flow: '⭐ → 📧 → 🎡 → 🎁',
-                recommended: false,
-              },
-            ]).map((option) => {
-              const selected = flowType === option.key;
-              return (
-                <button
-                  key={option.key}
-                  type="button"
-                  onClick={() => setFlowType(option.key)}
-                  className={cn(
-                    'w-full text-left rounded-xl border-2 px-4 py-3 transition-all duration-200 cursor-pointer',
-                    selected
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border/50 bg-background hover:border-border'
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                      selected ? 'border-primary' : 'border-border'
-                    )}>
-                      {selected && (
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-display font-semibold text-text">
-                          {option.label}
-                        </span>
-                        {option.recommended && (
-                          <Badge variant="success" size="sm">
-                            {TEXTS.onboarding.flowRecommended}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs font-body text-text-muted mt-0.5">
-                        {option.desc}
-                      </p>
-                      <p className="text-xs font-body text-text-muted/60 mt-1 tracking-wider">
-                        {option.flow}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Require review toggle — only visible in lottery_first mode */}
-          <AnimatePresence>
-            {flowType === 'lottery_first' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-4 px-4 py-3 rounded-xl bg-background border border-border/50">
-                  <label className="flex items-center justify-between gap-3 cursor-pointer">
-                    <div>
-                      <p className="text-sm font-display font-medium text-text">
-                        Exiger un avis Google pour débloquer le lot
-                      </p>
-                      <p className="text-xs font-body text-text-muted mt-0.5">
-                        Si désactivé, le client reçoit son lot directement après le spin
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={requireReview}
-                      onClick={() => setRequireReview(!requireReview)}
-                      className={cn(
-                        'relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/30',
-                        requireReview ? 'bg-primary' : 'bg-border'
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transform transition-transform duration-200 ease-in-out',
-                          requireReview ? 'translate-x-5' : 'translate-x-0'
-                        )}
-                      />
-                    </button>
-                  </label>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Card>
-      </motion.div>
-
-      {/* ================================================================
-          SECTION 5: Validite des lots
+          SECTION 4: Validite des lots
           ================================================================ */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}

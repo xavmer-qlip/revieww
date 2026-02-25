@@ -297,7 +297,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
       'Code',
       'Gagnant',
       'Reclame',
-      'Etoiles',
       'Marketing opt-in',
     ];
 
@@ -310,7 +309,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
         s.validation_code || '',
         s.is_winner ? 'Oui' : 'Non',
         (claimedMap[s.id] ?? s.claimed) ? 'Oui' : 'Non',
-        s.self_reported_stars?.toString() || '',
         s.opted_in_marketing ? 'Oui' : 'Non',
       ];
     });
@@ -336,7 +334,7 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-display font-bold text-text">
-            Avis & Contacts
+            Fichier client
           </h1>
           <p className="text-sm font-body text-text-muted mt-1">
             Retrouvez tous les contacts collectes via votre roue
@@ -381,7 +379,7 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
       >
         <div>
           <h1 className="text-2xl font-display font-bold text-text">
-            Avis & Contacts
+            Fichier client
           </h1>
           <p className="text-sm font-body text-text-muted mt-1">
             {totalCount} participation{totalCount > 1 ? 's' : ''} au total
@@ -512,9 +510,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
                   <th className="text-left px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
                     Code
                   </th>
-                  <th className="text-left px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
-                    Etoiles
-                  </th>
                   <th className="text-center px-4 py-3 text-xs font-display font-semibold text-text-muted uppercase tracking-wider">
                     Reclame
                   </th>
@@ -558,9 +553,6 @@ export function ClientsTable({ spins, totalCount }: ClientsTableProps) {
                         </td>
                         <td className="px-4 py-3 text-xs font-display font-bold text-blue-700 tracking-wider whitespace-nowrap">
                           {spin.validation_code || '-'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <StarRating stars={spin.self_reported_stars} />
                         </td>
                         <td className="px-4 py-3 text-center">
                           {spin.is_winner ? (

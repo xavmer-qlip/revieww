@@ -63,7 +63,7 @@ export default async function DashboardPage() {
   // ---- Fetch previous month spins for comparison ----
   const { data: previousMonthSpins } = await supabase
     .from('spins')
-    .select('email, confidence_score')
+    .select('email, confidence_score, is_winner')
     .eq('business_id', business.id)
     .gte('created_at', startOfPreviousMonth)
     .lte('created_at', endOfPreviousMonth);
@@ -79,10 +79,10 @@ export default async function DashboardPage() {
   const totalSpinsThisMonth = currentMonthCount ?? 0;
   const totalSpinsPrevMonth = previousMonthCount ?? 0;
 
-  // Reviews = spins with confidence_score >= 40 (assumed left a review)
-  const reviewsThisMonth = spins.filter((s) => s.confidence_score >= 40).length;
-  const prevMonthReviews = (previousMonthSpins ?? []).filter(
-    (s: { confidence_score: number }) => s.confidence_score >= 40
+  // Wins = spins where is_winner is true
+  const winsThisMonth = spins.filter((s) => s.is_winner).length;
+  const prevMonthWins = (previousMonthSpins ?? []).filter(
+    (s: { confidence_score: number; is_winner?: boolean }) => s.is_winner
   ).length;
 
   // Unique emails this month
@@ -149,7 +149,7 @@ export default async function DashboardPage() {
   // ---- Onboarding checklist ----
   const checklist = {
     accountCreated: true,
-    googleLinkAdded: !!business.google_review_link,
+    googleLinkAdded: true, // No longer required
     wheelConfigured: (segmentsCount ?? 0) > 0,
     qrCodeDownloaded: false, // TODO: track this separately
   };
@@ -161,8 +161,8 @@ export default async function DashboardPage() {
     <DashboardOverview
       business={business}
       stats={{
-        reviewsThisMonth,
-        reviewsPrevMonth: prevMonthReviews,
+        reviewsThisMonth: winsThisMonth,
+        reviewsPrevMonth: prevMonthWins,
         emailsThisMonth,
         emailsPrevMonth: prevMonthEmails,
         totalSpinsThisMonth,

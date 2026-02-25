@@ -221,7 +221,7 @@ export default function SignupPage() {
           <span className="text-primary">1 minute</span>
         </h1>
         <p className="mt-2 text-text-muted font-body text-base">
-          Creez votre compte et commencez a collecter des avis.
+          Creez votre compte et lancez votre animation commerciale.
         </p>
       </motion.div>
 

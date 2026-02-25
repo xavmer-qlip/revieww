@@ -18,16 +18,16 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'revieww — review & win',
+    default: 'revieww — play & win',
     template: '%s | revieww',
   },
   description:
-    'Boostez vos avis Google. Vos clients scannent, laissent un avis, et tournent la roue pour gagner. Simple, fun, efficace.',
+    'Animez votre commerce avec une roue de la fortune. Vos clients scannent, jouent, gagnent. Vous récupérez leurs emails.',
   metadataBase: new URL('https://revieww.ch'),
   openGraph: {
-    title: 'revieww — review & win',
+    title: 'revieww — play & win',
     description:
-      'Transformez chaque avis Google en une chance de gagner pour vos clients.',
+      'Fidélisez vos clients avec une roue de la fortune engageante. Fichier client, lots, animation commerciale.',
     url: 'https://revieww.ch',
     siteName: 'revieww',
     locale: 'fr_CH',
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'revieww — review & win',
+    title: 'revieww — play & win',
     description:
-      'Boostez vos avis Google avec une roue de la fortune ludique.',
+      'Animez votre commerce avec une roue de la fortune. Fichier client, lots, engagement.',
   },
   robots: {
     index: true,

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Phone, Star, ChevronRight, Clock, Gift, AlertCircle, Check, Lock, Globe, Instagram, Facebook } from 'lucide-react';
+import { Mail, Phone, ChevronRight, Clock, Gift, AlertCircle, Check, Globe, Instagram, Facebook, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/logo';
@@ -23,7 +23,7 @@ interface PlayFlowProps {
   segments: WheelSegment[];
 }
 
-type Step = 'welcome' | 'email' | 'wheel' | 'result' | 'locked';
+type Step = 'welcome' | 'wheel' | 'email' | 'result';
 
 interface SpinResult {
   id: string;
@@ -40,8 +40,6 @@ interface SpinResult {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const COOLDOWN_DAYS = 7;
-const MIN_GOOGLE_SECONDS = 15;
-const GOOD_GOOGLE_SECONDS = 30;
 
 function getStorageKey(slug: string) {
   return `revieww_spin_${slug}`;
@@ -84,7 +82,7 @@ function ReviewwFooter({ variant = 'light', className = '' }: { variant?: 'light
       rel="noopener noreferrer"
       className={`font-body text-[10px] transition-colors inline-flex items-center gap-1 ${colors} ${className}`}
     >
-      Chaque avis positif aide un commerce local <span className={heartColor}>&#10084;</span> revieww.ch
+      Fait avec <span className={heartColor}>&#10084;</span> en Suisse &middot; revieww.ch
     </a>
   );
 }
@@ -131,6 +129,21 @@ function TikTokIcon({ size = 16, className = '' }: { size?: number; className?: 
 }
 
 // ---------------------------------------------------------------------------
+// Google icon for review CTA
+// ---------------------------------------------------------------------------
+
+function GoogleIcon({ size = 18, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className={className}>
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Social links row (reusable for welcome + result)
 // ---------------------------------------------------------------------------
 
@@ -154,6 +167,9 @@ function SocialLinks({ business, variant = 'light' }: { business: Business; vari
     const raw = business.tiktok_url;
     const url = raw.startsWith('http') ? raw : `https://tiktok.com/@${raw.replace(/^@/, '')}`;
     links.push({ url, icon: <TikTokIcon size={16} />, label: 'TikTok' });
+  }
+  if (business.google_review_link) {
+    links.push({ url: business.google_review_link, icon: <GoogleIcon size={16} />, label: 'Google' });
   }
 
   if (links.length === 0) return null;
@@ -185,41 +201,23 @@ function SocialLinks({ business, variant = 'light' }: { business: Business; vari
 // ---------------------------------------------------------------------------
 
 export function PlayFlow({ business, segments }: PlayFlowProps) {
-  const isLotteryFirst = business.flow_type === 'lottery_first';
-
-  // ---- Dynamic step order ----
+  // ---- Fixed step order: pure lottery flow ----
   const stepOrder: Step[] = useMemo(() => {
-    if (isLotteryFirst) {
-      if (business.require_review) {
-        return ['welcome', 'wheel', 'locked', 'email', 'result'];
-      }
-      // No review required: skip locked step entirely
-      return ['welcome', 'wheel', 'email', 'result'];
-    }
-    return ['welcome', 'email', 'wheel', 'result'];
-  }, [isLotteryFirst, business.require_review]);
+    return ['welcome', 'wheel', 'email', 'result'];
+  }, []);
 
   // ---- State ----
   const [step, setStep] = useState<Step>('welcome');
   const [direction, setDirection] = useState(1);
   const [alreadyPlayed, setAlreadyPlayed] = useState(false);
 
-  // Lottery-first: reservation token + locked prize
+  // Reservation token + prize
   const [reserveToken, setReserveToken] = useState<string | null>(null);
   const [lockedPrize, setLockedPrize] = useState<{
     label: string;
     emoji: string;
     is_winning: boolean;
   } | null>(null);
-
-  // Waiting state after Google click
-  const [googleClicked, setGoogleClicked] = useState(false);
-  const [countdown, setCountdown] = useState(15);
-  const [countdownDone, setCountdownDone] = useState(false);
-  const [selectedStars, setSelectedStars] = useState(0);
-  const [timeOnGoogle, setTimeOnGoogle] = useState(0);
-  const googleClickTimeRef = useRef<number | null>(null);
-  const visibilityRef = useRef<number | null>(null);
 
   // Email form
   const [email, setEmail] = useState('');
@@ -285,78 +283,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     [step, stepOrder]
   );
 
-  // ---- Countdown timer after Google click ----
-  useEffect(() => {
-    if (!googleClicked) return;
-    if (countdown <= 0) {
-      setCountdownDone(true);
-      return;
-    }
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setCountdownDone(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [googleClicked]);
-
-  // ---- Visibility API for Google review time tracking ----
-  useEffect(() => {
-    function handleVisibilityChange() {
-      if (!googleClicked) return;
-
-      if (document.hidden) {
-        visibilityRef.current = Date.now();
-      } else {
-        if (visibilityRef.current) {
-          const awaySeconds = Math.round(
-            (Date.now() - visibilityRef.current) / 1000
-          );
-          setTimeOnGoogle(awaySeconds);
-          visibilityRef.current = null;
-
-          if (awaySeconds >= MIN_GOOGLE_SECONDS) {
-            setCountdownDone(true);
-          }
-        }
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () =>
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [googleClicked]);
-
-  // ---- Handlers ----
-
-  function handleGoogleClick() {
-    if (!business.google_review_link) return;
-    googleClickTimeRef.current = Date.now();
-    visibilityRef.current = Date.now();
-    setGoogleClicked(true);
-    window.open(business.google_review_link, '_blank', 'noopener');
-  }
-
-  function handleConfirmReview() {
-    goTo('email');
-  }
-
-  function calculateConfidenceScore(): number {
-    let score = 0;
-    if (googleClickTimeRef.current) score += 20;
-    if (timeOnGoogle >= GOOD_GOOGLE_SECONDS) score += 30;
-    score += 30;
-    if (selectedStars > 0) score += 20;
-    return score;
-  }
-
-  // ---- Lottery-first: reserve a spin (stateless token) ----
+  // ---- Reserve a spin ----
   async function handleReserveSpin() {
     setSubmitting(true);
     setApiError(null);
@@ -403,7 +330,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     }
   }
 
-  // ---- Review-first: submit email + spin ----
+  // ---- Submit email + confirm spin ----
   async function handleSpinSubmit() {
     if (!EMAIL_REGEX.test(email)) {
       setEmailError('Veuillez entrer un email valide');
@@ -414,8 +341,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     setApiError(null);
 
     try {
-      // Lottery-first: confirm with token
-      if (isLotteryFirst && reserveToken) {
+      if (reserveToken) {
         const res = await fetch('/api/spin/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -424,9 +350,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
             email,
             phone: phone || null,
             optedInMarketing: optedIn,
-            confidenceScore: calculateConfidenceScore(),
-            timeOnGoogleSeconds: timeOnGoogle,
-            selfReportedStars: selectedStars || null,
+            confidenceScore: 0,
+            timeOnGoogleSeconds: null,
+            selfReportedStars: null,
           }),
         });
 
@@ -456,7 +382,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
         saveSpin(business.slug);
         goTo('result');
       } else {
-        // Review-first: original flow
+        // Fallback: direct spin (shouldn't happen in normal flow)
         const res = await fetch('/api/spin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -465,9 +391,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
             email,
             phone: phone || null,
             optedInMarketing: optedIn,
-            confidenceScore: calculateConfidenceScore(),
-            timeOnGoogleSeconds: timeOnGoogle,
-            selfReportedStars: selectedStars || null,
+            confidenceScore: 0,
+            timeOnGoogleSeconds: null,
+            selfReportedStars: null,
           }),
         });
 
@@ -508,11 +434,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
 
   function handleSpinEnd() {
     setSpinning(false);
-
-    if (!isLotteryFirst) {
-      saveSpin(business.slug);
-    }
-
     // Trigger emoji explosion
     setShowExplosion(true);
   }
@@ -521,17 +442,8 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     setShowExplosion(false);
     setTimeout(() => {
       setShowResult(true);
-      if (isLotteryFirst) {
-        if (business.require_review) {
-          // Both winners and losers go through locked (review) step
-          goTo('locked');
-        } else {
-          // No review required: skip locked, go direct to email
-          goTo('email');
-        }
-      } else {
-        goTo('result');
-      }
+      // After wheel → go to email step
+      goTo('email');
     }, 300);
   }
 
@@ -680,16 +592,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                       {business.name}
                     </h1>
 
-                    {business.google_review_count > 0 && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Star size={12} className="text-amber-400 fill-amber-400" />
-                        <span className="text-xs font-body text-white/70">
-                          {business.google_rating ? `${business.google_rating} · ` : ''}
-                          {business.google_review_count} avis Google
-                        </span>
-                      </div>
-                    )}
-
                     {business.phone && (
                       <a
                         href={`tel:${business.phone}`}
@@ -708,254 +610,64 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                 </div>
               </motion.div>
 
-              {isLotteryFirst && !googleClicked ? (
-                /* ---- Lottery-first: CTA to spin the wheel ---- */
-                <>
-                  <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                    className="text-white/80 font-body text-base sm:text-lg mb-8 max-w-xs leading-relaxed"
-                  >
-                    {TEXTS.play.lotteryWelcome} 🎁
-                  </motion.p>
+              {/* CTA: Spin the wheel */}
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="text-white/80 font-body text-base sm:text-lg mb-8 max-w-xs leading-relaxed"
+              >
+                {TEXTS.play.welcome} 🎁
+              </motion.p>
 
-                  {/* API error in welcome (lottery_first) */}
-                  <AnimatePresence>
-                    {apiError && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden w-full mb-4"
-                      >
-                        <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-2xl px-4 py-3">
-                          <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
-                          <p className="text-sm font-body">{apiError}</p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
+              {/* API error in welcome */}
+              <AnimatePresence>
+                {apiError && (
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                    className="w-full"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden w-full mb-4"
                   >
-                    <button
-                      onClick={handleReserveSpin}
-                      disabled={submitting}
-                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
-                        flex items-center justify-center gap-3
-                        hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer
-                        disabled:opacity-60 disabled:cursor-not-allowed"
-                      style={{
-                        background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
-                        boxShadow: `0 8px 32px ${business.primary_color}66`,
-                      }}
-                    >
-                      {submitting ? (
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                          className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
-                        />
-                      ) : (
-                        <>
-                          🎡 {TEXTS.play.lotteryCta}
-                        </>
-                      )}
-                    </button>
-                  </motion.div>
-                </>
-              ) : !googleClicked ? (
-                /* ---- Review-first: CTA to leave Google review ---- */
-                <>
-                  <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                    className="text-white/80 font-body text-base sm:text-lg mb-8 max-w-xs leading-relaxed"
-                  >
-                    {TEXTS.play.welcome} 🎁
-                  </motion.p>
-
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                    className="w-full"
-                  >
-                    <button
-                      onClick={handleGoogleClick}
-                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
-                        flex items-center justify-center gap-3
-                        hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
-                      style={{
-                        background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
-                        boxShadow: `0 8px 32px ${business.primary_color}66`,
-                      }}
-                    >
-                      <Star className="w-5 h-5 fill-current" />
-                      {TEXTS.play.cta}
-                    </button>
-                  </motion.div>
-
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.6, duration: 0.5 }}
-                    className="mt-5 text-white/50 font-body text-xs max-w-xs leading-relaxed"
-                  >
-                    Après avoir laissé votre avis, revenez ici pour tourner la roue
-                  </motion.p>
-                </>
-              ) : (
-                /* ---- Waiting state: countdown ring + micro-copy + stars ---- */
-                <>
-                  {/* Progress ring */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    className="relative w-32 h-32 mb-6"
-                  >
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="52"
-                        fill="none"
-                        stroke="rgba(255,255,255,0.15)"
-                        strokeWidth="8"
-                      />
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="52"
-                        fill="none"
-                        stroke={countdownDone ? '#10B981' : 'white'}
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        strokeDasharray={2 * Math.PI * 52}
-                        strokeDashoffset={2 * Math.PI * 52 * (countdown / 15)}
-                        className="transition-all duration-1000 ease-linear"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      {countdownDone ? (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                        >
-                          <Check className="w-8 h-8 text-success" />
-                        </motion.div>
-                      ) : (
-                        <>
-                          <span className="text-2xl font-display font-bold text-white">
-                            {countdown}
-                          </span>
-                          <span className="text-white/60 font-body text-[10px]">
-                            {TEXTS.play.waitingStatus}
-                          </span>
-                        </>
-                      )}
+                    <div className="flex items-start gap-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white rounded-2xl px-4 py-3">
+                      <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+                      <p className="text-sm font-body">{apiError}</p>
                     </div>
                   </motion.div>
+                )}
+              </AnimatePresence>
 
-                  {/* Rotating micro-copy */}
-                  <div className="h-12 mb-6 flex items-center justify-center">
-                    <AnimatePresence mode="wait">
-                      <motion.p
-                        key={
-                          countdown > 11 ? 0 :
-                          countdown > 7 ? 1 :
-                          countdown > 3 ? 2 : 3
-                        }
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                        className="text-white/80 font-body text-sm max-w-xs"
-                      >
-                        {TEXTS.play.waitingMessages[
-                          countdown > 11 ? 0 :
-                          countdown > 7 ? 1 :
-                          countdown > 3 ? 2 : 3
-                        ]}
-                      </motion.p>
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Inline star rating */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2, duration: 0.4 }}
-                    className="mb-2"
-                  >
-                    <p className="text-white/60 font-body text-xs mb-3">
-                      {TEXTS.play.starsQuestion}
-                    </p>
-                    <div className="flex items-center justify-center gap-3">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <motion.button
-                          key={star}
-                          onClick={() => setSelectedStars(star)}
-                          whileTap={{ scale: 0.85 }}
-                          animate={
-                            selectedStars >= star
-                              ? { scale: [1, 1.3, 1], rotate: [0, -10, 10, 0] }
-                              : { scale: 1 }
-                          }
-                          transition={{ duration: 0.3 }}
-                          className="cursor-pointer focus:outline-none"
-                        >
-                          <Star
-                            className={cn(
-                              'w-8 h-8 sm:w-10 sm:h-10 transition-colors duration-200',
-                              selectedStars >= star
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-white/30'
-                            )}
-                          />
-                        </motion.button>
-                      ))}
-                    </div>
-                  </motion.div>
-
-                  {/* Confirm button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.4 }}
-                    className="w-full mt-6"
-                  >
-                    <motion.button
-                      onClick={handleConfirmReview}
-                      disabled={!countdownDone}
-                      animate={countdownDone ? { scale: [1, 1.05, 1] } : {}}
-                      transition={countdownDone ? { duration: 0.4, repeat: 2 } : {}}
-                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
-                        flex items-center justify-center gap-3 transition-all duration-200 cursor-pointer
-                        disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
-                        hover:scale-[1.02] active:scale-[0.98]"
-                      style={{
-                        background: countdownDone
-                          ? 'linear-gradient(135deg, #10B981, #059669)'
-                          : 'rgba(255,255,255,0.1)',
-                        boxShadow: countdownDone
-                          ? '0 8px 32px rgba(16,185,129,0.4)'
-                          : 'none',
-                      }}
-                    >
-                      {TEXTS.play.confirmButton} ✅
-                    </motion.button>
-                  </motion.div>
-                </>
-              )}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="w-full"
+              >
+                <button
+                  onClick={handleReserveSpin}
+                  disabled={submitting}
+                  className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-2xl
+                    flex items-center justify-center gap-3
+                    hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer
+                    disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
+                    boxShadow: `0 8px 32px ${business.primary_color}66`,
+                  }}
+                >
+                  {submitting ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+                    />
+                  ) : (
+                    <>
+                      🎡 {TEXTS.play.cta}
+                    </>
+                  )}
+                </button>
+              </motion.div>
             </motion.div>
           )}
 
@@ -996,9 +708,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
               >
                 {lockedPrize && !lockedPrize.is_winning
                   ? TEXTS.play.lostEmailTitle
-                  : isLotteryFirst && !business.require_review
-                    ? `${TEXTS.play.noReviewEmailTitle} 🎉`
-                    : `${TEXTS.play.emailTitle} 🎉`}
+                  : `${TEXTS.play.noReviewEmailTitle} 🎉`}
               </motion.h2>
 
               <motion.p
@@ -1009,9 +719,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
               >
                 {lockedPrize && !lockedPrize.is_winning
                   ? TEXTS.play.lostEmailSubtitle
-                  : isLotteryFirst && !business.require_review
-                    ? TEXTS.play.noReviewEmailSubtitle
-                    : TEXTS.play.emailPlaceholder}
+                  : TEXTS.play.noReviewEmailSubtitle}
               </motion.p>
 
               {/* Form */}
@@ -1099,21 +807,14 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   disabled={!email || submitting}
                   className="w-full text-lg"
                 >
-                  {isLotteryFirst ? (
-                    lockedPrize && !lockedPrize.is_winning ? (
-                      <>
-                        {!submitting && TEXTS.play.lostEmailCta}
-                        {!submitting && <ChevronRight className="w-5 h-5" />}
-                      </>
-                    ) : (
-                      <>
-                        {!submitting && '🎁'} Débloquer mon cadeau
-                        {!submitting && <ChevronRight className="w-5 h-5" />}
-                      </>
-                    )
+                  {lockedPrize && !lockedPrize.is_winning ? (
+                    <>
+                      {!submitting && TEXTS.play.lostEmailCta}
+                      {!submitting && <ChevronRight className="w-5 h-5" />}
+                    </>
                   ) : (
                     <>
-                      {!submitting && '🎰'} {TEXTS.play.spinButton}
+                      {!submitting && '🎁'} Débloquer mon cadeau
                       {!submitting && <ChevronRight className="w-5 h-5" />}
                     </>
                   )}
@@ -1166,202 +867,6 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   />
                 )}
               </AnimatePresence>
-            </motion.div>
-          )}
-
-          {/* ================================================================
-              STEP: LOCKED (lottery_first only)
-              ================================================================ */}
-          {step === 'locked' && lockedPrize && (
-            <motion.div
-              key="locked"
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={slideTransition}
-              className="flex flex-col items-center text-center"
-            >
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                className="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm"
-              >
-                {lockedPrize.is_winning ? (
-                  /* ---- WINNER: Blurred emoji with lock overlay ---- */
-                  <div className="relative inline-block mb-4">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 15, delay: 0.2 }}
-                      className="text-6xl blur-sm select-none"
-                    >
-                      {lockedPrize.emoji}
-                    </motion.div>
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 15, delay: 0.4 }}
-                      className="absolute inset-0 flex items-center justify-center"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-text/80 flex items-center justify-center shadow-lg">
-                        <Lock className="w-6 h-6 text-white" />
-                      </div>
-                    </motion.div>
-                  </div>
-                ) : (
-                  /* ---- LOSER: Emoji visible, no lock ---- */
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 15, delay: 0.2 }}
-                    className="text-6xl mb-4"
-                  >
-                    {lockedPrize.emoji}
-                  </motion.div>
-                )}
-
-                <motion.h2
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-2xl font-display font-extrabold text-text mb-1"
-                >
-                  {lockedPrize.is_winning ? TEXTS.play.lockedTitle : TEXTS.play.lostLockedTitle}
-                </motion.h2>
-
-                {lockedPrize.is_winning && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-text-muted font-body text-sm mb-2"
-                  >
-                    {lockedPrize.emoji} {lockedPrize.label}
-                  </motion.p>
-                )}
-
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="text-text-muted font-body text-xs mb-6"
-                >
-                  {lockedPrize.is_winning ? TEXTS.play.lockedSubtitle : TEXTS.play.lostLockedSubtitle}
-                </motion.p>
-
-                {!googleClicked ? (
-                  /* ---- CTA: Leave a Google review ---- */
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="space-y-3"
-                  >
-                    <button
-                      onClick={handleGoogleClick}
-                      className="w-full py-4 px-8 rounded-2xl font-display font-bold text-lg text-white shadow-xl
-                        flex items-center justify-center gap-3
-                        hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
-                      style={{
-                        background: `linear-gradient(135deg, ${business.primary_color}, ${business.primary_color}dd)`,
-                        boxShadow: `0 8px 32px ${business.primary_color}66`,
-                      }}
-                    >
-                      <Star className="w-5 h-5 fill-current" />
-                      {lockedPrize.is_winning ? TEXTS.play.lockedCta : TEXTS.play.lostLockedCta}
-                    </button>
-
-                    {/* Loser can skip review immediately */}
-                    {!lockedPrize.is_winning && (
-                      <button
-                        onClick={() => goTo('email')}
-                        className="w-full py-3 px-6 rounded-xl font-display font-medium text-sm text-text-muted hover:text-text transition-colors cursor-pointer"
-                      >
-                        {TEXTS.play.lostLockedSkip}
-                      </button>
-                    )}
-                  </motion.div>
-                ) : (
-                  /* ---- Waiting + countdown after Google click ---- */
-                  <div className="space-y-4">
-                    {/* Mini progress ring */}
-                    <div className="flex justify-center">
-                      <div className="relative w-20 h-20">
-                        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                          <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="8" />
-                          <circle
-                            cx="60" cy="60" r="52" fill="none"
-                            stroke={countdownDone ? '#10B981' : business.primary_color}
-                            strokeWidth="8" strokeLinecap="round"
-                            strokeDasharray={2 * Math.PI * 52}
-                            strokeDashoffset={2 * Math.PI * 52 * (countdown / 15)}
-                            className="transition-all duration-1000 ease-linear"
-                          />
-                        </svg>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          {countdownDone ? (
-                            <Check className="w-6 h-6 text-success" />
-                          ) : (
-                            <span className="text-lg font-display font-bold text-text">{countdown}</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Star rating (inline) */}
-                    <div>
-                      <p className="text-text-muted font-body text-xs mb-2">
-                        {TEXTS.play.starsQuestion}
-                      </p>
-                      <div className="flex items-center justify-center gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button
-                            key={star}
-                            onClick={() => setSelectedStars(star)}
-                            className="cursor-pointer focus:outline-none"
-                          >
-                            <Star
-                              className={cn(
-                                'w-7 h-7 transition-colors duration-200',
-                                selectedStars >= star
-                                  ? 'text-yellow-400 fill-yellow-400'
-                                  : 'text-border'
-                              )}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Confirm review button */}
-                    <button
-                      onClick={handleConfirmReview}
-                      disabled={!countdownDone}
-                      className={cn(
-                        'w-full py-3 px-6 rounded-xl font-display font-bold text-base transition-all duration-200',
-                        countdownDone
-                          ? 'bg-success text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
-                          : 'bg-border/30 text-text-muted cursor-not-allowed'
-                      )}
-                    >
-                      {TEXTS.play.confirmButton} ✅
-                    </button>
-
-                    {/* Loser can skip review even during countdown */}
-                    {!lockedPrize.is_winning && (
-                      <button
-                        onClick={() => goTo('email')}
-                        className="w-full py-2 px-6 rounded-xl font-display font-medium text-sm text-text-muted hover:text-text transition-colors cursor-pointer"
-                      >
-                        {TEXTS.play.lostLockedSkip}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </motion.div>
             </motion.div>
           )}
 
@@ -1504,12 +1009,42 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     Valable 7 jours
                   </motion.p>
 
+                  {/* Google review CTA — prominent, but optional */}
+                  {business.google_review_link && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.9 }}
+                      className="mt-5 pt-4 border-t border-gray-100"
+                    >
+                      <p className="text-xs font-body text-text-muted mb-3">
+                        Votre expérience vous a plu ?
+                      </p>
+                      <a
+                        href={business.google_review_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl font-display font-bold text-sm
+                          bg-white border-2 border-gray-200 text-text shadow-sm
+                          hover:border-amber-300 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                      >
+                        <GoogleIcon size={20} />
+                        <span>Laisser un avis sur Google</span>
+                        <div className="flex gap-0.5 ml-1">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <Star key={i} size={12} className="text-amber-400 fill-amber-400" />
+                          ))}
+                        </div>
+                      </a>
+                    </motion.div>
+                  )}
+
                   {/* Social links — follow us */}
                   {(business.instagram_url || business.facebook_url || business.tiktok_url || business.website_url) && (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.9 }}
+                      transition={{ delay: 1.0 }}
                       className="mt-4 pt-3 border-t border-gray-100"
                     >
                       <p className="text-xs font-body text-text-muted mb-2">
@@ -1544,9 +1079,19 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   <h2 className="text-xl font-display font-bold text-text mb-2">
                     {TEXTS.play.lostTitle}
                   </h2>
-                  <p className="text-text-muted font-body text-sm">
+                  <p className="text-text-muted font-body text-sm mb-4">
                     {TEXTS.play.lostSubtitle} 😊
                   </p>
+
+                  {/* Social links for losers too */}
+                  {(business.instagram_url || business.facebook_url || business.tiktok_url || business.website_url || business.google_review_link) && (
+                    <div className="pt-3 border-t border-gray-200">
+                      <p className="text-xs font-body text-text-muted/70 mb-2">
+                        Suivez {business.name}
+                      </p>
+                      <SocialLinks business={business} variant="dark" />
+                    </div>
+                  )}
                 </motion.div>
               )}
 

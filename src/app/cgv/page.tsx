@@ -201,7 +201,7 @@ export default function CGVPage() {
             <p>
               <strong className="text-text">10.4 Plateformes tierces.</strong> Le Prestataire n&apos;est
               pas responsable des décisions de plateformes tierces (Google, Stripe, etc.), y compris la
-              suppression d&apos;avis, les restrictions de profils ou les indisponibilités externes.
+              suppression de contenus, les restrictions de profils ou les indisponibilités externes.
             </p>
           </section>
 

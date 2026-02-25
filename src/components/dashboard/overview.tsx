@@ -203,7 +203,7 @@ function MiniBarChart({ data }: { data: DailyCount[] }) {
           <div className="flex items-center gap-2">
             <BarChart3 size={18} className="text-primary" />
             <h3 className="text-sm font-display font-semibold text-text">
-              Avis ces 30 derniers jours
+              Activité ces 30 derniers jours
             </h3>
           </div>
         </div>
@@ -336,7 +336,7 @@ function RecentActivity({ spins }: { spins: Spin[] }) {
               Aucun spin pour le moment
             </p>
             <p className="text-xs text-text-muted/70 font-body mt-1">
-              Partagez votre QR code pour recevoir vos premiers avis !
+              Partagez votre QR code pour recevoir vos premiers spins !
             </p>
           </div>
         )}
@@ -638,7 +638,7 @@ function ActivationHero({ business }: { business: Business }) {
 
   // Editable sharing message
   const qrPublicUrl = `${APP_URL}/qr/${business.slug}`;
-  const defaultMessage = `Salut l'equipe !\n\nOn met en place revieww pour ${business.name}. Nos clients pourront laisser un avis Google et gagner un cadeau grace a une roue de la fortune.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nVoici le QR code a presenter aux clients : ${qrPublicUrl}\nLien direct vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en cliquant sur le lien !`;
+  const defaultMessage = `Salut l'equipe !\n\nOn met en place revieww pour ${business.name}. Nos clients pourront tourner la roue de la fortune et gagner un cadeau.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, tournent la roue et decouvrent leur lot\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nVoici le QR code a presenter aux clients : ${qrPublicUrl}\nLien direct vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en cliquant sur le lien !`;
   const [shareMessage, setShareMessage] = useState(defaultMessage);
   const [editingMessage, setEditingMessage] = useState(false);
 
@@ -696,7 +696,7 @@ function ActivationHero({ business }: { business: Business }) {
   };
 
   const sendEmail = () => {
-    const subject = encodeURIComponent(`revieww \u2014 syst\u00e8me d'avis pour ${business.name}`);
+    const subject = encodeURIComponent(`revieww \u2014 animation commerciale pour ${business.name}`);
     const body = encodeURIComponent(shareMessage);
     window.open(`mailto:?subject=${subject}&body=${body}`);
     markDone(1);
@@ -745,7 +745,7 @@ function ActivationHero({ business }: { business: Business }) {
       num: 2,
       icon: Disc3,
       title: 'D\u00e9couvrez votre dashboard',
-      subtitle: 'Personnalisez votre roue, t\u00e9l\u00e9chargez le QR et suivez vos avis',
+      subtitle: 'Personnalisez votre roue, t\u00e9l\u00e9chargez le QR et suivez votre activit\u00e9',
     },
   ];
 
@@ -786,7 +786,7 @@ function ActivationHero({ business }: { business: Business }) {
               </h2>
               <p className="text-sm text-text-muted font-body">
                 {allDone
-                  ? 'Partagez votre QR code et collectez des avis'
+                  ? 'Partagez votre QR code et lancez votre animation'
                   : `${completedSteps.size}/3 \u00e9tapes compl\u00e9t\u00e9es`}
               </p>
             </div>
@@ -1041,7 +1041,7 @@ function ActivationHero({ business }: { business: Business }) {
                         {[
                           { icon: Disc3, label: 'Ma Roue', desc: 'Personnalisez vos lots', href: '/dashboard/wheel' },
                           { icon: QrCode, label: 'Mon QR Code', desc: 'T\u00e9l\u00e9chargez et imprimez', href: '/dashboard/qrcode' },
-                          { icon: Users, label: 'Avis & Contacts', desc: 'Suivez vos avis et emails', href: '/dashboard/clients' },
+                          { icon: Users, label: 'Fichier client', desc: 'Vos contacts pour newsletters et campagnes', href: '/dashboard/clients' },
                           { icon: ShieldCheck, label: 'Valider un lot', desc: 'V\u00e9rifiez les codes gagnants', href: '/dashboard/validate' },
                         ].map((item) => {
                           const ItemIcon = item.icon;
@@ -1109,7 +1109,7 @@ function ActivationHero({ business }: { business: Business }) {
 
               <div className="text-center">
                 <p className="font-display font-bold text-text text-lg mb-1">{business.name}</p>
-                <p className="font-body text-text-muted text-xs mb-5">Scannez pour laisser un avis et gagner un cadeau</p>
+                <p className="font-body text-text-muted text-xs mb-5">Scannez pour jouer et gagner un cadeau</p>
                 <img src={qrDataUrl} alt="QR Code" className="w-64 h-64 mx-auto rounded-xl" />
                 <p className="font-mono text-[10px] text-text-muted/60 mt-3 truncate">{playUrl}</p>
               </div>
@@ -1217,7 +1217,7 @@ export function DashboardOverview({
               icon={Star}
               iconColor="#FF6B35"
               value={stats.reviewsThisMonth}
-              label="Avis ce mois"
+              label="Lots gagnés"
               trend={reviewsTrend}
               delay={0.05}
             />

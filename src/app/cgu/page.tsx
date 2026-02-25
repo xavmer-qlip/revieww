@@ -18,7 +18,7 @@ export default function CGUPage() {
           Conditions générales d&apos;utilisation (CGU)
         </h1>
         <p className="text-sm font-body text-text-muted mb-8">
-          Dernière mise à jour : 25 février 2026 — Version 1.0
+          Dernière mise à jour : 25 février 2026 — Version 1.1
         </p>
 
         <div className="font-body text-text-muted space-y-8 text-sm leading-relaxed">
@@ -80,20 +80,20 @@ export default function CGUPage() {
               et identifier clairement l&apos;expéditeur (art. 3 al. 1 let. o LCD, recommandations PFPDT).
             </p>
             <p className="mb-2">
-              <strong className="text-text">4.3 Conformité Google Reviews.</strong> Il est
-              <strong className="text-text"> strictement interdit</strong> :
+              <strong className="text-text">4.3 Réseaux sociaux et liens tiers.</strong> Le Service permet
+              d&apos;afficher des liens vers des plateformes tierces (Google, Instagram, Facebook, etc.) à titre
+              informatif. Ces liens sont optionnels et ne conditionnent en aucun cas la participation au jeu
+              ou l&apos;obtention d&apos;un lot. Il est <strong className="text-text">strictement interdit</strong> :
             </p>
             <ul className="list-disc pl-5 space-y-1 mb-2">
-              <li>d&apos;offrir un lot, avantage, rabais ou gratuité <em>en échange</em> d&apos;un avis Google ;</li>
-              <li>de conditionner l&apos;obtention ou la remise d&apos;un lot à la publication, modification ou suppression d&apos;un avis ;</li>
-              <li>de mentionner une récompense dans une sollicitation d&apos;avis Google ;</li>
+              <li>d&apos;offrir un lot en échange d&apos;un avis en ligne ;</li>
+              <li>de conditionner un lot à la publication, modification ou suppression d&apos;un avis ;</li>
+              <li>de mentionner une récompense dans une sollicitation d&apos;avis ;</li>
               <li>d&apos;orienter les clients pour obtenir uniquement des avis positifs.</li>
             </ul>
             <p className="mb-2">
-              Le jeu concours et les lots sont présentés comme une animation distincte. Toute demande
-              d&apos;avis Google doit rester neutre, optionnelle et dépourvue de référence au jeu ou aux lots.
-              Google qualifie toute incitation en échange d&apos;avis de « fake engagement », passible de
-              restrictions sur le profil Google Business.
+              Le jeu concours et les lots sont une animation commerciale indépendante de toute plateforme
+              d&apos;avis.
             </p>
             <p className="mb-2">
               <strong className="text-text">4.4 Anti-fraude.</strong> Il est interdit de générer des
@@ -163,7 +163,7 @@ export default function CGUPage() {
             <h2 className="text-base font-display font-semibold text-text mb-2">8. Suspension et résiliation</h2>
             <p className="mb-2">
               qlip sàrl peut suspendre l&apos;accès au Service en cas de : non-paiement, risque de
-              sécurité, suspicion de fraude, violation des CGU ou violation répétée des règles Google Reviews.
+              sécurité, suspicion de fraude, violation des CGU ou violation des règles des plateformes tierces.
             </p>
             <p>
               En cas de violation grave, la suspension peut être immédiate, sans préavis.
@@ -188,7 +188,7 @@ export default function CGUPage() {
               <Link href="/cgv" className="text-primary hover:underline">Conditions générales de vente</Link>.
             </p>
             <p>
-              qlip sàrl ne garantit aucun résultat en termes d&apos;avis Google (volume, note, publication)
+              qlip sàrl ne garantit aucun résultat en termes d&apos;engagement, de volume de participations ou d&apos;impact commercial
               et n&apos;est pas responsable des décisions des plateformes tierces.
             </p>
           </section>

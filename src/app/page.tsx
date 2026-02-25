@@ -12,7 +12,6 @@ import {
 } from 'motion/react';
 import {
   QrCode,
-  Star,
   Gift,
   Check,
   ArrowRight,
@@ -105,7 +104,7 @@ function Phone({ children, className }: { children: React.ReactNode; className?:
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   PHONE SCREENS — Google Review Flow
+   PHONE SCREENS — Scan → Wheel → Result
    ═══════════════════════════════════════════════════════════════════════════ */
 function ScreenScanQR() {
   return (
@@ -118,73 +117,24 @@ function ScreenScanQR() {
       </div>
       <h3 className="font-display font-bold text-[15px] text-gray-900 mb-1.5">Pizzeria Da Marco</h3>
       <p className="font-body text-[11px] text-gray-400 mb-5 leading-relaxed">
-        Donnez votre avis<br />et tentez de gagner un cadeau !
+        Tournez la roue<br />et tentez de gagner un cadeau !
       </p>
       <div
         className="w-full font-display font-bold text-[13px] py-3 rounded-2xl shadow-md text-white text-center mb-3"
         style={{ background: `linear-gradient(90deg, ${C.coral}, #e66a5f)` }}
       >
-        Laisser un avis Google
+        Tourner la roue !
       </div>
       <p className="font-body text-[10px] text-gray-300">Prend moins de 30 secondes</p>
     </div>
   );
 }
 
-function ScreenGoogleReview() {
-  return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Google header */}
-      <div className="px-4 pt-6 pb-3 border-b border-gray-100">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-            <span className="text-white text-[10px] font-bold">G</span>
-          </div>
-          <div>
-            <p className="font-body text-[11px] font-semibold text-gray-800">Google Avis</p>
-            <p className="font-body text-[9px] text-gray-400">Pizzeria Da Marco</p>
-          </div>
-        </div>
-      </div>
-      {/* Stars */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
-        <p className="font-body text-[13px] text-gray-700 mb-5 text-center">Quelle note donnez-vous ?</p>
-        <div className="flex gap-2 mb-6">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <motion.div
-              key={i}
-              initial={{ scale: 0, rotateZ: -20 }}
-              animate={{ scale: 1, rotateZ: 0 }}
-              transition={{ delay: 0.3 + i * 0.12, type: 'spring', stiffness: 400 }}
-            >
-              <Star
-                className="w-8 h-8"
-                style={{ fill: i <= 5 ? '#FBBC04' : '#e5e7eb', color: i <= 5 ? '#FBBC04' : '#e5e7eb' }}
-              />
-            </motion.div>
-          ))}
-        </div>
-        <div className="w-full rounded-xl border border-gray-200 p-3 mb-4">
-          <motion.p
-            className="font-body text-[11px] text-gray-400"
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            Super pizza, service top...|
-          </motion.p>
-        </div>
-        <div className="w-full bg-blue-500 text-white font-display font-semibold text-[12px] py-2.5 rounded-xl text-center">
-          Publier
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function ScreenWheel() {
   return (
     <div className="h-full flex flex-col items-center justify-center px-5" style={{ background: 'linear-gradient(180deg, #fffde7 0%, #ffffff 100%)' }}>
-      <p className="font-display font-bold text-[13px] text-gray-900 mb-4">Merci pour votre avis !</p>
+      <p className="font-display font-bold text-[13px] text-gray-900 mb-4">C&apos;est parti !</p>
       <div className="relative w-40 h-40 mb-5">
         <motion.div
           animate={{ rotate: 360 }}
@@ -227,7 +177,6 @@ function CyclingPhones() {
   const [step, setStep] = useState(0);
   const screens = [
     { component: <ScreenScanQR />, label: 'Scan QR' },
-    { component: <ScreenGoogleReview />, label: 'Avis Google' },
     { component: <ScreenWheel />, label: 'Roue' },
     { component: <ScreenResult />, label: 'Cadeau' },
   ];
@@ -451,9 +400,9 @@ function HeroSection() {
               className="font-display font-extrabold text-[clamp(2.4rem,5.5vw,4.2rem)] leading-[1.08] tracking-[-0.03em] mb-6"
               style={{ color: C.text }}
             >
-              Transformez chaque client
+              Transformez chaque visite
               <br />en{' '}
-              <span style={{ color: C.coral }}>ambassadeur.</span>
+              <span style={{ color: C.coral }}>moment de jeu.</span>
             </motion.h1>
 
             <motion.p
@@ -463,31 +412,19 @@ function HeroSection() {
               className="font-body text-[17px] leading-relaxed mb-8 max-w-md"
               style={{ color: C.muted }}
             >
-              Un QR code sur la table. Votre client laisse un avis Google, tourne la roue, repart avec un cadeau. Vous, vous récupérez son email et un avis 5 étoiles.
+              Un QR code sur la table. Votre client tourne la roue, gagne un cadeau, et vous laisse son email. Fidélisation, engagement, contacts qualifiés.
             </motion.p>
 
-            {/* Google 5-star badge */}
+            {/* Fidélisation badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
               className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border mb-8"
-              style={{ borderColor: 'rgba(255,235,59,0.2)', background: 'rgba(255,235,59,0.06)' }}
+              style={{ borderColor: `${C.coral}30`, background: `${C.coral}08` }}
             >
-              <div className="flex gap-0.5">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <motion.span
-                    key={i}
-                    initial={{ opacity: 0, scale: 0, rotateZ: -30 }}
-                    animate={{ opacity: 1, scale: 1, rotateZ: 0 }}
-                    transition={{ delay: 0.15 + i * 0.07, type: 'spring', stiffness: 400, damping: 15 }}
-                  >
-                    <Star className="w-4 h-4" style={{ fill: C.yellow, color: C.yellow }} />
-                  </motion.span>
-                ))}
-              </div>
-              <span className="font-display font-bold text-sm" style={{ color: C.yellow }}>5.0</span>
-              <span className="font-body text-xs" style={{ color: C.muted }}>c&apos;est le but</span>
+              <Gift className="w-4 h-4" style={{ color: C.coral }} />
+              <span className="font-display font-bold text-sm" style={{ color: C.coral }}>Fidélisation & engagement</span>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }} className="flex flex-wrap gap-3 items-center mb-8">
@@ -560,8 +497,8 @@ function HowItWorksSection() {
   const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   const steps = [
     { icon: QrCode, num: '01', title: 'Scannez', desc: 'Un QR code sur vos tables, au comptoir ou dans l\'addition. Le client scanne avec son téléphone.', color: C.coral },
-    { icon: Star, num: '02', title: 'Avis Google', desc: 'Il est redirigé vers votre fiche Google. 30 secondes pour laisser un avis.', color: C.yellow },
-    { icon: Gift, num: '03', title: 'Roue & Cadeau', desc: 'Il tourne la roue, gagne un lot, et vous laisse son email. Tout le monde y gagne.', color: C.sky },
+    { icon: Gift, num: '02', title: 'Roue & Cadeau', desc: 'Il tourne la roue, découvre son lot instantanément.', color: C.yellow },
+    { icon: Mail, num: '03', title: 'Email & Contact', desc: 'Vous récupérez son email pour vos futures campagnes.', color: C.sky },
   ];
   return (
     <section id="how" className="py-28 sm:py-36" style={{ background: C.bg }}>
@@ -649,7 +586,7 @@ function ReviewCounterSection() {
             </motion.span>
           </div>
           <p className="font-body text-lg mb-2" style={{ color: C.muted }}>
-            avis Google déposés grâce à <span className="font-display font-bold" style={{ color: C.text }}>revieww</span>
+            participations via <span className="font-display font-bold" style={{ color: C.text }}>revieww</span>
           </p>
           <p className="font-body text-sm" style={{ color: `${C.muted}80` }}>
             et ça continue de grimper
@@ -688,7 +625,7 @@ function FeaturesSection() {
     {
       icon: BarChart3,
       title: 'Dashboard complet',
-      desc: 'Avis, contacts, spins, taux de conversion. Tout est mesuré. Vous savez exactement ce que revieww vous rapporte.',
+      desc: 'Contacts, spins, lots gagnés, taux de conversion. Tout est mesuré. Vous savez exactement ce que revieww vous rapporte.',
       color: C.green,
     },
   ];
@@ -1171,19 +1108,19 @@ function FAQSection() {
   const faqs = [
     {
       q: 'Comment ça fonctionne concrètement ?',
-      a: 'Vous créez votre compte, entrez le nom de votre commerce (on récupère automatiquement votre fiche Google), personnalisez votre roue avec vos lots, et imprimez le QR code. Vos clients le scannent, laissent un avis Google, puis tournent la roue pour gagner un cadeau. Vous récupérez leur email au passage.',
+      a: 'Vous créez votre compte, entrez le nom de votre commerce (on récupère automatiquement votre fiche Google), personnalisez votre roue avec vos lots, et imprimez le QR code. Vos clients scannent le QR, tournent la roue, gagnent un cadeau et vous laissent leur email.',
     },
     {
       q: 'Combien de temps prend la mise en place ?',
       a: 'Moins d\'une minute. Entrez le nom de votre établissement, notre outil récupère tout via l\'API Google (adresse, horaires, lien avis). Choisissez vos lots — on vous guide avec des recommandations — et c\'est prêt.',
     },
     {
-      q: 'Est-ce que les avis sont vérifiés ?',
-      a: 'Oui. Notre système détecte si le client a réellement passé du temps sur Google pour laisser un avis grâce à la Page Visibility API. Un score de confiance est calculé automatiquement.',
+      q: 'Faut-il un avis Google pour jouer ?',
+      a: 'Non. Le jeu est totalement indépendant des avis Google. Vos clients jouent, gagnent, et vous laissent leur email.',
     },
     {
-      q: 'Est-ce conforme aux règles de Google ?',
-      a: 'revieww n\'incite pas à laisser un avis positif. On motive le client à laisser un avis — quelle que soit la note. C\'est conforme aux guidelines Google.',
+      q: 'Comment fidéliser mes clients ?',
+      a: 'Chaque participation = un contact. Utilisez-les pour vos campagnes marketing et vos offres.',
     },
     {
       q: 'Que se passe-t-il avec les emails collectés ?',
@@ -1199,7 +1136,7 @@ function FAQSection() {
     },
     {
       q: 'C\'est adapté à quel type de commerce ?',
-      a: 'Restaurants, cafés, salons de coiffure, spas, escape games, boutiques, bars, fitness... Tout commerce qui reçoit des clients sur place et veut booster ses avis Google.',
+      a: 'Restaurants, cafés, salons de coiffure, spas, escape games, boutiques, bars, fitness... Tout commerce qui reçoit des clients sur place et veut fidéliser ses clients et animer son point de vente.',
     },
   ];
 
@@ -1247,8 +1184,8 @@ function FinalCTASection() {
       <div ref={sectionRef} className="max-w-3xl mx-auto px-6 text-center relative z-10">
         <motion.div initial={{ opacity: 0, y: 40, scale: 0.92 }} animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 0.92 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl mb-6 leading-tight" style={{ color: C.text }}>
-            Prêt à récolter{' '}
-            <span style={{ color: C.coral }}>des avis ?</span>
+            Prêt à animer{' '}
+            <span style={{ color: C.coral }}>votre commerce ?</span>
           </h2>
           <p className="font-body text-lg mb-10 max-w-md mx-auto" style={{ color: C.muted }}>
             1 minute pour s&apos;inscrire. 30 spins offerts. 0 raison d&apos;hésiter.
@@ -1281,7 +1218,7 @@ function Footer() {
           <div>
             <Logo size="sm" variant="light" animate />
             <p className="font-body text-[13px] mt-4 leading-relaxed max-w-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-              Plus d&apos;avis Google. Plus de clients. Plus de fidélité.
+              Plus d&apos;engagement. Plus de contacts. Plus de fidélité.
             </p>
           </div>
           {[
