@@ -556,6 +556,8 @@ function SocialProofBar() {
    HOW IT WORKS
    ═══════════════════════════════════════════════════════════════════════════ */
 function HowItWorksSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   const steps = [
     { icon: QrCode, num: '01', title: 'Scannez', desc: 'Un QR code sur vos tables, au comptoir ou dans l\'addition. Le client scanne avec son téléphone.', color: C.coral },
     { icon: Star, num: '02', title: 'Avis Google', desc: 'Il est redirigé vers votre fiche Google. 30 secondes pour laisser un avis.', color: C.yellow },
@@ -563,8 +565,13 @@ function HowItWorksSection() {
   ];
   return (
     <section id="how" className="py-28 sm:py-36" style={{ background: C.bg }}>
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-20">
+      <div ref={sectionRef} className="max-w-6xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-20"
+        >
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Comment ça marche</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl" style={{ color: C.text }}>
             Trois étapes.{' '}
@@ -577,9 +584,8 @@ function HowItWorksSection() {
             <motion.div
               key={s.num}
               initial={{ opacity: 0, y: 40, scale: 0.92 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.1 }}
-              transition={{ duration: 0.6, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
+              animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 0.92 }}
+              transition={{ duration: 0.6, delay: inView ? i * 0.15 : 0, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: 1.03, y: -4 }}
             >
               <div
@@ -617,18 +623,18 @@ function ReviewCounterSection() {
   const baseCount = 12847;
   const liveCount = useLiveCounter(baseCount);
   const countRef = useCountUp(baseCount, 3);
-  const inView = useInView(useRef(null), { once: true });
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.1 });
 
   return (
     <section className="py-20 relative overflow-hidden" style={{ background: C.surface }}>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[150px]" style={{ background: C.coralGlow }} />
       </div>
-      <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
+      <div ref={sectionRef} className="max-w-4xl mx-auto px-6 text-center relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 30, scale: 0.9 }}
-          whileInView={{ opacity: 1, y: 0, scale: 1 }}
-          viewport={{ once: true, amount: 0.15 }}
+          animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.9 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-6" style={{ color: C.coral }}>En temps réel</p>
@@ -658,6 +664,8 @@ function ReviewCounterSection() {
    FEATURES / PILLARS
    ═══════════════════════════════════════════════════════════════════════════ */
 function FeaturesSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   const features = [
     {
       icon: Clock,
@@ -687,8 +695,13 @@ function FeaturesSection() {
 
   return (
     <section className="py-28 sm:py-36" style={{ background: C.bg }}>
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-16">
+      <div ref={sectionRef} className="max-w-6xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.sky }}>Fonctionnalités</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
             Tout ce qu&apos;il faut.{' '}
@@ -704,9 +717,8 @@ function FeaturesSection() {
             <motion.div
               key={f.title}
               initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.1 }}
-              transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.95 }}
+              transition={{ duration: 0.6, delay: inView ? i * 0.1 : 0, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: 1.02, y: -3 }}
             >
               <div className="rounded-2xl p-7 h-full border transition-all duration-300" style={{ background: C.surface, borderColor: C.border }}
@@ -726,9 +738,8 @@ function FeaturesSection() {
         {/* Integration logos bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: inView ? 0.4 : 0 }}
           className="mt-12 text-center"
         >
           <p className="font-body text-[13px] mb-4" style={{ color: `${C.muted}60` }}>S&apos;intègre avec vos outils</p>
@@ -753,18 +764,19 @@ function FeaturesSection() {
    LOCAL VISION — Future teaser
    ═══════════════════════════════════════════════════════════════════════════ */
 function LocalVisionSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   return (
     <section className="py-28 sm:py-36 relative overflow-hidden" style={{ background: C.surface }}>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[150px]" style={{ background: C.skyGlow }} />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[130px]" style={{ background: C.yellowGlow }} />
       </div>
-      <div className="max-w-5xl mx-auto px-6 relative z-10">
+      <div ref={sectionRef} className="max-w-5xl mx-auto px-6 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.15 }}
+            animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
             <span
@@ -790,9 +802,8 @@ function LocalVisionSection() {
           </motion.div>
           <motion.div
             initial={{ opacity: 0, x: 30, scale: 0.95 }}
-            whileInView={{ opacity: 1, x: 0, scale: 1 }}
-            viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            animate={inView ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: 30, scale: 0.95 }}
+            transition={{ duration: 0.7, delay: inView ? 0.15 : 0, ease: [0.16, 1, 0.3, 1] }}
             className="flex justify-center"
           >
             <div className="relative">
@@ -828,9 +839,8 @@ function LocalVisionSection() {
                         top: `calc(50% + ${Math.sin(rad) * radius}px - 28px)`,
                       }}
                       initial={{ opacity: 0, scale: 0 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.3 + node.delay * 0.2, type: 'spring', stiffness: 200 }}
+                      animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0 }}
+                      transition={{ delay: inView ? 0.3 + node.delay * 0.2 : 0, type: 'spring', stiffness: 200 }}
                     >
                       <span className="text-xl">{node.emoji}</span>
                     </motion.div>
@@ -851,9 +861,8 @@ function LocalVisionSection() {
                         strokeWidth="1"
                         strokeDasharray="4 4"
                         initial={{ pathLength: 0 }}
-                        whileInView={{ pathLength: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.5 + i * 0.15, duration: 0.8 }}
+                        animate={inView ? { pathLength: 1 } : { pathLength: 0 }}
+                        transition={{ delay: inView ? 0.5 + i * 0.15 : 0, duration: 0.8 }}
                       />
                     );
                   })}
@@ -871,6 +880,8 @@ function LocalVisionSection() {
    DEMO — Interactive Wheel
    ═══════════════════════════════════════════════════════════════════════════ */
 function DemoSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<{ emoji: string; label: string } | null>(null);
   const [rotation, setRotation] = useState(0);
@@ -896,10 +907,10 @@ function DemoSection() {
 
   return (
     <section id="demo" className="py-28 sm:py-36" style={{ background: C.bg }}>
-      <div className="max-w-6xl mx-auto px-6">
+      <div ref={sectionRef} className="max-w-6xl mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Wheel */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.7 }} className="flex justify-center order-2 lg:order-1">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }} transition={{ duration: 0.7 }} className="flex justify-center order-2 lg:order-1">
             <div className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px]">
               <div className="absolute inset-[-10%] rounded-full blur-[50px]" style={{ background: C.coralGlow }} />
               <div
@@ -947,7 +958,7 @@ function DemoSection() {
           </motion.div>
 
           {/* Copy */}
-          <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="order-1 lg:order-2">
+          <motion.div initial={{ opacity: 0, x: 30 }} animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }} transition={{ duration: 0.6, delay: inView ? 0.1 : 0 }} className="order-1 lg:order-2">
             <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Essayez maintenant</p>
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
               Votre client voit{' '}
@@ -997,10 +1008,17 @@ function DemoSection() {
    PRICING
    ═══════════════════════════════════════════════════════════════════════════ */
 function PricingSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   return (
     <section id="pricing" className="py-28 sm:py-36" style={{ background: C.surface }}>
-      <div className="max-w-6xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-16">
+      <div ref={sectionRef} className="max-w-6xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.yellow }}>Tarifs</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
             Simple.{' '}
@@ -1014,9 +1032,8 @@ function PricingSection() {
         {/* Free plan highlight */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.5 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.5, delay: inView ? 0.1 : 0 }}
           className="max-w-lg mx-auto mb-10"
         >
           <div className="rounded-2xl p-6 text-center border" style={{ background: C.bg, borderColor: C.border }}>
@@ -1043,9 +1060,8 @@ function PricingSection() {
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 30, scale: 0.92 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: true, amount: 0.1 }}
-              transition={{ duration: 0.6, delay: i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+              animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 30, scale: 0.92 }}
+              transition={{ duration: 0.6, delay: inView ? 0.15 + i * 0.12 : 0, ease: [0.16, 1, 0.3, 1] }}
               whileHover={{ scale: plan.popular ? 1.04 : 1.02, y: -6 }}
             >
               <div
@@ -1150,6 +1166,8 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 function FAQSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   const faqs = [
     {
       q: 'Comment ça fonctionne concrètement ?',
@@ -1187,8 +1205,13 @@ function FAQSection() {
 
   return (
     <section id="faq" className="py-28 sm:py-36" style={{ background: C.bg }}>
-      <div className="max-w-3xl mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.6 }} className="text-center mb-14">
+      <div ref={sectionRef} className="max-w-3xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-14"
+        >
           <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.yellow }}>FAQ</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl" style={{ color: C.text }}>
             Questions{' '}
@@ -1197,9 +1220,8 @@ function FAQSection() {
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: inView ? 0.1 : 0 }}
         >
           {faqs.map((faq) => (
             <FAQItem key={faq.q} q={faq.q} a={faq.a} />
@@ -1214,14 +1236,16 @@ function FAQSection() {
    FINAL CTA
    ═══════════════════════════════════════════════════════════════════════════ */
 function FinalCTASection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.1 });
   return (
     <section className="py-28 sm:py-36 relative overflow-hidden" style={{ background: C.surface }}>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full blur-[130px]" style={{ background: C.coralGlow }} />
         <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[300px] h-[300px] rounded-full blur-[100px]" style={{ background: C.skyGlow }} />
       </div>
-      <div className="max-w-3xl mx-auto px-6 text-center relative z-10">
-        <motion.div initial={{ opacity: 0, y: 40, scale: 0.92 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+      <div ref={sectionRef} className="max-w-3xl mx-auto px-6 text-center relative z-10">
+        <motion.div initial={{ opacity: 0, y: 40, scale: 0.92 }} animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 0.92 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl mb-6 leading-tight" style={{ color: C.text }}>
             Prêt à récolter{' '}
             <span style={{ color: C.coral }}>des avis ?</span>
