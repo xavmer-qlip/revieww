@@ -18,18 +18,17 @@ const sizes = {
   xl: 'text-6xl',
 };
 
-// 2D wheel spin: 6 full rotations with progressive deceleration, then idle
-const wheelRotation = [0, 360, 720, 1080, 1440, 1800, 1980, 2160, 2160];
-const wheelScale = [1, 1.2, 1.25, 1.2, 1.15, 1.08, 1.02, 1, 1];
-const glowOpacity = [0, 0.8, 1, 0.9, 0.6, 0.3, 0.1, 0, 0];
-// Non-linear timing: fast rotations early, slower at end → deceleration feel
-const wheelTimes = [0, 0.05, 0.1, 0.16, 0.23, 0.31, 0.37, 0.42, 1];
+// Spinning indicator: 6 full rotations decelerating, then idle
+const spinRotation = [0, 360, 720, 1080, 1440, 1800, 1980, 2160, 2160];
+const spinOpacity = [0, 0.85, 1, 0.9, 0.7, 0.4, 0.15, 0, 0];
+const letterScale = [1, 1.08, 1.12, 1.1, 1.06, 1.02, 1.01, 1, 1];
+const spinTimes = [0, 0.05, 0.1, 0.16, 0.23, 0.31, 0.37, 0.42, 1];
 
-const wheelTransition = {
+const spinTransition = {
   duration: 5,
   repeat: Infinity,
   ease: 'linear' as const,
-  times: wheelTimes,
+  times: spinTimes,
 };
 
 export function Logo({
@@ -50,8 +49,8 @@ export function Logo({
         w
         {shouldAnimate ? (
           <>
-            <SpinningO variant={variant} delay={0} />
-            <SpinningO variant={variant} delay={0.3} />
+            <SpinningO delay={0} />
+            <SpinningO delay={0.3} />
           </>
         ) : (
           <span>oo</span>
@@ -62,35 +61,41 @@ export function Logo({
   );
 }
 
-function SpinningO({ variant, delay }: { variant: 'dark' | 'light'; delay: number }) {
-  // Glow matches text color: dark text on light bg, white on dark bg
-  const glowColor = variant === 'dark'
-    ? 'rgba(26, 26, 46, 0.4)'
-    : 'rgba(255, 255, 255, 0.5)';
-
+function SpinningO({ delay }: { delay: number }) {
   return (
     <span className="relative inline-block">
-      {/* The spinning letter */}
+      {/* The letter stays fixed — subtle scale pulse */}
       <motion.span
         className="inline-block origin-center"
         style={{ color: 'inherit' }}
-        animate={{
-          rotate: wheelRotation,
-          scale: wheelScale,
-        }}
-        transition={{ ...wheelTransition, delay }}
+        animate={{ scale: letterScale }}
+        transition={{ ...spinTransition, delay }}
       >
         o
       </motion.span>
-      {/* Glow ring behind — visible during spin, fades out when stopped */}
+
+      {/* Spinning indicator — triangle/arrow at the top of the "o" that orbits around */}
       <motion.span
-        className="absolute inset-[-15%] rounded-full pointer-events-none"
-        style={{
-          boxShadow: `0 0 10px 3px ${glowColor}, inset 0 0 6px 1px ${glowColor}`,
+        className="absolute inset-[-5%] pointer-events-none"
+        style={{ color: 'inherit' }}
+        animate={{
+          rotate: spinRotation,
+          opacity: spinOpacity,
         }}
-        animate={{ opacity: glowOpacity }}
-        transition={{ ...wheelTransition, delay }}
-      />
+        transition={{ ...spinTransition, delay }}
+      >
+        {/* Small triangle pointing inward at 12 o'clock position */}
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full"
+          style={{ color: 'inherit' }}
+        >
+          <polygon
+            points="50,8 44,0 56,0"
+            fill="currentColor"
+          />
+        </svg>
+      </motion.span>
     </span>
   );
 }
