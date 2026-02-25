@@ -21,7 +21,7 @@ const sizes = {
 // Spinning indicator: 6 full rotations decelerating, then idle
 const spinRotation = [0, 360, 720, 1080, 1440, 1800, 1980, 2160, 2160];
 const spinOpacity = [0, 0.85, 1, 0.9, 0.7, 0.4, 0.15, 0, 0];
-const letterScale = [1, 1.08, 1.12, 1.1, 1.06, 1.02, 1.01, 1, 1];
+const letterScale = [1, 1.25, 1.35, 1.3, 1.2, 1.1, 1.03, 1, 1];
 const spinTimes = [0, 0.05, 0.1, 0.16, 0.23, 0.31, 0.37, 0.42, 1];
 
 const spinTransition = {
