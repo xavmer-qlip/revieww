@@ -15,7 +15,7 @@
 ```html
 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
   <div style="text-align:center;margin-bottom:24px;">
-    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">w<span style="color:#FF6B35;">oo</span>pla</span>
+    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">woopla</span>
   </div>
   <h1 style="font-size:22px;font-weight:bold;text-align:center;color:#1A1A2E;margin:0 0 8px;">
     Bienvenue !
@@ -47,7 +47,7 @@
 ```html
 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
   <div style="text-align:center;margin-bottom:24px;">
-    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">w<span style="color:#FF6B35;">oo</span>pla</span>
+    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">woopla</span>
   </div>
   <h1 style="font-size:22px;font-weight:bold;text-align:center;color:#1A1A2E;margin:0 0 8px;">
     Vous etes invite !
@@ -79,7 +79,7 @@
 ```html
 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
   <div style="text-align:center;margin-bottom:24px;">
-    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">w<span style="color:#FF6B35;">oo</span>pla</span>
+    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">woopla</span>
   </div>
   <h1 style="font-size:22px;font-weight:bold;text-align:center;color:#1A1A2E;margin:0 0 8px;">
     Votre lien de connexion
@@ -111,7 +111,7 @@
 ```html
 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
   <div style="text-align:center;margin-bottom:24px;">
-    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">w<span style="color:#FF6B35;">oo</span>pla</span>
+    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">woopla</span>
   </div>
   <h1 style="font-size:22px;font-weight:bold;text-align:center;color:#1A1A2E;margin:0 0 8px;">
     Changement d'email
@@ -143,7 +143,7 @@
 ```html
 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
   <div style="text-align:center;margin-bottom:24px;">
-    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">w<span style="color:#FF6B35;">oo</span>pla</span>
+    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">woopla</span>
   </div>
   <h1 style="font-size:22px;font-weight:bold;text-align:center;color:#1A1A2E;margin:0 0 8px;">
     Mot de passe oublie ?
@@ -175,7 +175,7 @@
 ```html
 <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
   <div style="text-align:center;margin-bottom:24px;">
-    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">w<span style="color:#FF6B35;">oo</span>pla</span>
+    <span style="font-size:32px;font-weight:800;color:#1A1A2E;letter-spacing:-0.5px;">woopla</span>
   </div>
   <h1 style="font-size:22px;font-weight:bold;text-align:center;color:#1A1A2E;margin:0 0 8px;">
     Verification requise
