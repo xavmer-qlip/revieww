@@ -42,6 +42,8 @@ export default function SignupPage() {
   const [googleReviewCount, setGoogleReviewCount] = useState(0);
   const [googleCategory, setGoogleCategory] = useState<string | null>(null);
   const [businessAddress, setBusinessAddress] = useState<string | null>(null);
+  const [businessPhone, setBusinessPhone] = useState<string | null>(null);
+  const [businessWebsite, setBusinessWebsite] = useState<string | null>(null);
 
   // Auth state
   const [email, setEmail] = useState('');
@@ -62,6 +64,8 @@ export default function SignupPage() {
     setGoogleReviewCount(details.review_count);
     setGoogleCategory(details.category);
     setBusinessAddress(details.address);
+    setBusinessPhone(details.phone ?? null);
+    setBusinessWebsite(details.website ?? null);
   }, []);
 
   const handlePlaceReset = useCallback(() => {
@@ -70,6 +74,8 @@ export default function SignupPage() {
     setGoogleReviewCount(0);
     setGoogleCategory(null);
     setBusinessAddress(null);
+    setBusinessPhone(null);
+    setBusinessWebsite(null);
   }, []);
 
   async function handleSubmit(e: FormEvent) {
@@ -107,6 +113,8 @@ export default function SignupPage() {
             google_category: googleCategory,
             google_review_link: googleReviewLink.trim() || null,
             business_address: businessAddress,
+            business_phone: businessPhone,
+            business_website: businessWebsite,
           },
           emailRedirectTo: `${APP_URL}/auth/callback?next=/onboarding`,
         },

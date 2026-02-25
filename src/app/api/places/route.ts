@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   try {
     const url = new URL('https://maps.googleapis.com/maps/api/place/details/json');
     url.searchParams.set('place_id', placeId);
-    url.searchParams.set('fields', 'name,formatted_address,rating,user_ratings_total,types,url');
+    url.searchParams.set('fields', 'name,formatted_address,rating,user_ratings_total,types,url,formatted_phone_number,website');
     url.searchParams.set('language', 'fr');
     url.searchParams.set('key', GOOGLE_API_KEY);
 
@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
       category: result.types?.[0] ?? null,
       google_maps_url: result.url ?? null,
       google_review_link: reviewLink,
+      phone: result.formatted_phone_number ?? null,
+      website: result.website ?? null,
     });
   } catch (error) {
     console.error('Place Details fetch error:', error);

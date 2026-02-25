@@ -30,7 +30,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, getQuotaPercentage, getQuotaColor, formatNumber } from '@/lib/utils';
-import { PLANS, PLAY_URL } from '@/lib/constants';
+import { PLANS, PLAY_URL, APP_URL } from '@/lib/constants';
 import type { Business, Spin, PlanType } from '@/lib/types';
 import QRCode from 'qrcode';
 
@@ -633,7 +633,8 @@ function ActivationHero({ business }: { business: Business }) {
   });
 
   // Editable sharing message
-  const defaultMessage = `Salut l'equipe !\n\nOn met en place revieww pour ${business.name}. Nos clients pourront laisser un avis Google et gagner un cadeau grace a une roue de la fortune.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nLien vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en scannant le QR ou en cliquant sur le lien !`;
+  const qrPublicUrl = `${APP_URL}/qr/${business.slug}`;
+  const defaultMessage = `Salut l'equipe !\n\nOn met en place revieww pour ${business.name}. Nos clients pourront laisser un avis Google et gagner un cadeau grace a une roue de la fortune.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nVoici le QR code a presenter aux clients : ${qrPublicUrl}\nLien direct vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en cliquant sur le lien !`;
   const [shareMessage, setShareMessage] = useState(defaultMessage);
   const [editingMessage, setEditingMessage] = useState(false);
 
@@ -944,7 +945,7 @@ function ActivationHero({ business }: { business: Business }) {
                               {'T\u00e9l\u00e9chargez le QR code'}
                             </p>
                             <p className="text-[10px] font-body text-text-muted mt-0.5">
-                              {'Joignez-le \u00e0 votre message pour que l\u2019\u00e9quipe puisse le partager aux clients'}
+                              {'Pour imprimer ou afficher dans votre commerce'}
                             </p>
                           </div>
                           <Button variant="primary" size="sm" onClick={handleDownloadQR} className="shrink-0">
@@ -997,7 +998,7 @@ function ActivationHero({ business }: { business: Business }) {
                           </Button>
                         </div>
                         <p className="text-[10px] font-body text-text-muted/60">
-                          {"N\u2019oubliez pas de joindre le QR code en pi\u00e8ce jointe \u00e0 votre message"}
+                          {"Le lien QR est inclus dans le message — WhatsApp affichera un aper\u00e7u automatiquement"}
                         </p>
                         {!isDone && (
                           <button

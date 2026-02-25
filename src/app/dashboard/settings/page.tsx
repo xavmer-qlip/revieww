@@ -21,6 +21,10 @@ import {
   Gamepad2,
   ChevronRight,
   Clock,
+  Phone,
+  Instagram,
+  Facebook,
+  Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -224,6 +228,11 @@ export default function SettingsPage() {
   const [flowType, setFlowType] = useState<FlowType>('lottery_first');
   const [requireReview, setRequireReview] = useState(true);
   const [prizeValidityDays, setPrizeValidityDays] = useState(7);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [tiktokUrl, setTiktokUrl] = useState('');
 
   // ---- Toast helpers ----
   const addToast = useCallback((type: Toast['type'], message: string) => {
@@ -264,6 +273,11 @@ export default function SettingsPage() {
           setFlowType(data.flow_type || 'lottery_first');
           setRequireReview(data.require_review ?? true);
           setPrizeValidityDays(data.prize_validity_days ?? 7);
+          setPhoneNumber(data.phone || '');
+          setWebsiteUrl(data.website_url || '');
+          setInstagramUrl(data.instagram_url || '');
+          setFacebookUrl(data.facebook_url || '');
+          setTiktokUrl(data.tiktok_url || '');
         }
       } catch (err) {
         console.error('Failed to load settings:', err);
@@ -364,6 +378,11 @@ export default function SettingsPage() {
           flow_type: flowType,
           require_review: requireReview,
           prize_validity_days: prizeValidityDays,
+          phone: phoneNumber.trim() || null,
+          website_url: websiteUrl.trim() || null,
+          instagram_url: instagramUrl.trim() || null,
+          facebook_url: facebookUrl.trim() || null,
+          tiktok_url: tiktokUrl.trim() || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', business.id);
@@ -395,6 +414,11 @@ export default function SettingsPage() {
     flowType,
     requireReview,
     prizeValidityDays,
+    phoneNumber,
+    websiteUrl,
+    instagramUrl,
+    facebookUrl,
+    tiktokUrl,
     supabase,
     addToast,
   ]);
@@ -545,6 +569,74 @@ export default function SettingsPage() {
             Collez le lien direct vers la page d&apos;avis Google de votre
             commerce
           </p>
+        </Card>
+      </motion.div>
+
+      {/* ================================================================
+          SECTION 2b: Reseaux sociaux & web
+          ================================================================ */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.17 }}
+      >
+        <Card padding="lg">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Share2 size={20} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="text-base font-display font-semibold text-text">
+                Reseaux sociaux & web
+              </h2>
+              <p className="text-xs font-body text-text-muted">
+                Vos liens apparaitront sur la page client et dans les emails
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <Input
+              id="phone-number"
+              label="Telephone"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+41 21 123 45 67"
+              icon={<Phone size={16} />}
+            />
+            <Input
+              id="website-url"
+              label="Site web"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              placeholder="https://moncommerce.ch"
+              icon={<Globe size={16} />}
+            />
+            <Input
+              id="instagram-url"
+              label="Instagram"
+              value={instagramUrl}
+              onChange={(e) => setInstagramUrl(e.target.value)}
+              placeholder="@moncommerce ou https://instagram.com/moncommerce"
+              icon={<Instagram size={16} />}
+            />
+            <Input
+              id="facebook-url"
+              label="Facebook"
+              value={facebookUrl}
+              onChange={(e) => setFacebookUrl(e.target.value)}
+              placeholder="https://facebook.com/moncommerce"
+              icon={<Facebook size={16} />}
+            />
+            <Input
+              id="tiktok-url"
+              label="TikTok"
+              value={tiktokUrl}
+              onChange={(e) => setTiktokUrl(e.target.value)}
+              placeholder="@moncommerce"
+              icon={<Share2 size={16} />}
+            />
+          </div>
         </Card>
       </motion.div>
 

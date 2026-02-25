@@ -8,6 +8,40 @@ interface PrizeWonEmailParams {
   prizeLabel: string;
   promoCode?: string | null;
   validationCode?: string | null;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
+  tiktokUrl?: string | null;
+  websiteUrl?: string | null;
+}
+
+function buildSocialSection(businessName: string, params: Pick<PrizeWonEmailParams, 'instagramUrl' | 'facebookUrl' | 'tiktokUrl' | 'websiteUrl'>): string {
+  const links: string[] = [];
+
+  if (params.instagramUrl) {
+    const url = params.instagramUrl.startsWith('http') ? params.instagramUrl : `https://instagram.com/${params.instagramUrl.replace(/^@/, '')}`;
+    links.push(`<a href="${url}" style="color:#FF6B35;text-decoration:none;">Instagram</a>`);
+  }
+  if (params.facebookUrl) {
+    const url = params.facebookUrl.startsWith('http') ? params.facebookUrl : `https://facebook.com/${params.facebookUrl}`;
+    links.push(`<a href="${url}" style="color:#FF6B35;text-decoration:none;">Facebook</a>`);
+  }
+  if (params.tiktokUrl) {
+    const url = params.tiktokUrl.startsWith('http') ? params.tiktokUrl : `https://tiktok.com/@${params.tiktokUrl.replace(/^@/, '')}`;
+    links.push(`<a href="${url}" style="color:#FF6B35;text-decoration:none;">TikTok</a>`);
+  }
+  if (params.websiteUrl) {
+    const url = params.websiteUrl.startsWith('http') ? params.websiteUrl : `https://${params.websiteUrl}`;
+    links.push(`<a href="${url}" style="color:#FF6B35;text-decoration:none;">Site web</a>`);
+  }
+
+  if (links.length === 0) return '';
+
+  return `
+    <div style="text-align:center;margin-top:24px;padding:16px;background:#f9fafb;border-radius:12px;">
+      <p style="margin:0 0 8px;font-size:13px;color:#6b7280;">Suivez <strong style="color:#1A1A2E;">${businessName}</strong></p>
+      <p style="margin:0;font-size:13px;">${links.join(' &middot; ')}</p>
+    </div>
+  `;
 }
 
 export async function sendPrizeWonEmail({
@@ -17,6 +51,10 @@ export async function sendPrizeWonEmail({
   prizeLabel,
   promoCode,
   validationCode,
+  instagramUrl,
+  facebookUrl,
+  tiktokUrl,
+  websiteUrl,
 }: PrizeWonEmailParams) {
   const resend = getResend();
 
@@ -35,6 +73,8 @@ export async function sendPrizeWonEmail({
         <a href="${APP_URL}/validate/${validationCode}" style="display:inline-block;margin-top:12px;padding:8px 20px;background:#3B82F6;color:white;text-decoration:none;border-radius:8px;font-size:13px;font-weight:bold;">Voir mon lot</a>
       </div>`
     : '';
+
+  const socialSection = buildSocialSection(businessName, { instagramUrl, facebookUrl, tiktokUrl, websiteUrl });
 
   const html = `
     <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
@@ -58,6 +98,7 @@ export async function sendPrizeWonEmail({
       <p style="font-size:13px;color:#9ca3af;text-align:center;margin-top:24px;">
         Presentez ce code en caisse pour recuperer votre cadeau.
       </p>
+      ${socialSection}
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
       <p style="font-size:11px;color:#9ca3af;text-align:center;">
         Envoye par <a href="https://revieww.ch" style="color:#FF6B35;text-decoration:none;">revieww.ch</a>

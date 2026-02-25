@@ -33,6 +33,8 @@ export interface PlaceDetails {
   review_count: number;
   category: string | null;
   google_review_link: string;
+  phone?: string | null;
+  website?: string | null;
 }
 
 interface PlaceSearchProps {

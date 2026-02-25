@@ -745,6 +745,8 @@ export default function OnboardingPage() {
                 google_category: data.google_category,
                 google_review_link: data.google_review_link,
                 business_address: data.business_address,
+                business_phone: data.business_phone,
+                business_website: data.business_website,
               },
             });
           }
@@ -906,6 +908,8 @@ export default function OnboardingPage() {
             google_review_count: (meta.google_review_count as number) ?? 0,
             google_business_category: (meta.google_category as string) || null,
             address: (meta.business_address as string) || null,
+            phone: (meta.business_phone as string) || null,
+            website_url: (meta.business_website as string) || null,
             plan_type: 'free',
             monthly_spin_limit: spinLimit,
             contact_limit: contactLimit,

@@ -149,6 +149,10 @@ export async function POST(request: NextRequest) {
           prizeLabel: typedSegment.label,
           promoCode: typedSegment.promo_code,
           validationCode,
+          instagramUrl: business.instagram_url,
+          facebookUrl: business.facebook_url,
+          tiktokUrl: business.tiktok_url,
+          websiteUrl: business.website_url,
         });
       } catch (err) {
         console.error('Prize email error:', err);

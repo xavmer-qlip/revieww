@@ -13,6 +13,10 @@ export interface Business {
   secondary_color: string;
   address: string | null;
   phone: string | null;
+  website_url: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  tiktok_url: string | null;
   created_at: string;
   updated_at: string;
   stripe_customer_id: string | null;

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Phone, Star, ChevronRight, Clock, Gift, AlertCircle, Check, Lock } from 'lucide-react';
+import { Mail, Phone, Star, ChevronRight, Clock, Gift, AlertCircle, Check, Lock, Globe, Instagram, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/logo';
@@ -117,6 +117,68 @@ const slideTransition = {
   damping: 30,
   mass: 0.8,
 };
+
+// ---------------------------------------------------------------------------
+// TikTok icon (lucide-react doesn't include it)
+// ---------------------------------------------------------------------------
+
+function TikTokIcon({ size = 16, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+    </svg>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Social links row (reusable for welcome + result)
+// ---------------------------------------------------------------------------
+
+function SocialLinks({ business, variant = 'light' }: { business: Business; variant?: 'light' | 'dark' }) {
+  const links: { url: string; icon: React.ReactNode; label: string }[] = [];
+
+  if (business.website_url) {
+    const url = business.website_url.startsWith('http') ? business.website_url : `https://${business.website_url}`;
+    links.push({ url, icon: <Globe size={16} />, label: 'Site web' });
+  }
+  if (business.instagram_url) {
+    const raw = business.instagram_url;
+    const url = raw.startsWith('http') ? raw : `https://instagram.com/${raw.replace(/^@/, '')}`;
+    links.push({ url, icon: <Instagram size={16} />, label: 'Instagram' });
+  }
+  if (business.facebook_url) {
+    const url = business.facebook_url.startsWith('http') ? business.facebook_url : `https://facebook.com/${business.facebook_url}`;
+    links.push({ url, icon: <Facebook size={16} />, label: 'Facebook' });
+  }
+  if (business.tiktok_url) {
+    const raw = business.tiktok_url;
+    const url = raw.startsWith('http') ? raw : `https://tiktok.com/@${raw.replace(/^@/, '')}`;
+    links.push({ url, icon: <TikTokIcon size={16} />, label: 'TikTok' });
+  }
+
+  if (links.length === 0) return null;
+
+  const iconClass = variant === 'light'
+    ? 'w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-white/80 hover:bg-white/25 hover:text-white transition-all'
+    : 'w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-all';
+
+  return (
+    <div className="flex items-center justify-center gap-2">
+      {links.map((link) => (
+        <a
+          key={link.label}
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={iconClass}
+          title={link.label}
+        >
+          {link.icon}
+        </a>
+      ))}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // PlayFlow Component
@@ -565,62 +627,86 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
               transition={slideTransition}
               className="flex flex-col items-center text-center"
             >
-              {/* Business photo / logo / initials */}
+              {/* Business card */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.5 }}
-                className="mb-6"
+                className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6 w-full max-w-xs border border-white/15"
               >
-                {business.logo_url ? (
-                  <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20">
-                    <Image
-                      src={business.logo_url}
-                      alt={business.name}
-                      width={96}
-                      height={96}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : business.google_place_id ? (
-                  <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/api/places/photo?placeId=${business.google_place_id}`}
-                      alt={business.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        // Fallback to initials if photo fails
-                        const target = e.currentTarget;
-                        target.style.display = 'none';
-                        const parent = target.parentElement;
-                        if (parent) {
-                          parent.className = 'w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl border-4 border-white/20 text-white font-display font-bold text-2xl';
-                          parent.style.backgroundColor = business.primary_color;
-                          parent.textContent = getInitials(business.name);
-                        }
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl border-4 border-white/20 text-white font-display font-bold text-2xl"
-                    style={{ backgroundColor: business.primary_color }}
-                  >
-                    {getInitials(business.name)}
-                  </div>
-                )}
-              </motion.div>
+                <div className="flex items-center gap-3">
+                  {/* Photo */}
+                  {business.logo_url ? (
+                    <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0">
+                      <Image
+                        src={business.logo_url}
+                        alt={business.name}
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : business.google_place_id ? (
+                    <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg border-2 border-white/20 shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`/api/places/photo?placeId=${business.google_place_id}`}
+                        alt={business.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.className = 'w-14 h-14 rounded-xl flex items-center justify-center shadow-lg border-2 border-white/20 text-white font-display font-bold text-lg shrink-0';
+                            parent.style.backgroundColor = business.primary_color;
+                            parent.textContent = getInitials(business.name);
+                          }
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-14 h-14 rounded-xl flex items-center justify-center shadow-lg border-2 border-white/20 text-white font-display font-bold text-lg shrink-0"
+                      style={{ backgroundColor: business.primary_color }}
+                    >
+                      {getInitials(business.name)}
+                    </div>
+                  )}
 
-              {/* Business name */}
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="text-2xl sm:text-3xl font-display font-extrabold text-white mb-3"
-              >
-                {business.name}
-              </motion.h1>
+                  {/* Info */}
+                  <div className="min-w-0 flex-1 text-left">
+                    <h1 className="text-lg font-display font-extrabold text-white truncate">
+                      {business.name}
+                    </h1>
+
+                    {business.google_review_count > 0 && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star size={12} className="text-amber-400 fill-amber-400" />
+                        <span className="text-xs font-body text-white/70">
+                          {business.google_rating ? `${business.google_rating} · ` : ''}
+                          {business.google_review_count} avis Google
+                        </span>
+                      </div>
+                    )}
+
+                    {business.phone && (
+                      <a
+                        href={`tel:${business.phone}`}
+                        className="flex items-center gap-1 mt-0.5 text-white/60 hover:text-white/90 transition-colors"
+                      >
+                        <Phone size={11} />
+                        <span className="text-xs font-body">{business.phone}</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {/* Social links */}
+                <div className="mt-3">
+                  <SocialLinks business={business} variant="light" />
+                </div>
+              </motion.div>
 
               {isLotteryFirst && !googleClicked ? (
                 /* ---- Lottery-first: CTA to spin the wheel ---- */
@@ -1417,6 +1503,21 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   >
                     Valable 7 jours
                   </motion.p>
+
+                  {/* Social links — follow us */}
+                  {(business.instagram_url || business.facebook_url || business.tiktok_url || business.website_url) && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.9 }}
+                      className="mt-4 pt-3 border-t border-gray-100"
+                    >
+                      <p className="text-xs font-body text-text-muted mb-2">
+                        Suivez {business.name}
+                      </p>
+                      <SocialLinks business={business} variant="dark" />
+                    </motion.div>
+                  )}
                 </motion.div>
               ) : (
                 // ---- LOSER ----
