@@ -520,7 +520,7 @@ export default function SettingsPage() {
               />
               <p className="text-[11px] font-body text-text-muted flex items-center gap-1.5 pl-1">
                 <Link2 size={11} />
-                https://revieww.ch/play/{slug || '...'}
+                https://woopla.ch/play/{slug || '...'}
               </p>
             </div>
 

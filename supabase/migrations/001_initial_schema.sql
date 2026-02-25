@@ -1,5 +1,5 @@
 -- ============================================================
--- revieww — Initial schema
+-- woopla — Initial schema
 -- Tables: businesses, wheel_segments, spins
 -- ============================================================
 

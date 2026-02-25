@@ -586,7 +586,7 @@ function ReviewCounterSection() {
             </motion.span>
           </div>
           <p className="font-body text-lg mb-2" style={{ color: C.muted }}>
-            participations via <span className="font-display font-bold" style={{ color: C.text }}>revieww</span>
+            participations via <span className="font-display font-bold" style={{ color: C.text }}>woopla</span>
           </p>
           <p className="font-body text-sm" style={{ color: `${C.muted}80` }}>
             et ça continue de grimper
@@ -625,7 +625,7 @@ function FeaturesSection() {
     {
       icon: BarChart3,
       title: 'Dashboard complet',
-      desc: 'Contacts, spins, lots gagnés, taux de conversion. Tout est mesuré. Vous savez exactement ce que revieww vous rapporte.',
+      desc: 'Contacts, spins, lots gagnés, taux de conversion. Tout est mesuré. Vous savez exactement ce que woopla vous rapporte.',
       color: C.green,
     },
   ];
@@ -1240,8 +1240,8 @@ function Footer() {
           ))}
           <div>
             <h4 className="font-display font-bold text-[11px] uppercase tracking-wider mb-4" style={{ color: C.muted }}>Contact</h4>
-            <a href="mailto:hello@revieww.ch" className="inline-flex items-center gap-2 font-body text-[13px] transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.25)' }}>
-              <Mail className="w-3.5 h-3.5" />hello@revieww.ch
+            <a href="mailto:hello@woopla.ch" className="inline-flex items-center gap-2 font-body text-[13px] transition-colors hover:text-white" style={{ color: 'rgba(255,255,255,0.25)' }}>
+              <Mail className="w-3.5 h-3.5" />hello@woopla.ch
             </a>
           </div>
         </div>

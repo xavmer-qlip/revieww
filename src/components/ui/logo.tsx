@@ -18,6 +18,18 @@ const sizes = {
   xl: 'text-6xl',
 };
 
+const spinAnimation = {
+  rotateX: [0, 0, 0, 360, 360],
+  scale: [1, 1, 1, 1.1, 1],
+};
+
+const spinTransition = {
+  duration: 4,
+  repeat: Infinity,
+  ease: 'easeInOut' as const,
+  times: [0, 0.5, 0.6, 0.8, 1],
+};
+
 export function Logo({
   size = 'md',
   className,
@@ -32,28 +44,32 @@ export function Logo({
           sizes[size],
           variant === 'dark' ? 'text-text' : 'text-white'
         )}
+        style={{ perspective: '200px' }}
       >
-        review
+        w
         {shouldAnimate ? (
-          <motion.span
-            className="inline-block origin-center"
-            style={{ color: 'inherit' }}
-            animate={{
-              rotateY: [0, 0, 0, 360, 360],
-              scale: [1, 1, 1, 1.1, 1],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              times: [0, 0.5, 0.6, 0.8, 1],
-            }}
-          >
-            w
-          </motion.span>
+          <>
+            <motion.span
+              className="inline-block origin-center"
+              style={{ color: 'inherit' }}
+              animate={spinAnimation}
+              transition={spinTransition}
+            >
+              o
+            </motion.span>
+            <motion.span
+              className="inline-block origin-center"
+              style={{ color: 'inherit' }}
+              animate={spinAnimation}
+              transition={{ ...spinTransition, delay: 0.2 }}
+            >
+              o
+            </motion.span>
+          </>
         ) : (
-          <span>w</span>
+          <span>oo</span>
         )}
+        pla
       </span>
     </div>
   );

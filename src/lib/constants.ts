@@ -110,11 +110,11 @@ export function mapGoogleCategoryToSector(googleCategory: string | null): Sector
 // App constants
 // ---------------------------------------------------------------------------
 
-export const APP_NAME = 'revieww';
-export const APP_TAGLINE = 'play & win';
-export const APP_DOMAIN = 'revieww.ch';
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://revieww.ch';
-export const PLAY_URL = process.env.NEXT_PUBLIC_PLAY_URL || 'https://play.revieww.ch';
+export const APP_NAME = 'woopla';
+export const APP_TAGLINE = 'spin & win';
+export const APP_DOMAIN = 'woopla.ch';
+export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://woopla.ch';
+export const PLAY_URL = process.env.NEXT_PUBLIC_PLAY_URL || 'https://play.woopla.ch';
 
 export const FREE_PLAN: Plan = {
   id: 'free',
@@ -254,7 +254,7 @@ export const TEXTS = {
   hero: {
     title: 'Fidélisez vos clients.',
     subtitle: 'Vos clients adorent jouer.',
-    description: 'revieww transforme chaque visite en une chance de gagner',
+    description: 'woopla transforme chaque visite en une chance de gagner',
     cta: 'Commencer gratuitement',
   },
   howItWorks: {
@@ -266,7 +266,7 @@ export const TEXTS = {
     ],
   },
   stats: {
-    reviews: 'Participations via revieww',
+    reviews: 'Participations via woopla',
     retention: 'Commerçants actifs',
     emails: 'Emails collectés',
   },
@@ -282,7 +282,7 @@ export const TEXTS = {
     ],
   },
   footer: {
-    copyright: `© ${new Date().getFullYear()} revieww.ch`,
+    copyright: `© ${new Date().getFullYear()} woopla.ch`,
   },
   play: {
     welcome: 'Tournez la roue et tentez de gagner un cadeau !',

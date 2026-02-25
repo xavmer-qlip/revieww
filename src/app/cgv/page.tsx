@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
 
 export const metadata = {
-  title: 'Conditions générales de vente — revieww',
-  description: 'CGV du service SaaS revieww.ch — qlip sàrl, Genève',
+  title: 'Conditions générales de vente — woopla',
+  description: 'CGV du service SaaS woopla.ch — qlip sàrl, Genève',
 };
 
 export default function CGVPage() {
@@ -29,7 +29,7 @@ export default function CGVPage() {
             <p className="mb-2">
               <strong className="text-text">1.1 Prestataire (éditeur du Service)</strong><br />
               qlip sàrl, Rue du Grand-Bureau 11, 1227 Les Acacias, Suisse.<br />
-              Email : <a href="mailto:hello@revieww.ch" className="text-primary hover:underline">hello@revieww.ch</a><br />
+              Email : <a href="mailto:hello@woopla.ch" className="text-primary hover:underline">hello@woopla.ch</a><br />
               (ci-après « Prestataire »)
             </p>
             <p className="mb-2">
@@ -73,7 +73,7 @@ export default function CGVPage() {
           <section>
             <h2 className="text-base font-display font-semibold text-text mb-2">4. Souscription</h2>
             <p>
-              La souscription se fait en ligne via le site revieww.ch. Le contrat entre en vigueur à la
+              La souscription se fait en ligne via le site woopla.ch. Le contrat entre en vigueur à la
               date d&apos;acceptation en ligne (« click »), de création du compte ou d&apos;activation du
               Service, la première de ces dates prévalant. Conformément aux exigences SECO en matière
               de commerce électronique, les étapes de souscription sont clairement présentées, avec
@@ -177,7 +177,7 @@ export default function CGVPage() {
             <p>
               Le Prestataire peut effectuer des maintenances (annoncées dans la mesure du possible).
               Aucun SLA n&apos;est garanti sauf accord spécifique. Le support est fourni par email
-              à <a href="mailto:hello@revieww.ch" className="text-primary hover:underline">hello@revieww.ch</a>.
+              à <a href="mailto:hello@woopla.ch" className="text-primary hover:underline">hello@woopla.ch</a>.
             </p>
           </section>
 

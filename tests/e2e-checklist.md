@@ -1,19 +1,19 @@
-# revieww — Checklist de test E2E
+# woopla — Checklist de test E2E
 
 ## Personas de test
 
 ### Persona 1 : Marie (Commercante)
-- **Email** : `marie.test@revieww.ch`
+- **Email** : `marie.test@woopla.ch`
 - **Mot de passe** : `Test1234!`
 - **Commerce** : Cafe du Marche
 - **Role** : Proprietaire, gere le dashboard, valide les lots
 
 ### Persona 2 : Lucas (Client)
-- **Email** : `lucas.test@revieww.ch`
+- **Email** : `lucas.test@woopla.ch`
 - **Role** : Client qui scanne le QR, laisse un avis, tourne la roue
 
 ### Persona 3 : Sophie (2eme commercante)
-- **Email** : `sophie.test@revieww.ch`
+- **Email** : `sophie.test@woopla.ch`
 - **Mot de passe** : `Test1234!`
 - **Commerce** : Boulangerie du Lac
 - **Role** : Teste l'isolation entre commerces (ne doit pas pouvoir valider les lots de Marie)
@@ -24,7 +24,7 @@
 
 ### 1.1 Inscription Marie
 - [ ] Aller sur `/signup`
-- [ ] Remplir : "Cafe du Marche", `marie.test@revieww.ch`, `Test1234!`
+- [ ] Remplir : "Cafe du Marche", `marie.test@woopla.ch`, `Test1234!`
 - [ ] Accepter les CGU, cliquer "Creer mon compte"
 - [ ] **Attendu** : Ecran "Verifiez votre email" avec l'adresse affichee
 - [ ] Verifier l'email de confirmation recu
@@ -41,7 +41,7 @@
 - [ ] **Attendu** : Redirection vers `/dashboard`
 
 ### 1.3 Inscription deja existante
-- [ ] Re-tenter signup avec `marie.test@revieww.ch`
+- [ ] Re-tenter signup avec `marie.test@woopla.ch`
 - [ ] **Attendu** : "Cette adresse email est deja utilisee. Essayez de vous connecter."
 
 ---
@@ -54,7 +54,7 @@
 
 ### 2.2 QR Code
 - [ ] `/dashboard/qrcode` genere un QR code
-- [ ] Le QR pointe vers `/play/{slug}` ou `play.revieww.ch/{slug}`
+- [ ] Le QR pointe vers `/play/{slug}` ou `play.woopla.ch/{slug}`
 
 ### 2.3 Configuration roue
 - [ ] `/dashboard/wheel` affiche les segments configures
@@ -77,7 +77,7 @@
 
 ### 3.3 Selection etoiles + email
 - [ ] Selectionner 5 etoiles, cliquer "J'ai laisse mon avis"
-- [ ] Entrer `lucas.test@revieww.ch`, cocher opt-in, cliquer "Tourner la roue"
+- [ ] Entrer `lucas.test@woopla.ch`, cocher opt-in, cliquer "Tourner la roue"
 - [ ] **Attendu** : Animation de la roue
 
 ### 3.4 Resultat + code de validation
@@ -97,7 +97,7 @@
 - [ ] **Attendu** : "Vous avez deja participe recemment !"
 
 ### 3.6 Email de lot
-- [ ] Verifier que `lucas.test@revieww.ch` a recu un email
+- [ ] Verifier que `lucas.test@woopla.ch` a recu un email
 - [ ] **Attendu** : Email contient le lot, le code RW-XXXX, un bouton "Voir mon lot"
 - [ ] Le bouton pointe vers `/validate/RW-XXXX` (PAS localhost)
 
@@ -113,7 +113,7 @@
 ### 4.2 Login depuis validation
 - [ ] Cliquer "Se connecter"
 - [ ] **Attendu** : Redirection vers `/login?redirect=/validate/RW-XXXX`
-- [ ] Se connecter avec `marie.test@revieww.ch`
+- [ ] Se connecter avec `marie.test@woopla.ch`
 - [ ] **Attendu** : Redirection vers `/validate/RW-XXXX`
 
 ### 4.3 Validation par proprietaire
@@ -127,7 +127,7 @@
 - [ ] **Attendu** : Affiche "Lot deja reclame" avec date, pas de bouton
 
 ### 4.5 Validation par mauvais proprietaire
-- [ ] Se connecter avec `sophie.test@revieww.ch`
+- [ ] Se connecter avec `sophie.test@woopla.ch`
 - [ ] Aller sur `/validate/RW-XXXX` (lot du Cafe du Marche)
 - [ ] **Attendu** : "Vous n'etes pas le proprietaire de ce commerce"
 
@@ -160,8 +160,8 @@
 
 > Ces etapes doivent etre faites dans le dashboard Supabase :
 
-- [ ] **Site URL** : `https://www.revieww.ch` (pas localhost)
-- [ ] **Redirect URLs** : ajouter `https://www.revieww.ch/auth/callback`
+- [ ] **Site URL** : `https://www.woopla.ch` (pas localhost)
+- [ ] **Redirect URLs** : ajouter `https://www.woopla.ch/auth/callback`
 - [ ] **Email templates** : verifier que les liens de confirmation utilisent `{{ .SiteURL }}`
 
 ---

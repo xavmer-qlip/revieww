@@ -107,7 +107,7 @@ function NotActivatedView({ businessName }: { businessName: string }) {
           Le propriétaire doit confirmer son adresse email pour activer la roue.
         </p>
         <a
-          href="https://revieww.ch"
+          href="https://woopla.ch"
           className="inline-block mt-6 px-6 py-3 bg-primary text-white font-display font-semibold rounded-2xl hover:bg-primary-dark transition-colors"
         >
           Découvrir {APP_NAME}
@@ -132,7 +132,7 @@ function NotFoundView() {
           Verifiez le lien ou le QR code.
         </p>
         <a
-          href="https://revieww.ch"
+          href="https://woopla.ch"
           className="inline-block mt-6 px-6 py-3 bg-primary text-white font-display font-semibold rounded-2xl hover:bg-primary-dark transition-colors"
         >
           Decouvrir {APP_NAME}

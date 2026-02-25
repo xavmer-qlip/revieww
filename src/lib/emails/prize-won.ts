@@ -101,14 +101,14 @@ export async function sendPrizeWonEmail({
       ${socialSection}
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
       <p style="font-size:11px;color:#9ca3af;text-align:center;">
-        Fait avec &#10084; en Suisse &middot; <a href="https://revieww.ch" style="color:#FF6B35;text-decoration:none;">revieww.ch</a>
+        Fait avec &#10084; en Suisse &middot; <a href="https://woopla.ch" style="color:#FF6B35;text-decoration:none;">woopla.ch</a>
       </p>
     </div>
   `;
 
   try {
     await resend.emails.send({
-      from: `${businessName} via revieww <hello@revieww.ch>`,
+      from: `${businessName} via woopla <hello@woopla.ch>`,
       to,
       subject: `${prizeEmoji} Votre cadeau chez ${businessName}`,
       html,

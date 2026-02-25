@@ -1,4 +1,4 @@
-# revieww — review & win
+# woopla — spin & win
 
 ## What is this?
 SaaS MVP helping restaurants/shops get more Google reviews through gamification.
@@ -18,7 +18,7 @@ Merchant gets the customer's email for marketing.
 
 ## Design System
 - **Full documentation**: See `design-system.md` at project root
-- **Logo**: "revieww" (2 w), unicolor bold, no star/icon, animated 2nd W (rotateY spin)
+- **Logo**: "woopla", unicolor bold, no star/icon, animated 2 "oo" (rotateX slot-machine spin with stagger)
 - **Landing page**: Dark theme (`#0b0f1a` bg) with "Summer Breeze" palette:
   - Coral `#F88379` (primary accent, CTAs, highlights)
   - Yellow `#FFEB3B` (secondary accent, energy)

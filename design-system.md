@@ -1,4 +1,4 @@
-# revieww — Design System
+# woopla — Design System
 
 > Document de référence pour toutes les décisions visuelles et UX du projet.
 > Dernière mise à jour : février 2026.
@@ -8,18 +8,18 @@
 ## 1. Identité de marque
 
 ### Nom
-**revieww** — toujours en minuscule, 2 "w" (review + w).
+**woopla** — toujours en minuscule.
 
 ### Logo
 - Texte seul, unicolor, **bold** (font-display `font-extrabold`)
 - Pas d'icône, pas d'étoile, pas de tagline
-- Le 2e "w" porte une **animation rotative 3D** (rotateY 360°) style lottery/spin, déclenchée périodiquement
+- Les 2 "oo" portent une **animation rotative 3D** (rotateX 360°) style machine à sous, avec décalage entre elles (delay 0.2s)
 - Variantes : `light` (blanc) pour fonds sombres, `dark` (text color) pour fonds clairs
 - Tailles : `sm` (text-xl), `md` (text-2xl), `lg` (text-4xl), `xl` (text-6xl)
 - Composant : `src/components/ui/logo.tsx`
 
 ### Tagline
-"review & win" — utilisé uniquement dans les métadonnées SEO, **jamais affiché dans l'UI**.
+"spin & win" — utilisé uniquement dans les métadonnées SEO, **jamais affiché dans l'UI**.
 
 ---
 
@@ -246,7 +246,7 @@ Dans les composants dashboard et onboarding, utiliser `sky` (pas `accent`) pour 
 | Floating             | Phones, éléments hero                    | `animate={{ y: [0, -10, 0] }}` repeat Infinity        |
 | Count up             | Compteurs, stats                         | `useMotionValue` + `useTransform` + `animate`         |
 | Slide (onboarding)   | Transitions entre étapes                 | `x: ±300`, spring transition                          |
-| Rotate (logo W)      | Logo 2e W                                | `rotateY: [0, 360]`, repeat, easeInOut                |
+| Rotate (logo oo)     | Logo 2 "oo"                              | `rotateX: [0, 360]`, repeat, easeInOut, stagger 0.2s  |
 | Pulse ring           | Indicateurs actifs                       | `scale: [1, 1.4]`, `opacity: [0.5, 0]`, repeat       |
 
 ### Timing

@@ -1,5 +1,5 @@
 /**
- * Smoke test script for revieww
+ * Smoke test script for woopla
  * Tests: build, pages, API validation, utils, auth flow basics
  *
  * Usage: npx tsx tests/smoke-test.ts
@@ -250,7 +250,7 @@ async function testAPIs() {
 
 async function main() {
   console.log('\n\x1b[1;36m╔══════════════════════════════════════╗\x1b[0m');
-  console.log('\x1b[1;36m║    revieww — Smoke Test Suite         ║\x1b[0m');
+  console.log('\x1b[1;36m║    woopla — Smoke Test Suite         ║\x1b[0m');
   console.log('\x1b[1;36m╚══════════════════════════════════════╝\x1b[0m');
 
   // Unit tests (no server needed)

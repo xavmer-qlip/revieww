@@ -41,7 +41,7 @@ export default function DashboardValidatePage() {
     }
   }
 
-  const shareText = 'Lien pour valider les lots revieww';
+  const shareText = 'Lien pour valider les lots woopla';
   const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText}: ${validateBaseUrl}`)}`;
   const mailtoUrl = `mailto:?subject=${encodeURIComponent(shareText)}&body=${encodeURIComponent(`${shareText}\n\n${validateBaseUrl}`)}`;
 

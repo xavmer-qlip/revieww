@@ -30,13 +30,13 @@ export async function sendTrialExpiringEmail({
         </p>
       </div>
       <div style="text-align:center;margin-top:24px;">
-        <a href="https://revieww.ch/dashboard/billing" style="display:inline-block;background:#FF6B35;color:white;font-weight:bold;padding:12px 32px;border-radius:12px;text-decoration:none;font-size:14px;">
+        <a href="https://woopla.ch/dashboard/billing" style="display:inline-block;background:#FF6B35;color:white;font-weight:bold;padding:12px 32px;border-radius:12px;text-decoration:none;font-size:14px;">
           Choisir mon plan
         </a>
       </div>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
       <p style="font-size:11px;color:#9ca3af;text-align:center;">
-        <a href="https://revieww.ch" style="color:#FF6B35;text-decoration:none;">revieww.ch</a>
+        <a href="https://woopla.ch" style="color:#FF6B35;text-decoration:none;">woopla.ch</a>
       </p>
     </div>
   `;
@@ -45,7 +45,7 @@ export async function sendTrialExpiringEmail({
     await resend.emails.send({
       from: EMAIL_FROM,
       to,
-      subject: `⏰ Votre essai revieww se termine dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+      subject: `⏰ Votre essai woopla se termine dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
       html,
     });
   } catch (error) {

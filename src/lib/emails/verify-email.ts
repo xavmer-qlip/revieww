@@ -40,7 +40,7 @@ export async function sendVerificationEmail({
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
       <p style="font-size:11px;color:#9ca3af;text-align:center;">
-        <a href="https://revieww.ch" style="color:#FF6B35;text-decoration:none;">revieww.ch</a>
+        <a href="https://woopla.ch" style="color:#FF6B35;text-decoration:none;">woopla.ch</a>
       </p>
     </div>
   `;

@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
 
 export const metadata = {
-  title: 'Politique de confidentialité — revieww',
-  description: 'Politique de confidentialité de revieww.ch — qlip sàrl, Genève',
+  title: 'Politique de confidentialité — woopla',
+  description: 'Politique de confidentialité de woopla.ch — qlip sàrl, Genève',
 };
 
 export default function ConfidentialitePage() {
@@ -29,7 +29,7 @@ export default function ConfidentialitePage() {
             <p className="mb-2">
               <strong className="text-text">qlip sàrl</strong><br />
               Rue du Grand-Bureau 11, 1227 Les Acacias, Suisse<br />
-              Email : <a href="mailto:hello@revieww.ch" className="text-primary hover:underline">hello@revieww.ch</a>
+              Email : <a href="mailto:hello@woopla.ch" className="text-primary hover:underline">hello@woopla.ch</a>
             </p>
             <p>
               Pour les données des participants collectées via le Service pour le compte d&apos;un
@@ -127,7 +127,7 @@ export default function ConfidentialitePage() {
             </ul>
             <p>
               Pour exercer vos droits, contactez-nous à{' '}
-              <a href="mailto:hello@revieww.ch" className="text-primary hover:underline">hello@revieww.ch</a>.
+              <a href="mailto:hello@woopla.ch" className="text-primary hover:underline">hello@woopla.ch</a>.
               Nous pouvons demander une preuve d&apos;identité raisonnable. Délai de réponse : 30 jours.
             </p>
           </section>
@@ -183,7 +183,7 @@ export default function ConfidentialitePage() {
             <h2 className="text-base font-display font-semibold text-text mb-2">12. Modifications</h2>
             <p>
               Nous pouvons modifier cette politique. La version à jour est accessible depuis le site
-              revieww.ch. Les modifications significatives sont communiquées par email ou via le Service.
+              woopla.ch. Les modifications significatives sont communiquées par email ou via le Service.
             </p>
           </section>
 
@@ -192,7 +192,7 @@ export default function ConfidentialitePage() {
             <h2 className="text-base font-display font-semibold text-text mb-2">13. Contact et autorité de surveillance</h2>
             <p className="mb-2">
               Pour toute question relative à la protection de vos données :<br />
-              <a href="mailto:hello@revieww.ch" className="text-primary hover:underline">hello@revieww.ch</a>
+              <a href="mailto:hello@woopla.ch" className="text-primary hover:underline">hello@woopla.ch</a>
             </p>
             <p>
               Autorité de surveillance compétente :<br />

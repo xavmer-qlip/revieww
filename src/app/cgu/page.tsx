@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
 
 export const metadata = {
-  title: 'Conditions générales d\'utilisation — revieww',
-  description: 'CGU de la plateforme revieww.ch — qlip sàrl, Genève',
+  title: 'Conditions générales d\'utilisation — woopla',
+  description: 'CGU de la plateforme woopla.ch — qlip sàrl, Genève',
 };
 
 export default function CGUPage() {
@@ -28,7 +28,7 @@ export default function CGUPage() {
             <h2 className="text-base font-display font-semibold text-text mb-2">1. Objet</h2>
             <p>
               Les présentes conditions générales d&apos;utilisation (CGU) régissent l&apos;accès et
-              l&apos;utilisation de la plateforme <strong className="text-text">revieww.ch</strong> (ci-après
+              l&apos;utilisation de la plateforme <strong className="text-text">woopla.ch</strong> (ci-après
               le « Service »), éditée par qlip sàrl. Le Service permet aux commerçants de créer des
               animations d&apos;engagement client (QR code, roue de la fortune, collecte de contacts)
               depuis un tableau de bord en ligne, et aux clients finaux de participer à ces animations.
@@ -41,7 +41,7 @@ export default function CGUPage() {
             <p>
               <strong className="text-text">qlip sàrl</strong><br />
               Rue du Grand-Bureau 11, 1227 Les Acacias, Suisse<br />
-              Email : <a href="mailto:hello@revieww.ch" className="text-primary hover:underline">hello@revieww.ch</a>
+              Email : <a href="mailto:hello@woopla.ch" className="text-primary hover:underline">hello@woopla.ch</a>
             </p>
           </section>
 

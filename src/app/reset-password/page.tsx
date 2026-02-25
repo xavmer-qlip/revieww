@@ -202,12 +202,12 @@ export default function ResetPasswordPage() {
       {/* Footer tagline */}
       <div className="mt-10 flex justify-center">
         <a
-          href="https://revieww.ch"
+          href="https://woopla.ch"
           target="_blank"
           rel="noopener noreferrer"
           className="font-body text-[10px] text-text-muted/50 hover:text-text-muted transition-colors inline-flex items-center gap-1"
         >
-          Fait avec <span className="text-red-500">&#10084;</span> en Suisse &middot; revieww.ch
+          Fait avec <span className="text-red-500">&#10084;</span> en Suisse &middot; woopla.ch
         </a>
       </div>
     </div>

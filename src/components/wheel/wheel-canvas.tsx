@@ -447,7 +447,7 @@ export function WheelCanvas({
             </radialGradient>
           </defs>
 
-          {/* Hub icon - "R" for revieww */}
+          {/* Hub icon - "W" for woopla */}
           <text
             x={cx}
             y={cy}
@@ -458,7 +458,7 @@ export function WheelCanvas({
             fontFamily="var(--font-sora), system-ui, sans-serif"
             fill="white"
           >
-            R
+            W
           </text>
 
           {/* Subtle shine on hub */}

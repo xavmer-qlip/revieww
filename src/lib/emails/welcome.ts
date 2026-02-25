@@ -17,7 +17,7 @@ export async function sendWelcomeEmail({
         <span style="font-size:48px;">🎉</span>
       </div>
       <h1 style="font-size:24px;font-weight:bold;text-align:center;color:#1A1A2E;margin:0 0 8px;">
-        Bienvenue sur revieww !
+        Bienvenue sur woopla !
       </h1>
       <p style="font-size:16px;text-align:center;color:#6b7280;margin:0 0 24px;">
         <strong style="color:#1A1A2E;">${businessName}</strong> est pret a animer votre commerce
@@ -37,7 +37,7 @@ export async function sendWelcomeEmail({
         </div>
       </div>
       <div style="text-align:center;margin-top:24px;">
-        <a href="https://revieww.ch/dashboard" style="display:inline-block;background:#FF6B35;color:white;font-weight:bold;padding:12px 32px;border-radius:12px;text-decoration:none;font-size:14px;">
+        <a href="https://woopla.ch/dashboard" style="display:inline-block;background:#FF6B35;color:white;font-weight:bold;padding:12px 32px;border-radius:12px;text-decoration:none;font-size:14px;">
           Acceder au dashboard
         </a>
       </div>
@@ -46,7 +46,7 @@ export async function sendWelcomeEmail({
       </p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
       <p style="font-size:11px;color:#9ca3af;text-align:center;">
-        <a href="https://revieww.ch" style="color:#FF6B35;text-decoration:none;">revieww.ch</a>
+        <a href="https://woopla.ch" style="color:#FF6B35;text-decoration:none;">woopla.ch</a>
       </p>
     </div>
   `;
@@ -55,7 +55,7 @@ export async function sendWelcomeEmail({
     await resend.emails.send({
       from: EMAIL_FROM,
       to,
-      subject: `🎉 Bienvenue sur revieww, ${businessName} !`,
+      subject: `🎉 Bienvenue sur woopla, ${businessName} !`,
       html,
     });
   } catch (error) {

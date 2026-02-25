@@ -4,7 +4,7 @@ import { ClientsTable } from '@/components/dashboard/clients-table';
 import type { Business, Spin } from '@/lib/types';
 
 export const metadata = {
-  title: 'Avis & Contacts | revieww',
+  title: 'Avis & Contacts | woopla',
 };
 
 export default async function ClientsPage() {

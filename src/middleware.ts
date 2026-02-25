@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
-const PLAY_HOSTNAMES = ['play.revieww.ch', 'play.localhost'];
+const PLAY_HOSTNAMES = ['play.woopla.ch', 'play.localhost'];
 
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host')?.split(':')[0] ?? '';
 
-  // Subdomain routing: play.revieww.ch/{slug} → /play/{slug}
+  // Subdomain routing: play.woopla.ch/{slug} → /play/{slug}
   if (PLAY_HOSTNAMES.includes(hostname)) {
     const pathname = request.nextUrl.pathname;
 

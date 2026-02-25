@@ -18,24 +18,24 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'revieww — play & win',
-    template: '%s | revieww',
+    default: 'woopla — spin & win',
+    template: '%s | woopla',
   },
   description:
     'Animez votre commerce avec une roue de la fortune. Vos clients scannent, jouent, gagnent. Vous récupérez leurs emails.',
-  metadataBase: new URL('https://revieww.ch'),
+  metadataBase: new URL('https://woopla.ch'),
   openGraph: {
-    title: 'revieww — play & win',
+    title: 'woopla — spin & win',
     description:
       'Fidélisez vos clients avec une roue de la fortune engageante. Fichier client, lots, animation commerciale.',
-    url: 'https://revieww.ch',
-    siteName: 'revieww',
+    url: 'https://woopla.ch',
+    siteName: 'woopla',
     locale: 'fr_CH',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'revieww — play & win',
+    title: 'woopla — spin & win',
     description:
       'Animez votre commerce avec une roue de la fortune. Fichier client, lots, engagement.',
   },

@@ -793,7 +793,7 @@ function ActivationHero({ business }: { business: Business }) {
 
   // Editable sharing message
   const qrPublicUrl = `${APP_URL}/qr/${business.slug}`;
-  const defaultMessage = `Salut l'equipe !\n\nOn met en place revieww pour ${business.name}. Nos clients pourront tourner la roue de la fortune et gagner un cadeau.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, tournent la roue et decouvrent leur lot\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nVoici le QR code a presenter aux clients : ${qrPublicUrl}\nLien direct vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en cliquant sur le lien !`;
+  const defaultMessage = `Salut l'equipe !\n\nOn met en place woopla pour ${business.name}. Nos clients pourront tourner la roue de la fortune et gagner un cadeau.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, tournent la roue et decouvrent leur lot\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nVoici le QR code a presenter aux clients : ${qrPublicUrl}\nLien direct vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en cliquant sur le lien !`;
   const [shareMessage, setShareMessage] = useState(defaultMessage);
   const [editingMessage, setEditingMessage] = useState(false);
 
@@ -851,7 +851,7 @@ function ActivationHero({ business }: { business: Business }) {
   };
 
   const sendEmail = () => {
-    const subject = encodeURIComponent(`revieww \u2014 animation commerciale pour ${business.name}`);
+    const subject = encodeURIComponent(`woopla \u2014 animation commerciale pour ${business.name}`);
     const body = encodeURIComponent(shareMessage);
     window.open(`mailto:?subject=${subject}&body=${body}`);
     markDone(1);

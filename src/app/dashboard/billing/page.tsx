@@ -4,7 +4,7 @@ import { BillingClient } from '@/components/dashboard/billing-client';
 import type { Business } from '@/lib/types';
 
 export const metadata = {
-  title: 'Abonnement | revieww',
+  title: 'Abonnement | woopla',
 };
 
 export default async function BillingPage() {

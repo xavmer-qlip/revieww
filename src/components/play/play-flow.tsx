@@ -42,7 +42,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const COOLDOWN_DAYS = 7;
 
 function getStorageKey(slug: string) {
-  return `revieww_spin_${slug}`;
+  return `woopla_spin_${slug}`;
 }
 
 function hasRecentSpin(slug: string): boolean {
@@ -77,12 +77,12 @@ function ReviewwFooter({ variant = 'light', className = '' }: { variant?: 'light
   const heartColor = variant === 'light' ? 'text-red-400' : 'text-red-500';
   return (
     <a
-      href="https://revieww.ch"
+      href="https://woopla.ch"
       target="_blank"
       rel="noopener noreferrer"
       className={`font-body text-[10px] transition-colors inline-flex items-center gap-1 ${colors} ${className}`}
     >
-      Fait avec <span className={heartColor}>&#10084;</span> en Suisse &middot; revieww.ch
+      Fait avec <span className={heartColor}>&#10084;</span> en Suisse &middot; woopla.ch
     </a>
   );
 }
@@ -529,7 +529,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
         />
       </div>
 
-      {/* Powered by revieww - top */}
+      {/* Powered by woopla - top */}
       <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
         <div className="opacity-60 hover:opacity-100 transition-opacity">
           <Logo size="sm" variant="light" />
