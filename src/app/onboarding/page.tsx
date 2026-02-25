@@ -86,7 +86,7 @@ const EMOJI_GRID = [
   '🍿', '🥤', '🍷', '🍸', '🍓', '🍫',
 ];
 
-function StepHowItWorks({
+function StepChooseFlow({
   flowType,
   onFlowChange,
 }: {
@@ -97,19 +97,30 @@ function StepHowItWorks({
     key: FlowType;
     label: string;
     recommended: boolean;
-    steps: { emoji: string; title: string }[];
+    description: string;
+    steps: { emoji: string; label: string }[];
   }[] = [
     {
       key: 'lottery_first',
       label: 'Loterie d\'abord',
       recommended: true,
-      steps: HOW_IT_WORKS_LOTTERY.map((s) => ({ emoji: s.emoji, title: s.title })),
+      description: 'Le jeu attire le client, l\'avis vient ensuite',
+      steps: [
+        { emoji: '📱', label: 'Scan' },
+        { emoji: '🎡', label: 'Roue' },
+        { emoji: '⭐', label: 'Avis' },
+      ],
     },
     {
       key: 'review_first',
       label: 'Avis d\'abord',
       recommended: false,
-      steps: HOW_IT_WORKS_REVIEW.map((s) => ({ emoji: s.emoji, title: s.title })),
+      description: 'L\'avis est garanti, le jeu est la récompense',
+      steps: [
+        { emoji: '📱', label: 'Scan' },
+        { emoji: '⭐', label: 'Avis' },
+        { emoji: '🎡', label: 'Roue' },
+      ],
     },
   ];
 
@@ -117,62 +128,69 @@ function StepHowItWorks({
     <div className="space-y-6">
       <div className="text-center">
         <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          {TEXTS.onboarding.howItWorksTitle}
+          Parcours client
         </h2>
         <p className="mt-2 text-text-muted font-body">
-          Choisissez le parcours de vos clients
+          Dans quel ordre vos clients participent ?
         </p>
       </div>
 
-      {/* Two flow options side by side */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">
+      <div className="space-y-3 max-w-md mx-auto">
         {FLOW_OPTIONS.map((option) => {
           const isSelected = flowType === option.key;
           return (
             <motion.button
               key={option.key}
               onClick={() => onFlowChange(option.key)}
-              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={cn(
-                'relative rounded-2xl border-2 p-4 pt-5 text-left transition-all duration-200 cursor-pointer',
+                'w-full rounded-2xl px-4 py-4 text-left transition-all duration-200 cursor-pointer',
                 isSelected
-                  ? 'border-primary bg-primary/5 shadow-sm'
-                  : 'border-border/50 opacity-60 hover:opacity-80 hover:border-border'
+                  ? 'bg-primary/5 ring-2 ring-primary'
+                  : 'bg-background ring-1 ring-border/50 hover:ring-border'
               )}
             >
-              {/* Recommended badge */}
-              {option.recommended && (
-                <Badge variant="primary" size="sm" className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] px-2 py-0.5 whitespace-nowrap">
-                  Recommandé
-                </Badge>
-              )}
-
-              {/* Title row with check */}
-              <div className="flex items-center gap-2 mb-3">
+              {/* Header: radio + label + recommended */}
+              <div className="flex items-center gap-3">
                 <div
                   className={cn(
                     'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    isSelected
-                      ? 'border-primary bg-primary'
-                      : 'border-border'
+                    isSelected ? 'border-primary bg-primary' : 'border-border'
                   )}
                 >
-                  {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
+                  {isSelected && (
+                    <div className="w-2 h-2 rounded-full bg-white" />
+                  )}
                 </div>
-                <h3 className="text-sm font-display font-bold text-text">
+                <span className="text-sm font-display font-bold text-text">
                   {option.label}
-                </h3>
+                </span>
+                {option.recommended && (
+                  <span className="text-[10px] font-display font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                    Recommandé
+                  </span>
+                )}
               </div>
 
-              <div className="space-y-2 pl-7">
-                {option.steps.map((step, i) => (
+              {/* Visual flow: emoji → emoji → emoji */}
+              <div className="flex items-center justify-center gap-2 mt-3 py-2">
+                {option.steps.map((s, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <span className="text-base shrink-0">{step.emoji}</span>
-                    <span className="text-xs font-body text-text-muted">{step.title}</span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-2xl">{s.emoji}</span>
+                      <span className="text-[10px] font-body text-text-muted">{s.label}</span>
+                    </div>
+                    {i < option.steps.length - 1 && (
+                      <ChevronRight size={14} className="text-text-muted/40 shrink-0 mt-[-12px]" />
+                    )}
                   </div>
                 ))}
               </div>
+
+              {/* Description */}
+              <p className="text-xs font-body text-text-muted mt-1 pl-8">
+                {option.description}
+              </p>
             </motion.button>
           );
         })}
@@ -843,13 +861,13 @@ export default function OnboardingPage() {
   // --- Step navigation ---
   const handleNext = useCallback(async () => {
     if (step === 0) {
+      if (!validation.valid) return;
       setStep(1);
       return;
     }
 
     if (step === 1) {
-      if (!validation.valid) return;
-      // Create business + segments (flow_type was chosen in step 0)
+      // Create business + segments (prizes from step 0, flow_type from step 1)
       setLoading(true);
       setError(null);
 
@@ -970,7 +988,7 @@ export default function OnboardingPage() {
   // --- Button visibility & label ---
   const showButton = step !== 2; // Step 2 (verify email) has no main CTA
   const buttonLabel = step === 3 ? 'Aller au dashboard' : 'Suivant';
-  const canProceed = step === 0 || (step === 1 && validation.valid) || step === 3;
+  const canProceed = (step === 0 && validation.valid) || step === 1 || step === 3;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -1001,18 +1019,6 @@ export default function OnboardingPage() {
                   exit={{ opacity: 0, x: -50 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 >
-                  <StepHowItWorks flowType={flowType} onFlowChange={setFlowType} />
-                </motion.div>
-              )}
-
-              {step === 1 && (
-                <motion.div
-                  key="step-1"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                >
                   <StepConfigurePrizes
                     detectedSector={detectedSector}
                     currentSector={currentSector}
@@ -1026,6 +1032,18 @@ export default function OnboardingPage() {
                     onDeletePreset={deletePreset}
                     validation={validation}
                   />
+                </motion.div>
+              )}
+
+              {step === 1 && (
+                <motion.div
+                  key="step-1"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <StepChooseFlow flowType={flowType} onFlowChange={setFlowType} />
                 </motion.div>
               )}
 

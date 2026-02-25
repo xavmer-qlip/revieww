@@ -128,7 +128,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
 
   // Waiting state after Google click
   const [googleClicked, setGoogleClicked] = useState(false);
-  const [countdown, setCountdown] = useState(30);
+  const [countdown, setCountdown] = useState(15);
   const [countdownDone, setCountdownDone] = useState(false);
   const [selectedStars, setSelectedStars] = useState(0);
   const [timeOnGoogle, setTimeOnGoogle] = useState(0);
@@ -709,7 +709,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                         strokeWidth="8"
                         strokeLinecap="round"
                         strokeDasharray={2 * Math.PI * 52}
-                        strokeDashoffset={2 * Math.PI * 52 * (countdown / 30)}
+                        strokeDashoffset={2 * Math.PI * 52 * (countdown / 15)}
                         className="transition-all duration-1000 ease-linear"
                       />
                     </svg>
@@ -740,9 +740,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     <AnimatePresence mode="wait">
                       <motion.p
                         key={
-                          countdown > 22 ? 0 :
-                          countdown > 14 ? 1 :
-                          countdown > 6 ? 2 : 3
+                          countdown > 11 ? 0 :
+                          countdown > 7 ? 1 :
+                          countdown > 3 ? 2 : 3
                         }
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -751,9 +751,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                         className="text-white/80 font-body text-sm max-w-xs"
                       >
                         {TEXTS.play.waitingMessages[
-                          countdown > 22 ? 0 :
-                          countdown > 14 ? 1 :
-                          countdown > 6 ? 2 : 3
+                          countdown > 11 ? 0 :
+                          countdown > 7 ? 1 :
+                          countdown > 3 ? 2 : 3
                         ]}
                       </motion.p>
                     </AnimatePresence>
@@ -1167,7 +1167,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                             stroke={countdownDone ? '#10B981' : business.primary_color}
                             strokeWidth="8" strokeLinecap="round"
                             strokeDasharray={2 * Math.PI * 52}
-                            strokeDashoffset={2 * Math.PI * 52 * (countdown / 30)}
+                            strokeDashoffset={2 * Math.PI * 52 * (countdown / 15)}
                             className="transition-all duration-1000 ease-linear"
                           />
                         </svg>
@@ -1416,9 +1416,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   href="https://revieww.ch"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-white/40 hover:text-white/70 font-body text-xs transition-colors"
+                  className="text-white/40 hover:text-white/70 font-body text-xs transition-colors inline-flex items-center gap-1"
                 >
-                  Propulse par revieww.ch
+                  Chaque avis fait vivre un commerce local <span className="text-red-400">&#10084;</span> revieww.ch
                 </a>
               </motion.div>
             </motion.div>

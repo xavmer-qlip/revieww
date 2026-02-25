@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { cn, getQuotaPercentage, getQuotaColor, formatNumber } from '@/lib/utils';
 import { PLANS, PLAY_URL } from '@/lib/constants';
 import type { Business, Spin, PlanType } from '@/lib/types';
+import QRCode from 'qrcode';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -612,6 +613,8 @@ function ActivationHero({ business }: { business: Business }) {
   const playUrl = `${PLAY_URL}/${business.slug}`;
   const validateUrl = '/dashboard/validate';
   const [copied, setCopied] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [googlePhotoUrl, setGooglePhotoUrl] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
     try {
       const stored = localStorage.getItem(`activation_${business.id}`);
@@ -625,9 +628,35 @@ function ActivationHero({ business }: { business: Business }) {
       if (!done.has(0)) return 0;
       if (!done.has(1)) return 1;
       if (!done.has(2)) return 2;
-      return 2;
+      return 0; // All done — show step 0 by default (QR code)
     } catch { return 0; }
   });
+
+  // Editable sharing message
+  const defaultMessage = `Salut l'equipe !\n\nOn met en place revieww pour ${business.name}. Nos clients pourront laisser un avis Google et gagner un cadeau grace a une roue de la fortune.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nLien vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en scannant le QR ou en cliquant sur le lien !`;
+  const [shareMessage, setShareMessage] = useState(defaultMessage);
+  const [editingMessage, setEditingMessage] = useState(false);
+
+  // Generate QR code
+  useEffect(() => {
+    QRCode.toDataURL(playUrl, {
+      width: 512,
+      margin: 2,
+      color: { dark: '#1B2A4A', light: '#FFFFFF' },
+      errorCorrectionLevel: 'H',
+    })
+      .then(setQrDataUrl)
+      .catch(() => {});
+  }, [playUrl]);
+
+  // Try to load Google business photo
+  useEffect(() => {
+    if (!business.google_place_id) return;
+    const img = new Image();
+    img.src = `/api/places/photo?placeId=${business.google_place_id}`;
+    img.onload = () => setGooglePhotoUrl(img.src);
+    img.onerror = () => {}; // silently fail
+  }, [business.google_place_id]);
 
   const markDone = (step: number) => {
     setCompletedSteps((prev) => {
@@ -636,7 +665,7 @@ function ActivationHero({ business }: { business: Business }) {
       try { localStorage.setItem(`activation_${business.id}`, JSON.stringify([...next])); } catch {}
       return next;
     });
-    // Auto advance
+    // Auto advance to next incomplete step
     if (step < 2) setActiveStep(step + 1);
   };
 
@@ -648,21 +677,32 @@ function ActivationHero({ business }: { business: Business }) {
     } catch {}
   };
 
-  const teamWhatsApp = () => {
-    const msg = encodeURIComponent(
-      `Salut l'équipe ! 👋\n\nOn lance revieww dans notre établissement ! Nos clients pourront laisser un avis Google et gagner un cadeau grâce à une roue de la fortune.\n\nComment ça marche :\n1. Présentez le QR code aux clients après leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, vérifiez leur code ici : ${window.location.origin}${validateUrl}\n\n📱 Lien vers la roue : ${playUrl}\n\nTestez vous-même !`
-    );
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  const handleCopyMessage = async () => {
+    try {
+      await navigator.clipboard.writeText(shareMessage);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  const sendWhatsApp = () => {
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareMessage)}`, '_blank');
     markDone(1);
   };
 
-  const teamEmail = () => {
-    const subject = encodeURIComponent(`revieww — nouveau système d'avis pour ${business.name}`);
-    const body = encodeURIComponent(
-      `Salut l'équipe !\n\nOn lance revieww dans notre établissement ! Nos clients pourront laisser un avis Google et gagner un cadeau grâce à une roue de la fortune.\n\nComment ça marche :\n1. Présentez le QR code aux clients après leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, vérifiez leur code ici : ${window.location.origin}${validateUrl}\n\nLien vers la roue : ${playUrl}\n\nTestez vous-même !`
-    );
+  const sendEmail = () => {
+    const subject = encodeURIComponent(`revieww \u2014 syst\u00e8me d'avis pour ${business.name}`);
+    const body = encodeURIComponent(shareMessage);
     window.open(`mailto:?subject=${subject}&body=${body}`);
     markDone(1);
+  };
+
+  const handleDownloadQR = () => {
+    if (!qrDataUrl) return;
+    const link = document.createElement('a');
+    link.download = `qr-${business.slug}.png`;
+    link.href = qrDataUrl;
+    link.click();
   };
 
   const allDone = completedSteps.size >= 3;
@@ -672,19 +712,19 @@ function ActivationHero({ business }: { business: Business }) {
       num: 0,
       icon: ExternalLink,
       title: 'Testez la roue',
-      subtitle: 'Vivez l\'expérience client pour mieux l\'expliquer à votre équipe',
+      subtitle: 'Vivez l\u2019exp\u00e9rience client pour mieux l\u2019expliquer \u00e0 votre \u00e9quipe',
     },
     {
       num: 1,
       icon: Send,
-      title: 'Partagez avec votre équipe',
-      subtitle: 'Envoyez le lien et les instructions à vos collaborateurs',
+      title: 'Partagez avec votre \u00e9quipe',
+      subtitle: 'Envoyez le lien et les instructions \u00e0 vos collaborateurs',
     },
     {
       num: 2,
       icon: Disc3,
-      title: 'Découvrez votre dashboard',
-      subtitle: 'Personnalisez votre roue, téléchargez le QR et suivez vos avis',
+      title: 'D\u00e9couvrez votre dashboard',
+      subtitle: 'Personnalisez votre roue, t\u00e9l\u00e9chargez le QR et suivez vos avis',
     },
   ];
 
@@ -695,30 +735,93 @@ function ActivationHero({ business }: { business: Business }) {
       transition={{ duration: 0.5 }}
       className="space-y-4"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg sm:text-xl font-display font-bold text-text">
-            {allDone ? 'Vous êtes prêt !' : 'Activez revieww'}
-          </h2>
-          <p className="text-sm text-text-muted font-body mt-0.5">
-            {allDone
-              ? 'Partagez votre QR code et commencez à collecter des avis'
-              : `${completedSteps.size}/3 étapes complétées`}
-          </p>
+      {/* Hero header with QR + Google photo */}
+      <Card padding="md" className="overflow-hidden">
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          {/* Business info + photo */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {googlePhotoUrl ? (
+              <img
+                src={googlePhotoUrl}
+                alt={business.name}
+                className="w-14 h-14 rounded-xl object-cover shrink-0 border border-border/30"
+              />
+            ) : (
+              <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-2xl font-display font-bold text-primary">
+                  {business.name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <div className="min-w-0">
+              <h2 className="text-lg font-display font-bold text-text truncate">
+                {allDone ? 'Vous \u00eates pr\u00eat !' : `Activez ${business.name}`}
+              </h2>
+              <p className="text-sm text-text-muted font-body">
+                {allDone
+                  ? 'Partagez votre QR code et collectez des avis'
+                  : `${completedSteps.size}/3 \u00e9tapes compl\u00e9t\u00e9es`}
+              </p>
+            </div>
+          </div>
+
+          {/* QR Code — always visible */}
+          <div className="flex flex-col items-center gap-2 shrink-0">
+            {qrDataUrl ? (
+              <div className="p-2 bg-white rounded-xl shadow-sm border border-border/30 cursor-pointer hover:shadow-md transition-shadow" onClick={handleDownloadQR}>
+                <img src={qrDataUrl} alt="QR Code" className="w-24 h-24 sm:w-28 sm:h-28" />
+              </div>
+            ) : (
+              <div className="w-24 h-24 sm:w-28 sm:h-28 bg-border/20 rounded-xl animate-pulse" />
+            )}
+            <button onClick={handleDownloadQR} className="text-[10px] font-body text-primary hover:underline flex items-center gap-1">
+              <Download size={10} />
+              T\u00e9l\u00e9charger
+            </button>
+          </div>
         </div>
-        {/* Mini progress */}
-        <div className="flex gap-1.5">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className={cn(
-                'w-8 h-1.5 rounded-full transition-colors',
-                completedSteps.has(i) ? 'bg-success' : 'bg-border/50',
-              )}
-            />
-          ))}
+
+        {/* Quick actions row */}
+        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border/30">
+          <Link href={playUrl} target="_blank" rel="noopener noreferrer" onClick={() => markDone(0)}>
+            <Button variant="primary" size="sm">
+              <ExternalLink size={13} />
+              Tester la roue
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={handleCopyLink}>
+            <Copy size={13} />
+            {copied ? 'Copi\u00e9 !' : 'Copier le lien'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadQR}>
+            <Download size={13} />
+            QR Code
+          </Button>
         </div>
+
+        {/* Direct link display */}
+        <div
+          onClick={handleCopyLink}
+          className="flex items-center gap-2 mt-3 rounded-lg bg-background border border-border/50 px-3 py-2 cursor-pointer hover:border-primary/30 transition-all"
+        >
+          <span className="flex-1 min-w-0 truncate text-xs font-mono text-text-muted">
+            {playUrl}
+          </span>
+          {copied ? <CheckCircle2 size={14} className="text-success shrink-0" /> : <ExternalLink size={14} className="text-text-muted shrink-0" />}
+        </div>
+      </Card>
+
+      {/* Progress bar */}
+      <div className="flex gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className={cn(
+              'flex-1 h-1.5 rounded-full transition-colors',
+              completedSteps.has(i) ? 'bg-success' : 'bg-border/50',
+            )}
+          />
+        ))}
       </div>
 
       {/* Step cards */}
@@ -738,13 +841,13 @@ function ActivationHero({ business }: { business: Business }) {
               padding="md"
               className={cn(
                 'transition-all duration-200',
-                isActive && !isDone && 'border-primary/30 shadow-md',
-                isDone && 'opacity-70',
+                isActive && 'border-primary/30 shadow-md',
+                isDone && !isActive && 'opacity-70',
               )}
             >
-              {/* Step header — always visible */}
+              {/* Step header — always clickable to reopen */}
               <button
-                onClick={() => !isDone && setActiveStep(step.num)}
+                onClick={() => setActiveStep(isActive ? -1 : step.num)}
                 className="w-full flex items-center gap-3 text-left"
               >
                 <div className={cn(
@@ -764,11 +867,11 @@ function ActivationHero({ business }: { business: Business }) {
                 <div className="flex-1 min-w-0">
                   <h3 className={cn(
                     'text-sm font-display font-semibold',
-                    isDone ? 'text-text-muted line-through' : 'text-text',
+                    isDone && !isActive ? 'text-text-muted line-through' : 'text-text',
                   )}>
                     {step.title}
                   </h3>
-                  {!isActive && !isDone && (
+                  {!isActive && (
                     <p className="text-xs font-body text-text-muted/70 truncate">{step.subtitle}</p>
                   )}
                 </div>
@@ -777,8 +880,8 @@ function ActivationHero({ business }: { business: Business }) {
                 )}
               </button>
 
-              {/* Step content — expanded when active */}
-              {isActive && !isDone && (
+              {/* Step content — expanded when active (even if done, to allow review) */}
+              {isActive && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -791,15 +894,6 @@ function ActivationHero({ business }: { business: Business }) {
                     {/* Step 0: Test the wheel */}
                     {step.num === 0 && (
                       <div className="space-y-3">
-                        {/* Direct link */}
-                        <div className="flex items-center gap-2 rounded-xl bg-background border border-border/50 px-3 py-2">
-                          <span className="flex-1 min-w-0 truncate text-xs font-mono text-text-muted">
-                            {playUrl}
-                          </span>
-                          <button onClick={handleCopyLink} className="text-text-muted hover:text-primary transition-colors shrink-0">
-                            {copied ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
-                          </button>
-                        </div>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Link
                             href={playUrl}
@@ -815,36 +909,76 @@ function ActivationHero({ business }: { business: Business }) {
                           </Link>
                           <Link href="/dashboard/qrcode" className="flex-1">
                             <Button variant="outline" size="sm" className="w-full">
-                              <Download size={14} />
-                              Télécharger le QR
+                              <QrCode size={14} />
+                              Page QR Code
                             </Button>
                           </Link>
                         </div>
+                        {!isDone && (
+                          <button
+                            onClick={() => markDone(0)}
+                            className="text-xs font-body text-primary hover:underline"
+                          >
+                            Marquer comme fait
+                          </button>
+                        )}
                       </div>
                     )}
 
-                    {/* Step 1: Share with team */}
+                    {/* Step 1: Share with team — editable message */}
                     {step.num === 1 && (
                       <div className="space-y-3">
-                        <div className="rounded-xl bg-background border border-border/50 px-3 py-2.5">
-                          <p className="text-[11px] font-body text-text-muted leading-relaxed">
-                            Un message pré-rédigé sera envoyé avec le lien de la roue, le fonctionnement et les instructions pour valider les lots.
-                          </p>
+                        {/* Editable message preview */}
+                        <div className="rounded-xl bg-background border border-border/50 overflow-hidden">
+                          <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
+                            <span className="text-[11px] font-display font-semibold text-text-muted">
+                              Message pour votre \u00e9quipe
+                            </span>
+                            <button
+                              onClick={() => setEditingMessage(!editingMessage)}
+                              className="text-[11px] font-body text-primary hover:underline"
+                            >
+                              {editingMessage ? 'Terminer' : 'Modifier'}
+                            </button>
+                          </div>
+                          {editingMessage ? (
+                            <textarea
+                              value={shareMessage}
+                              onChange={(e) => setShareMessage(e.target.value)}
+                              className="w-full p-3 text-xs font-body text-text bg-transparent resize-none focus:outline-none min-h-[180px]"
+                            />
+                          ) : (
+                            <div className="p-3 max-h-32 overflow-y-auto">
+                              <p className="text-[11px] font-body text-text-muted leading-relaxed whitespace-pre-line">
+                                {shareMessage}
+                              </p>
+                            </div>
+                          )}
                         </div>
+
+                        {/* Share buttons */}
                         <div className="flex flex-col sm:flex-row gap-2">
-                          <Button variant="primary" size="sm" onClick={teamWhatsApp} className="flex-1">
+                          <Button variant="primary" size="sm" onClick={sendWhatsApp} className="flex-1">
                             <Send size={14} />
                             WhatsApp
                           </Button>
-                          <Button variant="outline" size="sm" onClick={teamEmail} className="flex-1">
+                          <Button variant="outline" size="sm" onClick={sendEmail} className="flex-1">
                             <Mail size={14} />
                             Email
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => { handleCopyLink(); markDone(1); }} className="flex-1">
+                          <Button variant="outline" size="sm" onClick={() => { handleCopyMessage(); markDone(1); }} className="flex-1">
                             <Copy size={14} />
-                            {copied ? 'Copié !' : 'Copier'}
+                            {copied ? 'Copi\u00e9 !' : 'Copier'}
                           </Button>
                         </div>
+                        {!isDone && (
+                          <button
+                            onClick={() => markDone(1)}
+                            className="text-xs font-body text-primary hover:underline"
+                          >
+                            Marquer comme fait
+                          </button>
+                        )}
                       </div>
                     )}
 
@@ -853,9 +987,9 @@ function ActivationHero({ business }: { business: Business }) {
                       <div className="space-y-2">
                         {[
                           { icon: Disc3, label: 'Ma Roue', desc: 'Personnalisez vos lots', href: '/dashboard/wheel' },
-                          { icon: QrCode, label: 'Mon QR Code', desc: 'Téléchargez et imprimez', href: '/dashboard/qrcode' },
+                          { icon: QrCode, label: 'Mon QR Code', desc: 'T\u00e9l\u00e9chargez et imprimez', href: '/dashboard/qrcode' },
                           { icon: Users, label: 'Avis & Contacts', desc: 'Suivez vos avis et emails', href: '/dashboard/clients' },
-                          { icon: ShieldCheck, label: 'Valider un lot', desc: 'Vérifiez les codes gagnants', href: '/dashboard/validate' },
+                          { icon: ShieldCheck, label: 'Valider un lot', desc: 'V\u00e9rifiez les codes gagnants', href: '/dashboard/validate' },
                         ].map((item) => {
                           const ItemIcon = item.icon;
                           return (
@@ -876,6 +1010,14 @@ function ActivationHero({ business }: { business: Business }) {
                             </Link>
                           );
                         })}
+                        {!isDone && (
+                          <button
+                            onClick={() => markDone(2)}
+                            className="text-xs font-body text-primary hover:underline mt-2"
+                          >
+                            Marquer comme fait
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
