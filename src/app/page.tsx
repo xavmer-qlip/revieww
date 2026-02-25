@@ -376,7 +376,7 @@ function HeroSection() {
               className="font-body text-[17px] leading-relaxed mb-8 max-w-md"
               style={{ color: C.muted }}
             >
-              Un QR code sur la table. Votre client tourne la roue, gagne un cadeau, et vous laisse son email. Fidélisation, engagement, contacts qualifiés.
+              Un QR code sur la table, au comptoir ou dans l&apos;addition. Votre client scanne, tourne la roue et gagne un cadeau. Vous récupérez son email, vous construisez votre fichier clients, et vous lui donnez une raison de revenir. Restaurant, café, salon, boutique — woopla s&apos;adapte à tous les commerces qui reçoivent des clients sur place.
             </motion.p>
 
             {/* Fidélisation badge */}
@@ -460,9 +460,9 @@ function HowItWorksSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, amount: 0.05 });
   const steps = [
-    { icon: QrCode, num: '01', title: 'Scannez', desc: 'Un QR code sur vos tables, au comptoir ou dans l\'addition. Le client scanne avec son téléphone.', color: C.coral },
-    { icon: Gift, num: '02', title: 'Roue & Cadeau', desc: 'Il tourne la roue, découvre son lot instantanément.', color: C.yellow },
-    { icon: Mail, num: '03', title: 'Email & Contact', desc: 'Vous récupérez son email pour vos futures campagnes.', color: C.sky },
+    { icon: QrCode, num: '01', title: 'Scannez', desc: 'Placez un QR code sur vos tables, au comptoir ou dans l\'addition. Votre client le scanne en 2 secondes avec son téléphone — pas d\'app à télécharger, pas de compte à créer.', color: C.coral },
+    { icon: Gift, num: '02', title: 'Roue & Cadeau', desc: 'La roue tourne, l\'excitation monte. Café offert, dessert gratuit, réduction surprise… Votre client découvre son lot instantanément. C\'est fun, c\'est gratifiant, et ça crée un souvenir positif lié à votre commerce.', color: C.yellow },
+    { icon: Mail, num: '03', title: 'Email & Contact', desc: 'Pour récupérer son lot, votre client laisse son email. Vous construisez votre base de contacts qualifiés pour vos futures campagnes marketing — sans effort, sans friction.', color: C.sky },
   ];
   return (
     <section id="how" className="py-28 sm:py-36" style={{ background: C.bg }}>
@@ -526,26 +526,26 @@ function LocalMerchantsSection() {
   const cards = [
     {
       icon: Star,
-      title: 'Gagnez des avis Google',
-      desc: 'Vos clients laissent un avis naturellement après avoir joué. Plus d\'avis = plus de visibilité sur Google Maps.',
+      title: 'Boostez vos avis Google',
+      desc: 'Après avoir joué, vos clients sont dans un état d\'esprit positif — le moment idéal pour leur proposer de laisser un avis. Plus d\'avis positifs = meilleur référencement sur Google Maps = plus de nouveaux clients qui vous découvrent.',
       color: C.yellow,
     },
     {
       icon: Users,
       title: 'Construisez votre fichier clients',
-      desc: 'Chaque spin = un email qualifié. Exportez vers Mailchimp, Brevo ou utilisez directement.',
+      desc: 'Chaque spin = un email qualifié, récupéré naturellement. En un mois, vous pouvez collecter des dizaines de contacts. Exportez-les vers Mailchimp, Brevo, Klaviyo — ou utilisez-les directement pour annoncer vos offres, vos événements ou vos nouveautés.',
       color: C.sky,
     },
     {
       icon: Heart,
       title: 'Donnez envie de revenir',
-      desc: 'Un client qui gagne revient. La gamification crée l\'habitude et la fidélité.',
+      desc: 'Un client qui gagne un café se souvient de vous. La gamification crée une émotion positive, un souvenir ludique. Résultat : il revient, il en parle autour de lui, et il amène ses proches. C\'est la fidélisation par le plaisir.',
       color: C.coral,
     },
     {
       icon: Store,
-      title: 'Favorisez les commerces du quartier',
-      desc: 'Offrez un billet de cinéma dans le cinéma du quartier. Tout le quartier y gagne.',
+      title: 'Créez un réseau de quartier',
+      desc: 'Imaginez : un client gagne chez vous un bon pour le café d\'à côté. Et les clients du café découvrent votre restaurant. Les commerçants du quartier se soutiennent et partagent leurs communautés. Tout le monde y gagne.',
       color: C.green,
     },
   ];
@@ -599,35 +599,214 @@ function LocalMerchantsSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DASHBOARD MOCKUP — Show the product
+   CLIENT EXPERIENCE MOCKUP — Mobile flow + Client recap
    ═══════════════════════════════════════════════════════════════════════════ */
-function DashboardMockupSection() {
+
+function MiniPhone({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn('relative', className)}>
+      <div
+        className="relative rounded-[2rem] p-[6px] shadow-xl"
+        style={{ background: 'linear-gradient(145deg, #2a2a2e 0%, #0a0a0a 100%)', boxShadow: '0 15px 40px rgba(0,0,0,0.4)' }}
+      >
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-3.5 rounded-b-xl z-10" style={{ background: '#0a0a0a' }} />
+        <div className="rounded-[1.6rem] overflow-hidden w-[180px] h-[360px] relative bg-white">
+          {children}
+        </div>
+        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-16 h-0.5 bg-white/20 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
+function FlowScreenWelcome() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center px-4 text-center" style={{ background: 'linear-gradient(180deg, #fff5f4 0%, #ffffff 100%)' }}>
+      <div
+        className="w-11 h-11 rounded-xl flex items-center justify-center mb-3 shadow-md"
+        style={{ background: `linear-gradient(135deg, ${C.coral}, #e66a5f)`, boxShadow: '0 6px 16px rgba(248,131,121,0.3)' }}
+      >
+        <span className="text-white text-base">🍕</span>
+      </div>
+      <h3 className="font-display font-bold text-[12px] text-gray-900 mb-1">Pizzeria Da Marco</h3>
+      <p className="font-body text-[9px] text-gray-400 mb-4 leading-relaxed">
+        Tournez la roue<br />et tentez de gagner !
+      </p>
+      <div
+        className="w-full font-display font-bold text-[10px] py-2 rounded-xl text-white text-center"
+        style={{ background: `linear-gradient(90deg, ${C.coral}, #e66a5f)` }}
+      >
+        Tourner la roue !
+      </div>
+    </div>
+  );
+}
+
+function FlowScreenWheel() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center px-4" style={{ background: 'linear-gradient(180deg, #fffde7 0%, #ffffff 100%)' }}>
+      <p className="font-display font-bold text-[11px] text-gray-900 mb-3">La roue tourne...</p>
+      {/* Simplified wheel */}
+      <div className="relative w-28 h-28 mb-3">
+        <svg viewBox="0 0 100 100" className="w-full h-full">
+          {[
+            { color: '#F88379', start: 0 },
+            { color: '#FFEB3B', start: 60 },
+            { color: '#82C8E5', start: 120 },
+            { color: '#34d399', start: 180 },
+            { color: '#F88379', start: 240 },
+            { color: '#E6D8C4', start: 300 },
+          ].map((seg, i) => {
+            const startAngle = (seg.start * Math.PI) / 180;
+            const endAngle = ((seg.start + 60) * Math.PI) / 180;
+            const x1 = 50 + 45 * Math.cos(startAngle);
+            const y1 = 50 + 45 * Math.sin(startAngle);
+            const x2 = 50 + 45 * Math.cos(endAngle);
+            const y2 = 50 + 45 * Math.sin(endAngle);
+            return (
+              <path
+                key={i}
+                d={`M50,50 L${x1},${y1} A45,45 0 0,1 ${x2},${y2} Z`}
+                fill={seg.color}
+                opacity={0.8}
+              />
+            );
+          })}
+          <circle cx="50" cy="50" r="12" fill="white" />
+          <text x="50" y="53" textAnchor="middle" className="font-display font-bold text-[10px]" fill={C.coral}>W</text>
+        </svg>
+        {/* Arrow indicator */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 w-3 h-3" style={{ borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: `8px solid ${C.coral}` }} />
+      </div>
+      <p className="font-body text-[9px] text-gray-400">Bonne chance !</p>
+    </div>
+  );
+}
+
+function FlowScreenResult() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center px-4 text-center" style={{ background: 'linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%)' }}>
+      <div className="text-3xl mb-2">☕</div>
+      <div className="w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: `${C.green}20` }}>
+        <Check className="w-4 h-4" style={{ color: C.green }} />
+      </div>
+      <p className="font-display font-bold text-[11px] mb-1" style={{ color: C.green }}>Félicitations !</p>
+      <p className="font-display font-bold text-[12px] text-gray-900 mb-3">Café offert</p>
+      <div className="bg-gray-50 rounded-lg px-3 py-1.5 mb-3">
+        <p className="font-body text-[8px] text-gray-400">Code de validation</p>
+        <p className="font-display font-bold text-[11px] text-blue-700 tracking-wider">WP-7K3M</p>
+      </div>
+      <p className="font-body text-[8px] text-gray-400">Présentez ce code en caisse</p>
+    </div>
+  );
+}
+
+function FlowScreenSocial() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center px-4 text-center" style={{ background: 'linear-gradient(180deg, #eff6ff 0%, #ffffff 100%)' }}>
+      <p className="font-display font-bold text-[11px] text-gray-900 mb-3">Merci pour votre visite !</p>
+      {/* Google review stars */}
+      <div className="bg-white rounded-xl border border-gray-100 p-3 w-full mb-3 shadow-sm">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-5 h-5 rounded bg-blue-500 flex items-center justify-center">
+            <span className="text-white text-[8px] font-bold">G</span>
+          </div>
+          <span className="font-body text-[9px] text-gray-600">Laisser un avis Google</span>
+        </div>
+        <div className="flex gap-0.5 justify-center">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <Star key={s} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+          ))}
+        </div>
+      </div>
+      {/* Social links */}
+      <div className="flex gap-2 w-full">
+        <div className="flex-1 bg-white rounded-lg border border-gray-100 py-2 flex items-center justify-center shadow-sm">
+          <span className="text-[10px]">📷</span>
+        </div>
+        <div className="flex-1 bg-white rounded-lg border border-gray-100 py-2 flex items-center justify-center shadow-sm">
+          <span className="text-[10px]">👍</span>
+        </div>
+        <div className="flex-1 bg-white rounded-lg border border-gray-100 py-2 flex items-center justify-center shadow-sm">
+          <span className="text-[10px]">🎵</span>
+        </div>
+      </div>
+      <p className="font-body text-[8px] text-gray-300 mt-3">Suivez Pizzeria Da Marco</p>
+    </div>
+  );
+}
+
+function ClientExperienceSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, amount: 0.05 });
 
   return (
     <section className="py-28 sm:py-36" style={{ background: C.bg }}>
       <div ref={sectionRef} className="max-w-6xl mx-auto px-6">
+        {/* --- Part A: Mobile flow --- */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.sky }}>Dashboard</p>
+          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.sky }}>Expérience client</p>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
-            Suivez vos résultats{' '}
-            <span style={{ color: C.sky }}>en temps réel.</span>
+            Vos clients vivent{' '}
+            <span style={{ color: C.sky }}>cette expérience.</span>
           </h2>
           <p className="font-body text-lg max-w-lg mx-auto" style={{ color: C.muted }}>
-            Contacts, spins, lots gagnés. Tout est mesuré. Vous savez exactement ce que woopla vous rapporte.
+            Du scan du QR code au partage sur Google. Tout est fluide, rapide et engageant. Moins de 30 secondes, zéro friction.
+          </p>
+        </motion.div>
+
+        {/* 4 mobile screens */}
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.95 }}
+          animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 0.95 }}
+          transition={{ duration: 0.8, delay: inView ? 0.15 : 0, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-24"
+        >
+          {[
+            { label: 'Accueil', screen: <FlowScreenWelcome /> },
+            { label: 'La roue', screen: <FlowScreenWheel /> },
+            { label: 'Résultat', screen: <FlowScreenResult /> },
+            { label: 'Avis & Social', screen: <FlowScreenSocial /> },
+          ].map((item, i) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 30 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+              transition={{ duration: 0.6, delay: inView ? 0.2 + i * 0.1 : 0 }}
+              className="flex flex-col items-center gap-3"
+            >
+              <MiniPhone>{item.screen}</MiniPhone>
+              <span className="font-display font-semibold text-[12px]" style={{ color: C.muted }}>{item.label}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* --- Part B: Client dashboard recap --- */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6, delay: inView ? 0.3 : 0 }}
+          className="text-center mb-12"
+        >
+          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Dashboard</p>
+          <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
+            Suivez vos résultats{' '}
+            <span style={{ color: C.coral }}>en temps réel.</span>
+          </h2>
+          <p className="font-body text-lg max-w-lg mx-auto" style={{ color: C.muted }}>
+            Contacts, spins, lots distribués. Tout est mesuré. Vous savez exactement ce que woopla vous rapporte.
           </p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 40, scale: 0.95 }}
           animate={inView ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 40, scale: 0.95 }}
-          transition={{ duration: 0.8, delay: inView ? 0.15 : 0, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.8, delay: inView ? 0.4 : 0, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-4xl mx-auto"
         >
           {/* Browser chrome */}
@@ -652,7 +831,7 @@ function DashboardMockupSection() {
                 {[
                   { label: 'Spins ce mois', value: '847', trend: '+23%', color: C.coral },
                   { label: 'Contacts', value: '312', trend: '+18%', color: C.sky },
-                  { label: 'Taux de conversion', value: '68%', trend: '+5%', color: C.green },
+                  { label: 'Lots distribués', value: '214', trend: '+12%', color: C.green },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100">
                     <p className="font-body text-[10px] sm:text-[11px] text-gray-400 mb-1">{stat.label}</p>
@@ -664,52 +843,73 @@ function DashboardMockupSection() {
                 ))}
               </div>
 
-              {/* Chart */}
-              <div className="bg-white rounded-xl p-4 sm:p-5 border border-gray-100 mb-5">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="font-display font-bold text-xs sm:text-sm text-gray-900">Spins par jour</p>
-                  <span className="font-body text-[10px] sm:text-[11px] text-gray-400">7 derniers jours</span>
-                </div>
-                <svg viewBox="0 0 400 100" className="w-full h-16 sm:h-20">
-                  <defs>
-                    <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={C.coral} stopOpacity={0.2} />
-                      <stop offset="100%" stopColor={C.coral} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <path d="M0,80 L57,65 L114,70 L171,45 L228,50 L285,30 L342,35 L400,15 L400,100 L0,100Z" fill="url(#chartGrad)" />
-                  <path d="M0,80 L57,65 L114,70 L171,45 L228,50 L285,30 L342,35 L400,15" fill="none" stroke={C.coral} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  {[[0, 80], [57, 65], [114, 70], [171, 45], [228, 50], [285, 30], [342, 35], [400, 15]].map(([x, y], i) => (
-                    <circle key={i} cx={x} cy={y} r="3" fill="white" stroke={C.coral} strokeWidth="2" />
-                  ))}
-                </svg>
-              </div>
-
-              {/* Recent spins table */}
-              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                <div className="px-4 sm:px-5 py-3 border-b border-gray-50">
-                  <p className="font-display font-bold text-xs sm:text-sm text-gray-900">Derniers spins</p>
-                </div>
-                {[
-                  { email: 'marie@email.ch', prize: 'Café offert', emoji: '☕', time: 'Il y a 2 min', won: true },
-                  { email: 'lucas@email.ch', prize: 'Dessert offert', emoji: '🎂', time: 'Il y a 8 min', won: true },
-                  { email: 'sophie@email.ch', prize: 'Pas de chance', emoji: '❌', time: 'Il y a 15 min', won: false },
-                ].map((spin, i) => (
-                  <div key={i} className="flex items-center justify-between px-4 sm:px-5 py-2.5 sm:py-3 border-b border-gray-50 last:border-0">
-                    <div className="flex items-center gap-2.5 sm:gap-3">
-                      <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                        <span className="font-display font-bold text-[10px] text-gray-400">{spin.email[0].toUpperCase()}</span>
+              <div className="grid sm:grid-cols-2 gap-4 mb-5">
+                {/* Recent wins */}
+                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-50">
+                    <p className="font-display font-bold text-xs sm:text-sm text-gray-900">Derniers gains</p>
+                  </div>
+                  {[
+                    { email: 'marie@email.ch', prize: 'Café offert', emoji: '☕', time: 'Il y a 2 min', status: 'Validé', statusColor: C.green },
+                    { email: 'lucas@email.ch', prize: 'Dessert offert', emoji: '🎂', time: 'Il y a 8 min', status: 'En attente', statusColor: C.yellow },
+                    { email: 'sophie@email.ch', prize: '-10% sur l\'addition', emoji: '🏷️', time: 'Il y a 15 min', status: 'Validé', statusColor: C.green },
+                  ].map((spin, i) => (
+                    <div key={i} className="flex items-center justify-between px-4 py-2.5 border-b border-gray-50 last:border-0">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-sm">{spin.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="font-body text-[11px] sm:text-[12px] text-gray-700 truncate">{spin.email}</p>
+                          <p className="font-body text-[9px] sm:text-[10px] text-gray-400">{spin.time}</p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="font-body text-[12px] sm:text-[13px] text-gray-700 truncate">{spin.email}</p>
-                        <p className="font-body text-[10px] sm:text-[11px] text-gray-400">{spin.time}</p>
+                      <span className="font-display font-semibold text-[10px] shrink-0 ml-2 px-2 py-0.5 rounded-full" style={{ background: `${spin.statusColor}15`, color: spin.statusColor }}>
+                        {spin.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Google reviews + messages */}
+                <div className="space-y-4">
+                  {/* Google reviews card */}
+                  <div className="bg-white rounded-xl border border-gray-100 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                      </div>
+                      <div>
+                        <p className="font-display font-bold text-xs text-gray-900">Avis Google</p>
+                        <p className="font-body text-[10px] text-gray-400">Ce mois-ci</p>
                       </div>
                     </div>
-                    <span className={cn('font-display font-semibold text-[11px] sm:text-[12px] shrink-0 ml-2', spin.won ? 'text-green-600' : 'text-gray-400')}>
-                      {spin.emoji} {spin.prize}
-                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display font-extrabold text-2xl text-gray-900">4.8</span>
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className={cn('w-3 h-3', s <= 4 ? 'fill-yellow-400 text-yellow-400' : 'fill-yellow-400/50 text-yellow-400/50')} />
+                        ))}
+                      </div>
+                      <span className="font-body text-[10px] text-gray-400">(+24 avis)</span>
+                    </div>
                   </div>
-                ))}
+
+                  {/* Messages preview */}
+                  <div className="bg-white rounded-xl border border-gray-100 p-4">
+                    <p className="font-display font-bold text-xs text-gray-900 mb-3">Messages envoyés</p>
+                    {[
+                      { subject: '🏆 Votre cadeau vous attend !', to: '312 contacts', time: 'Hier' },
+                      { subject: '🍕 Menu spécial ce weekend', to: '287 contacts', time: 'Il y a 3j' },
+                    ].map((msg, i) => (
+                      <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                        <div className="min-w-0">
+                          <p className="font-body text-[11px] text-gray-700 truncate">{msg.subject}</p>
+                          <p className="font-body text-[9px] text-gray-400">{msg.to}</p>
+                        </div>
+                        <span className="font-body text-[9px] text-gray-300 shrink-0 ml-2">{msg.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1130,35 +1330,35 @@ function FAQSection() {
   const faqs = [
     {
       q: 'Comment ça fonctionne concrètement ?',
-      a: 'Vous créez votre compte, entrez le nom de votre commerce (on récupère automatiquement votre fiche Google), personnalisez votre roue avec vos lots, et imprimez le QR code. Vos clients scannent le QR, tournent la roue, gagnent un cadeau et vous laissent leur email.',
+      a: 'Vous créez votre compte en 1 minute : entrez le nom de votre commerce, on récupère automatiquement votre fiche Google (adresse, photo, lien avis). Ensuite, personnalisez votre roue avec vos lots — on vous propose des suggestions adaptées à votre secteur. Imprimez le QR code et placez-le sur vos tables ou au comptoir. Vos clients scannent, tournent la roue, découvrent leur lot et laissent leur email. Vous suivez tout en temps réel depuis votre dashboard.',
     },
     {
       q: 'Combien de temps prend la mise en place ?',
-      a: 'Moins d\'une minute. Entrez le nom de votre établissement, notre outil récupère tout via l\'API Google (adresse, horaires, lien avis). Choisissez vos lots — on vous guide avec des recommandations — et c\'est prêt.',
+      a: 'Moins d\'une minute, vraiment. Tapez le nom de votre commerce, notre outil récupère tout via Google (adresse, horaires, lien avis). On vous propose des lots adaptés à votre secteur (café offert pour un restaurant, soin découverte pour un spa…). Validez, imprimez votre QR code, et c\'est parti. Pas de configuration technique, pas de compétences particulières.',
     },
     {
       q: 'Faut-il un avis Google pour jouer ?',
-      a: 'Non. Le jeu est totalement indépendant des avis Google. Vos clients jouent, gagnent, et vous laissent leur email.',
+      a: 'Non, jamais. Le jeu est une animation commerciale 100% indépendante des avis Google. Vos clients jouent, gagnent un cadeau et vous laissent leur email. Après le jeu, on leur propose de laisser un avis — mais c\'est totalement optionnel et ne conditionne jamais le lot gagné. Tout est conforme aux règles de Google.',
     },
     {
-      q: 'Comment fidéliser mes clients ?',
-      a: 'Chaque participation = un contact. Utilisez-les pour vos campagnes marketing et vos offres.',
+      q: 'Comment fidéliser mes clients avec woopla ?',
+      a: 'Chaque participation génère un contact qualifié. Utilisez votre base pour envoyer des offres personnalisées, annoncer vos événements, vos menus du jour ou vos promotions saisonnières. Un client qui gagne un café gratuit se souvient de vous et revient — avec ses amis. La gamification transforme une simple visite en expérience mémorable.',
     },
     {
       q: 'Que se passe-t-il avec les emails collectés ?',
-      a: 'Chaque email est stocké dans votre dashboard. Vous pouvez exporter la liste en CSV ou la connecter directement à vos outils marketing (Mailchimp, Brevo, Klaviyo) via Zapier ou nos intégrations natives.',
+      a: 'Chaque email est stocké en toute sécurité dans votre dashboard. Vous pouvez exporter la liste complète en CSV en un clic, ou la connecter directement à vos outils marketing préférés (Mailchimp, Brevo, Klaviyo) via Zapier. Les données restent les vôtres — nous ne les partageons jamais avec des tiers.',
     },
     {
       q: 'Je peux choisir les lots et les probabilités ?',
-      a: 'Absolument. Vous définissez chaque lot, son emoji, sa probabilité de gain. Notre outil vous recommande les meilleures combinaisons pour maximiser l\'engagement sans exploser votre budget.',
+      a: 'Absolument. Vous contrôlez tout : chaque lot, son emoji, sa couleur, sa probabilité de gain et son stock mensuel. Vous voulez que 70% des joueurs gagnent un petit lot et 5% un gros lot ? C\'est vous qui décidez. Notre outil vous recommande les meilleures combinaisons pour maximiser l\'engagement tout en maîtrisant votre budget.',
     },
     {
       q: 'Puis-je annuler à tout moment ?',
-      a: 'Oui. Pas d\'engagement, pas de frais cachés. Vous pouvez annuler depuis votre dashboard en un clic. Le plan gratuit ne nécessite pas de carte bancaire.',
+      a: 'Oui, sans aucune condition. Pas d\'engagement, pas de frais cachés, pas de période minimale. Vous pouvez annuler depuis votre dashboard en un clic — l\'abonnement reste actif jusqu\'à la fin de la période payée. Le plan gratuit (30 spins) ne nécessite même pas de carte bancaire.',
     },
     {
       q: 'C\'est adapté à quel type de commerce ?',
-      a: 'Restaurants, cafés, salons de coiffure, spas, escape games, boutiques, bars, fitness... Tout commerce qui reçoit des clients sur place et veut fidéliser ses clients et animer son point de vente.',
+      a: 'Restaurants, cafés, salons de coiffure, spas, escape games, boutiques, bars, boulangeries, fitness, food trucks… Tout commerce qui reçoit des clients sur place. Nos lots prédéfinis s\'adaptent automatiquement à votre secteur d\'activité. Que vous ayez 10 ou 500 clients par jour, woopla s\'adapte à votre volume.',
     },
   ];
 
@@ -1209,8 +1409,8 @@ function FinalCTASection() {
             Prêt à animer{' '}
             <span style={{ color: C.coral }}>votre commerce ?</span>
           </h2>
-          <p className="font-body text-lg mb-10 max-w-md mx-auto" style={{ color: C.muted }}>
-            1 minute pour s&apos;inscrire. 30 spins offerts. 0 raison d&apos;hésiter.
+          <p className="font-body text-lg mb-10 max-w-lg mx-auto" style={{ color: C.muted }}>
+            Créez votre compte en 1 minute, personnalisez votre roue, imprimez le QR code. 30 spins offerts pour tester, sans carte bancaire. Vos premiers contacts dès aujourd&apos;hui.
           </p>
           <Link
             href="/signup"
@@ -1287,7 +1487,7 @@ export default function LandingPage() {
       <SocialProofBar />
       <HowItWorksSection />
       <LocalMerchantsSection />
-      <DashboardMockupSection />
+      <ClientExperienceSection />
       <LocalVisionSection />
       <DemoSection />
       <PricingSection />

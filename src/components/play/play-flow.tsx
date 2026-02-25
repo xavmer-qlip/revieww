@@ -532,7 +532,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
       {/* Powered by woopla - top */}
       <div className="absolute top-4 left-0 right-0 flex justify-center z-10">
         <div className="opacity-60 hover:opacity-100 transition-opacity">
-          <Logo size="sm" variant="light" />
+          <Logo size="sm" variant="light" animate />
         </div>
       </div>
 

@@ -106,7 +106,7 @@ function ValidatePageInner() {
     <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       {/* Logo */}
       <div className="absolute top-4 left-0 right-0 flex justify-center">
-        <Logo size="sm" />
+        <Logo size="sm" animate />
       </div>
 
       <motion.div

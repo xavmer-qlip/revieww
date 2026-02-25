@@ -104,7 +104,7 @@ export default function AuthLayout({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
           >
-            <Logo variant="light" size="xl" showTagline />
+            <Logo variant="light" size="xl" showTagline animate />
           </motion.div>
         </div>
 
@@ -177,7 +177,7 @@ export default function AuthLayout({
         >
           {/* Mobile logo */}
           <div className="lg:hidden mb-10">
-            <Logo variant="dark" size="lg" showTagline />
+            <Logo variant="dark" size="lg" showTagline animate />
           </div>
 
           {children}

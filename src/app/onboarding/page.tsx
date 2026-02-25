@@ -359,7 +359,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-center pt-8 pb-4">
-        <Logo size="md" showTagline />
+        <Logo size="md" showTagline animate />
       </header>
 
       {/* Step indicator */}

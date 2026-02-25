@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-10">
-          <Logo size="lg" showTagline />
+          <Logo size="lg" showTagline animate />
         </div>
 
         {success ? (

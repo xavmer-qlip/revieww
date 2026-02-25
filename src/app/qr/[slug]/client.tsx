@@ -95,7 +95,7 @@ export function QrPageClient({ business, playUrl, qrImageUrl }: QrPageClientProp
         transition={{ delay: 0.6 }}
         className="mt-8"
       >
-        <Logo size="sm" />
+        <Logo size="sm" animate />
       </motion.div>
     </div>
   );

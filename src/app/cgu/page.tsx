@@ -10,7 +10,7 @@ export default function CGUPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="flex items-center justify-center pt-8 pb-4">
-        <Link href="/"><Logo size="md" /></Link>
+        <Link href="/"><Logo size="md" animate /></Link>
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-8 pb-20">
