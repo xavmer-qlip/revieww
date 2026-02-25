@@ -85,8 +85,8 @@ export default function ResetPasswordPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center"
           >
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-accent/10 flex items-center justify-center">
-              <Check className="w-8 h-8 text-accent" />
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-success/10 flex items-center justify-center">
+              <Check className="w-8 h-8 text-success" />
             </div>
             <h1 className="text-2xl font-display font-extrabold text-text">
               Mot de passe modifié !

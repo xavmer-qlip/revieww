@@ -105,7 +105,7 @@ function ToastNotification({
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border font-body text-sm',
         toast.type === 'success'
-          ? 'bg-accent/10 border-accent/20 text-accent'
+          ? 'bg-success/10 border-success/20 text-success'
           : 'bg-danger/10 border-danger/20 text-danger'
       )}
     >
@@ -343,8 +343,8 @@ export default function QRCodePage() {
 
                 {/* Decorative corner dots */}
                 <div className="absolute -top-2 -left-2 w-4 h-4 rounded-full bg-primary/20" />
-                <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-accent/20" />
-                <div className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-accent/20" />
+                <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-primary/20" />
+                <div className="absolute -bottom-2 -left-2 w-4 h-4 rounded-full bg-primary/20" />
                 <div className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full bg-primary/20" />
               </div>
 

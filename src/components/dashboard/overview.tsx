@@ -17,6 +17,14 @@ import {
   ArrowUpRight,
   AlertTriangle,
   Sparkles,
+  QrCode,
+  Disc3,
+  Users,
+  ShieldCheck,
+  Send,
+  Copy,
+  ExternalLink,
+  Download,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -602,9 +610,37 @@ function OnboardingChecklist({ checklist }: { checklist: ChecklistState }) {
 
 function ActivationHero({ business }: { business: Business }) {
   const playUrl = `${PLAY_URL}/${business.slug}`;
+  const validateUrl = '/dashboard/validate';
   const [copied, setCopied] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
+    try {
+      const stored = localStorage.getItem(`activation_${business.id}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set<number>();
+    } catch { return new Set<number>(); }
+  });
+  const [activeStep, setActiveStep] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`activation_${business.id}`);
+      const done = stored ? new Set(JSON.parse(stored)) : new Set<number>();
+      if (!done.has(0)) return 0;
+      if (!done.has(1)) return 1;
+      if (!done.has(2)) return 2;
+      return 2;
+    } catch { return 0; }
+  });
 
-  const handleCopy = async () => {
+  const markDone = (step: number) => {
+    setCompletedSteps((prev) => {
+      const next = new Set(prev);
+      next.add(step);
+      try { localStorage.setItem(`activation_${business.id}`, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+    // Auto advance
+    if (step < 2) setActiveStep(step + 1);
+  };
+
+  const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(playUrl);
       setCopied(true);
@@ -612,28 +648,43 @@ function ActivationHero({ business }: { business: Business }) {
     } catch {}
   };
 
-  const steps = [
+  const teamWhatsApp = () => {
+    const msg = encodeURIComponent(
+      `Salut l'équipe ! 👋\n\nOn lance revieww dans notre établissement ! Nos clients pourront laisser un avis Google et gagner un cadeau grâce à une roue de la fortune.\n\nComment ça marche :\n1. Présentez le QR code aux clients après leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, vérifiez leur code ici : ${window.location.origin}${validateUrl}\n\n📱 Lien vers la roue : ${playUrl}\n\nTestez vous-même !`
+    );
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    markDone(1);
+  };
+
+  const teamEmail = () => {
+    const subject = encodeURIComponent(`revieww — nouveau système d'avis pour ${business.name}`);
+    const body = encodeURIComponent(
+      `Salut l'équipe !\n\nOn lance revieww dans notre établissement ! Nos clients pourront laisser un avis Google et gagner un cadeau grâce à une roue de la fortune.\n\nComment ça marche :\n1. Présentez le QR code aux clients après leur visite\n2. Ils scannent, laissent un avis et tournent la roue\n3. S'ils gagnent, vérifiez leur code ici : ${window.location.origin}${validateUrl}\n\nLien vers la roue : ${playUrl}\n\nTestez vous-même !`
+    );
+    window.open(`mailto:?subject=${subject}&body=${body}`);
+    markDone(1);
+  };
+
+  const allDone = completedSteps.size >= 3;
+
+  const STEPS = [
     {
-      emoji: '📱',
-      title: 'Téléchargez votre QR code',
-      description: 'Imprimez-le et placez-le dans votre établissement',
-      href: '/dashboard/qrcode',
-      cta: 'Voir le QR code',
+      num: 0,
+      icon: ExternalLink,
+      title: 'Testez la roue',
+      subtitle: 'Vivez l\'expérience client pour mieux l\'expliquer à votre équipe',
     },
     {
-      emoji: '📤',
+      num: 1,
+      icon: Send,
       title: 'Partagez avec votre équipe',
-      description: 'Envoyez le lien à vos collaborateurs',
-      action: handleCopy,
-      cta: copied ? 'Copié !' : 'Copier le lien',
+      subtitle: 'Envoyez le lien et les instructions à vos collaborateurs',
     },
     {
-      emoji: '🎡',
-      title: 'Testez vous-même',
-      description: 'Essayez l\'expérience client en direct',
-      href: playUrl,
-      external: true,
-      cta: 'Tester la roue',
+      num: 2,
+      icon: Disc3,
+      title: 'Découvrez votre dashboard',
+      subtitle: 'Personnalisez votre roue, téléchargez le QR et suivez vos avis',
     },
   ];
 
@@ -642,59 +693,198 @@ function ActivationHero({ business }: { business: Business }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      className="space-y-4"
     >
-      <Card padding="lg" className="relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-sky/5">
-        {/* Decorative */}
-        <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg sm:text-xl font-display font-bold text-text">
+            {allDone ? 'Vous êtes prêt !' : 'Activez revieww'}
+          </h2>
+          <p className="text-sm text-text-muted font-body mt-0.5">
+            {allDone
+              ? 'Partagez votre QR code et commencez à collecter des avis'
+              : `${completedSteps.size}/3 étapes complétées`}
+          </p>
+        </div>
+        {/* Mini progress */}
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={cn(
+                'w-8 h-1.5 rounded-full transition-colors',
+                completedSteps.has(i) ? 'bg-success' : 'bg-border/50',
+              )}
+            />
+          ))}
+        </div>
+      </div>
 
-        <div className="relative">
-          <div className="text-center mb-6">
-            <span className="text-4xl mb-3 block">🚀</span>
-            <h2 className="text-xl sm:text-2xl font-display font-bold text-text">
-              Activez revieww en 3 étapes
-            </h2>
-            <p className="text-sm text-text-muted font-body mt-1">
-              Commencez à collecter des avis dès aujourd&apos;hui
-            </p>
-          </div>
+      {/* Step cards */}
+      {STEPS.map((step, idx) => {
+        const isDone = completedSteps.has(step.num);
+        const isActive = activeStep === step.num;
+        const StepIcon = step.icon;
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {steps.map((step, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 + i * 0.1 }}
+        return (
+          <motion.div
+            key={step.num}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: idx * 0.08 }}
+          >
+            <Card
+              padding="md"
+              className={cn(
+                'transition-all duration-200',
+                isActive && !isDone && 'border-primary/30 shadow-md',
+                isDone && 'opacity-70',
+              )}
+            >
+              {/* Step header — always visible */}
+              <button
+                onClick={() => !isDone && setActiveStep(step.num)}
+                className="w-full flex items-center gap-3 text-left"
               >
-                <Card padding="md" hover className="h-full flex flex-col items-center text-center gap-3">
-                  <span className="text-3xl">{step.emoji}</span>
-                  <h3 className="text-sm font-display font-bold text-text">
+                <div className={cn(
+                  'w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all',
+                  isDone
+                    ? 'bg-success/10'
+                    : isActive
+                      ? 'bg-primary/10'
+                      : 'bg-border/30',
+                )}>
+                  {isDone ? (
+                    <CheckCircle2 size={16} className="text-success" />
+                  ) : (
+                    <StepIcon size={16} className={isActive ? 'text-primary' : 'text-text-muted'} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className={cn(
+                    'text-sm font-display font-semibold',
+                    isDone ? 'text-text-muted line-through' : 'text-text',
+                  )}>
                     {step.title}
                   </h3>
-                  <p className="text-xs font-body text-text-muted flex-1">
-                    {step.description}
-                  </p>
-                  {step.href ? (
-                    <Link
-                      href={step.href}
-                      {...(step.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    >
-                      <Button size="sm" variant="primary">
-                        {step.cta}
-                        <ArrowUpRight size={12} />
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={step.action}>
-                      {step.cta}
-                    </Button>
+                  {!isActive && !isDone && (
+                    <p className="text-xs font-body text-text-muted/70 truncate">{step.subtitle}</p>
                   )}
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </Card>
+                </div>
+                {isDone && (
+                  <Badge variant="success" size="sm">Fait</Badge>
+                )}
+              </button>
+
+              {/* Step content — expanded when active */}
+              {isActive && !isDone && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden"
+                >
+                  <div className="pt-4 pl-11">
+                    <p className="text-xs font-body text-text-muted mb-4">{step.subtitle}</p>
+
+                    {/* Step 0: Test the wheel */}
+                    {step.num === 0 && (
+                      <div className="space-y-3">
+                        {/* Direct link */}
+                        <div className="flex items-center gap-2 rounded-xl bg-background border border-border/50 px-3 py-2">
+                          <span className="flex-1 min-w-0 truncate text-xs font-mono text-text-muted">
+                            {playUrl}
+                          </span>
+                          <button onClick={handleCopyLink} className="text-text-muted hover:text-primary transition-colors shrink-0">
+                            {copied ? <CheckCircle2 size={14} className="text-success" /> : <Copy size={14} />}
+                          </button>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Link
+                            href={playUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => markDone(0)}
+                            className="flex-1"
+                          >
+                            <Button variant="primary" size="sm" className="w-full">
+                              <ExternalLink size={14} />
+                              Tester la roue
+                            </Button>
+                          </Link>
+                          <Link href="/dashboard/qrcode" className="flex-1">
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Download size={14} />
+                              Télécharger le QR
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 1: Share with team */}
+                    {step.num === 1 && (
+                      <div className="space-y-3">
+                        <div className="rounded-xl bg-background border border-border/50 px-3 py-2.5">
+                          <p className="text-[11px] font-body text-text-muted leading-relaxed">
+                            Un message pré-rédigé sera envoyé avec le lien de la roue, le fonctionnement et les instructions pour valider les lots.
+                          </p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button variant="primary" size="sm" onClick={teamWhatsApp} className="flex-1">
+                            <Send size={14} />
+                            WhatsApp
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={teamEmail} className="flex-1">
+                            <Mail size={14} />
+                            Email
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => { handleCopyLink(); markDone(1); }} className="flex-1">
+                            <Copy size={14} />
+                            {copied ? 'Copié !' : 'Copier'}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Step 2: Discover dashboard */}
+                    {step.num === 2 && (
+                      <div className="space-y-2">
+                        {[
+                          { icon: Disc3, label: 'Ma Roue', desc: 'Personnalisez vos lots', href: '/dashboard/wheel' },
+                          { icon: QrCode, label: 'Mon QR Code', desc: 'Téléchargez et imprimez', href: '/dashboard/qrcode' },
+                          { icon: Users, label: 'Avis & Contacts', desc: 'Suivez vos avis et emails', href: '/dashboard/clients' },
+                          { icon: ShieldCheck, label: 'Valider un lot', desc: 'Vérifiez les codes gagnants', href: '/dashboard/validate' },
+                        ].map((item) => {
+                          const ItemIcon = item.icon;
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => markDone(2)}
+                              className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-background transition-colors group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                <ItemIcon size={14} className="text-primary" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-display font-medium text-text">{item.label}</p>
+                                <p className="text-xs font-body text-text-muted">{item.desc}</p>
+                              </div>
+                              <ArrowUpRight size={14} className="text-text-muted/40 group-hover:text-primary transition-colors shrink-0" />
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </Card>
+          </motion.div>
+        );
+      })}
     </motion.div>
   );
 }

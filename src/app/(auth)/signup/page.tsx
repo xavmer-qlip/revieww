@@ -27,7 +27,7 @@ function getPasswordStrength(password: string): {
   if (score <= 1) return { score: 1, label: 'Faible', color: 'bg-danger' };
   if (score <= 2) return { score: 2, label: 'Moyen', color: 'bg-warning' };
   if (score <= 3) return { score: 3, label: 'Bon', color: 'bg-primary' };
-  if (score <= 4) return { score: 4, label: 'Fort', color: 'bg-accent' };
+  if (score <= 4) return { score: 4, label: 'Fort', color: 'bg-success' };
   return { score: 5, label: 'Excellent', color: 'bg-success' };
 }
 
@@ -148,9 +148,9 @@ export default function SignupPage() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="w-20 h-20 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-6"
+          className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6"
         >
-          <MailCheck className="w-10 h-10 text-accent" />
+          <MailCheck className="w-10 h-10 text-success" />
         </motion.div>
 
         <motion.h1
@@ -407,7 +407,7 @@ export default function SignupPage() {
               key={perk}
               className="inline-flex items-center gap-1.5 text-xs font-body text-text-muted"
             >
-              <span className="w-1 h-1 rounded-full bg-accent" />
+              <span className="w-1 h-1 rounded-full bg-primary" />
               {perk}
             </span>
           )

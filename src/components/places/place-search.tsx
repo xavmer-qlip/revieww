@@ -163,12 +163,12 @@ export function PlaceSearch({
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border-2 border-accent bg-accent/5 p-3 sm:p-4 space-y-2.5"
+            className="rounded-2xl border-2 border-primary bg-primary/5 p-3 sm:p-4 space-y-2.5"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-start gap-2.5 min-w-0">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-accent/15 flex items-center justify-center shrink-0">
-                  <MapPin size={18} className="text-accent" />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <MapPin size={18} className="text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-display font-bold text-text text-sm sm:text-base leading-tight">{selectedPlace.name}</p>
@@ -206,8 +206,8 @@ export function PlaceSearch({
             )}
 
             <div className="flex items-center gap-2">
-              <Check size={14} className="text-accent" />
-              <span className="text-xs font-body text-accent font-medium">
+              <Check size={14} className="text-success" />
+              <span className="text-xs font-body text-success font-medium">
                 Lien Google Review configuré
               </span>
             </div>

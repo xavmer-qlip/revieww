@@ -261,7 +261,7 @@ function WinToggle({
       onClick={onToggle}
       className={cn(
         'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200',
-        isWinning ? 'bg-accent' : 'bg-border',
+        isWinning ? 'bg-success' : 'bg-border',
       )}
     >
       <motion.span
@@ -432,7 +432,7 @@ function SegmentCard({
                 />
                 <span className={cn(
                   'text-xs font-medium font-display transition-colors',
-                  segment.is_winning ? 'text-accent' : 'text-text-muted',
+                  segment.is_winning ? 'text-success' : 'text-text-muted',
                 )}>
                   {segment.is_winning ? 'Lot gagnant' : 'Perdant'}
                 </span>
@@ -480,7 +480,7 @@ function ProbabilityBar({ total }: { total: number }) {
         <span
           className={cn(
             'text-sm font-bold font-display tabular-nums transition-colors',
-            isValid ? 'text-accent' : isOver ? 'text-danger' : 'text-warning',
+            isValid ? 'text-success' : isOver ? 'text-danger' : 'text-warning',
           )}
         >
           {total}%
@@ -490,7 +490,7 @@ function ProbabilityBar({ total }: { total: number }) {
         <motion.div
           className={cn(
             'h-full rounded-full transition-colors duration-300',
-            isValid ? 'bg-accent' : isOver ? 'bg-danger' : 'bg-warning',
+            isValid ? 'bg-success' : isOver ? 'bg-danger' : 'bg-warning',
           )}
           animate={{ width: `${Math.min(total, 100)}%` }}
           transition={{ duration: 0.3 }}
@@ -532,7 +532,7 @@ function ToastNotification({ toast, onDismiss }: { toast: Toast; onDismiss: (id:
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border font-body text-sm',
         toast.type === 'success'
-          ? 'bg-accent/10 border-accent/20 text-accent'
+          ? 'bg-success/10 border-success/20 text-success'
           : 'bg-danger/10 border-danger/20 text-danger',
       )}
     >
@@ -1043,7 +1043,7 @@ export default function WheelEditorPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center"
               >
-                <p className="text-xs font-body text-accent flex items-center justify-center gap-1.5">
+                <p className="text-xs font-body text-success flex items-center justify-center gap-1.5">
                   <Check size={14} />
                   Pret a sauvegarder
                 </p>

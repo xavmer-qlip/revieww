@@ -720,7 +720,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                           animate={{ scale: 1 }}
                           transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                         >
-                          <Check className="w-8 h-8 text-accent" />
+                          <Check className="w-8 h-8 text-success" />
                         </motion.div>
                       ) : (
                         <>
@@ -931,7 +931,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                       className={cn(
                         'w-5 h-5 rounded-lg border-2 transition-all duration-200 flex items-center justify-center',
                         optedIn
-                          ? 'border-accent bg-accent'
+                          ? 'border-primary bg-primary'
                           : 'border-border bg-surface group-hover:border-primary'
                       )}
                     >
@@ -1173,7 +1173,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                         </svg>
                         <div className="absolute inset-0 flex items-center justify-center">
                           {countdownDone ? (
-                            <Check className="w-6 h-6 text-accent" />
+                            <Check className="w-6 h-6 text-success" />
                           ) : (
                             <span className="text-lg font-display font-bold text-text">{countdown}</span>
                           )}
@@ -1213,7 +1213,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                       className={cn(
                         'w-full py-3 px-6 rounded-xl font-display font-bold text-base transition-all duration-200',
                         countdownDone
-                          ? 'bg-accent text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
+                          ? 'bg-success text-white shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
                           : 'bg-border/30 text-text-muted cursor-not-allowed'
                       )}
                     >
@@ -1356,7 +1356,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.7 }}
-                    className="flex items-center justify-center gap-2 text-accent"
+                    className="flex items-center justify-center gap-2 text-success"
                   >
                     <Gift className="w-4 h-4" />
                     <p className="font-body text-sm font-medium">

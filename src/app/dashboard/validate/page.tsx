@@ -54,8 +54,8 @@ export default function DashboardValidatePage() {
         transition={{ duration: 0.4 }}
       >
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-            <ShieldCheck size={20} className="text-accent" />
+          <div className="w-10 h-10 rounded-xl bg-sky/10 flex items-center justify-center">
+            <ShieldCheck size={20} className="text-sky" />
           </div>
           <div>
             <h1 className="text-2xl font-display font-bold text-text">
@@ -136,7 +136,7 @@ export default function DashboardValidatePage() {
               onClick={handleCopy}
               className="flex-1"
             >
-              {copied ? <Check size={16} className="text-accent" /> : <Copy size={16} />}
+              {copied ? <Check size={16} className="text-success" /> : <Copy size={16} />}
               {copied ? 'Copié !' : 'Copier le lien'}
             </Button>
 

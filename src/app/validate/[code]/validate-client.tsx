@@ -109,12 +109,12 @@ export function ValidateClient({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-accent/10 border border-accent/20 rounded-2xl p-4 text-center"
+            className="bg-success/10 border border-success/20 rounded-2xl p-4 text-center"
           >
-            <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center mx-auto mb-2">
-              <Check className="w-5 h-5 text-accent" />
+            <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-2">
+              <Check className="w-5 h-5 text-success" />
             </div>
-            <p className="text-sm font-display font-bold text-accent">
+            <p className="text-sm font-display font-bold text-success">
               {TEXTS.validate.claimed}
             </p>
             {spin.claimed_at && (

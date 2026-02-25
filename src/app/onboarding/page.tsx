@@ -135,7 +135,7 @@ function StepHowItWorks({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className={cn(
-                'relative rounded-2xl border-2 p-4 text-left transition-all duration-200 cursor-pointer',
+                'relative rounded-2xl border-2 p-4 pt-5 text-left transition-all duration-200 cursor-pointer',
                 isSelected
                   ? 'border-primary bg-primary/5 shadow-sm'
                   : 'border-border/50 opacity-60 hover:opacity-80 hover:border-border'
@@ -143,16 +143,29 @@ function StepHowItWorks({
             >
               {/* Recommended badge */}
               {option.recommended && (
-                <Badge variant="success" size="sm" className="absolute -top-2.5 right-3 text-[9px] px-2 py-0.5">
+                <Badge variant="primary" size="sm" className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[9px] px-2 py-0.5 whitespace-nowrap">
                   Recommandé
                 </Badge>
               )}
 
-              <h3 className="text-sm font-display font-bold text-text mb-3">
-                {option.label}
-              </h3>
+              {/* Title row with check */}
+              <div className="flex items-center gap-2 mb-3">
+                <div
+                  className={cn(
+                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                    isSelected
+                      ? 'border-primary bg-primary'
+                      : 'border-border'
+                  )}
+                >
+                  {isSelected && <Check size={10} className="text-white" strokeWidth={3} />}
+                </div>
+                <h3 className="text-sm font-display font-bold text-text">
+                  {option.label}
+                </h3>
+              </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 pl-7">
                 {option.steps.map((step, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <span className="text-base shrink-0">{step.emoji}</span>
@@ -160,17 +173,6 @@ function StepHowItWorks({
                   </div>
                 ))}
               </div>
-
-              {/* Selection indicator */}
-              {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-3 left-3 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                >
-                  <Check size={12} className="text-white" strokeWidth={3} />
-                </motion.div>
-              )}
             </motion.button>
           );
         })}

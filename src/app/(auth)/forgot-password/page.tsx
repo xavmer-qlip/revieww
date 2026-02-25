@@ -48,8 +48,8 @@ export default function ForgotPasswordPage() {
           transition={{ duration: 0.4 }}
           className="text-center"
         >
-          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-accent/10 flex items-center justify-center">
-            <Check className="w-8 h-8 text-accent" />
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-success/10 flex items-center justify-center">
+            <Check className="w-8 h-8 text-success" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-display font-extrabold text-text tracking-tight">
             Email envoyé !

@@ -65,7 +65,7 @@ function ToastNotification({
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border font-body text-sm',
         toast.type === 'success'
-          ? 'bg-accent/10 border-accent/20 text-accent'
+          ? 'bg-success/10 border-success/20 text-success'
           : 'bg-danger/10 border-danger/20 text-danger'
       )}
     >
@@ -520,8 +520,8 @@ export default function SettingsPage() {
       >
         <Card padding="lg">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Link2 size={20} className="text-accent" />
+            <div className="w-10 h-10 rounded-xl bg-sky/10 flex items-center justify-center">
+              <Link2 size={20} className="text-sky" />
             </div>
             <div className="flex-1">
               <h2 className="text-base font-display font-semibold text-text">
@@ -821,8 +821,8 @@ export default function SettingsPage() {
       >
         <Card padding="lg">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
-              <Clock size={20} className="text-accent" />
+            <div className="w-10 h-10 rounded-xl bg-sky/10 flex items-center justify-center">
+              <Clock size={20} className="text-sky" />
             </div>
             <div>
               <h2 className="text-base font-display font-semibold text-text">
