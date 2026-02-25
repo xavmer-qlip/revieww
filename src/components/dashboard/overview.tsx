@@ -787,13 +787,14 @@ function ActivationHero({ business }: { business: Business }) {
       if (!done.has(0)) return 0;
       if (!done.has(1)) return 1;
       if (!done.has(2)) return 2;
-      return 0; // All done — show step 0 by default (QR code)
+      if (!done.has(3)) return 3;
+      return 0; // All done — show step 0 by default
     } catch { return 0; }
   });
 
   // Editable sharing message
   const qrPublicUrl = `${APP_URL}/qr/${business.slug}`;
-  const defaultMessage = `Salut l'equipe !\n\nOn met en place woopla pour ${business.name}. Nos clients pourront tourner la roue de la fortune et gagner un cadeau.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, tournent la roue et decouvrent leur lot\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nVoici le QR code a presenter aux clients : ${qrPublicUrl}\nLien direct vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en cliquant sur le lien !`;
+  const defaultMessage = `Salut l'equipe !\n\nOn met en place woopla pour ${business.name}. Nos clients pourront tourner la roue de la fortune et gagner un cadeau.\n\nComment ca marche :\n1. Presentez le QR code aux clients apres leur visite\n2. Ils scannent, tournent la roue et decouvrent leur lot\n3. S'ils gagnent, ils recoivent un code par email valable lors de leur prochaine visite\n4. Verifiez et validez leur code ici : ${typeof window !== 'undefined' ? window.location.origin : ''}${validateUrl}\n\nVoici le QR code a presenter aux clients : ${qrPublicUrl}\nLien direct vers la roue : ${playUrl}\n\nImportant : les lots sont a remettre lors de la prochaine visite du client (non encaissables immediatement).\n\nTestez vous-meme en cliquant sur le lien !\n\nBon a savoir : apres avoir joue, les clients sont invites a laisser un avis sur Google et a suivre nos reseaux sociaux. C'est automatique et ca booste notre visibilite en ligne !`;
   const [shareMessage, setShareMessage] = useState(defaultMessage);
   const [editingMessage, setEditingMessage] = useState(false);
 
@@ -826,7 +827,7 @@ function ActivationHero({ business }: { business: Business }) {
       return next;
     });
     // Auto advance to next incomplete step
-    if (step < 2) setActiveStep(step + 1);
+    if (step < 3) setActiveStep(step + 1);
   };
 
   const handleCopyLink = async () => {
@@ -847,14 +848,14 @@ function ActivationHero({ business }: { business: Business }) {
 
   const sendWhatsApp = () => {
     window.open(`https://wa.me/?text=${encodeURIComponent(shareMessage)}`, '_blank');
-    markDone(1);
+    markDone(2);
   };
 
   const sendEmail = () => {
     const subject = encodeURIComponent(`woopla \u2014 animation commerciale pour ${business.name}`);
     const body = encodeURIComponent(shareMessage);
     window.open(`mailto:?subject=${subject}&body=${body}`);
-    markDone(1);
+    markDone(2);
   };
 
   const handleDownloadQR = () => {
@@ -881,26 +882,32 @@ function ActivationHero({ business }: { business: Business }) {
     }
   };
 
-  const allDone = completedSteps.size >= 3;
+  const allDone = completedSteps.size >= 4;
 
   const STEPS = [
     {
       num: 0,
+      icon: Disc3,
+      title: 'Configurez vos lots',
+      subtitle: 'Personnalisez les r\u00e9compenses, emojis et probabilit\u00e9s',
+    },
+    {
+      num: 1,
       icon: ExternalLink,
       title: 'Testez la roue',
       subtitle: 'Vivez l\u2019exp\u00e9rience client pour mieux l\u2019expliquer \u00e0 votre \u00e9quipe',
     },
     {
-      num: 1,
+      num: 2,
       icon: Send,
       title: 'Partagez avec votre \u00e9quipe',
       subtitle: 'Envoyez le lien et les instructions \u00e0 vos collaborateurs',
     },
     {
-      num: 2,
-      icon: Disc3,
+      num: 3,
+      icon: Sparkles,
       title: 'D\u00e9couvrez votre dashboard',
-      subtitle: 'Personnalisez votre roue, t\u00e9l\u00e9chargez le QR et suivez votre activit\u00e9',
+      subtitle: 'T\u00e9l\u00e9chargez le QR, suivez votre activit\u00e9 et g\u00e9rez vos contacts',
     },
   ];
 
@@ -942,7 +949,7 @@ function ActivationHero({ business }: { business: Business }) {
               <p className="text-sm text-text-muted font-body">
                 {allDone
                   ? 'Partagez votre QR code et lancez votre animation'
-                  : `${completedSteps.size}/3 \u00e9tapes compl\u00e9t\u00e9es`}
+                  : `${completedSteps.size}/4 \u00e9tapes compl\u00e9t\u00e9es`}
               </p>
             </div>
           </div>
@@ -970,7 +977,7 @@ function ActivationHero({ business }: { business: Business }) {
 
       {/* Progress bar */}
       <div className="flex gap-1.5">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <div
             key={i}
             className={cn(
@@ -1048,15 +1055,39 @@ function ActivationHero({ business }: { business: Business }) {
                   <div className="pt-4 pl-11">
                     <p className="text-xs font-body text-text-muted mb-4">{step.subtitle}</p>
 
-                    {/* Step 0: Test the wheel */}
+                    {/* Step 0: Configure prizes */}
                     {step.num === 0 && (
+                      <div className="space-y-3">
+                        <Link
+                          href="/dashboard/wheel"
+                          onClick={() => markDone(0)}
+                          className="block"
+                        >
+                          <Button variant="primary" size="sm" className="w-full sm:w-auto">
+                            <Disc3 size={14} />
+                            Personnaliser mes lots
+                          </Button>
+                        </Link>
+                        {!isDone && (
+                          <button
+                            onClick={() => markDone(0)}
+                            className="text-xs font-body text-primary hover:underline"
+                          >
+                            Marquer comme fait
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Step 1: Test the wheel */}
+                    {step.num === 1 && (
                       <div className="space-y-3">
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Link
                             href={playUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => markDone(0)}
+                            onClick={() => markDone(1)}
                             className="flex-1"
                           >
                             <Button variant="primary" size="sm" className="w-full">
@@ -1066,13 +1097,13 @@ function ActivationHero({ business }: { business: Business }) {
                           </Link>
                           <Button variant="outline" size="sm" className="flex-1" onClick={handleCopyLink}>
                             <Copy size={14} />
-                            {copied ? 'Copié !' : 'Copier le lien'}
+                            {copied ? 'Copi\u00e9 !' : 'Copier le lien'}
                           </Button>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Button variant="outline" size="sm" className="flex-1" onClick={handleDownloadQR}>
                             <Download size={14} />
-                            Télécharger le QR
+                            T\u00e9l\u00e9charger le QR
                           </Button>
                           <Link href="/dashboard/qrcode" className="flex-1">
                             <Button variant="outline" size="sm" className="w-full">
@@ -1093,7 +1124,7 @@ function ActivationHero({ business }: { business: Business }) {
                         </div>
                         {!isDone && (
                           <button
-                            onClick={() => markDone(0)}
+                            onClick={() => markDone(1)}
                             className="text-xs font-body text-primary hover:underline"
                           >
                             Marquer comme fait
@@ -1102,8 +1133,8 @@ function ActivationHero({ business }: { business: Business }) {
                       </div>
                     )}
 
-                    {/* Step 1: Share with team — QR download + editable message */}
-                    {step.num === 1 && (
+                    {/* Step 2: Share with team — QR download + editable message */}
+                    {step.num === 2 && (
                       <div className="space-y-3">
                         {/* QR code — tap to enlarge */}
                         <div className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/20 px-3 py-3">
@@ -1171,17 +1202,17 @@ function ActivationHero({ business }: { business: Business }) {
                             <Mail size={14} />
                             Email
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => { handleCopyMessage(); markDone(1); }} className="flex-1">
+                          <Button variant="outline" size="sm" onClick={() => { handleCopyMessage(); markDone(2); }} className="flex-1">
                             <Copy size={14} />
                             {copied ? 'Copi\u00e9 !' : 'Copier'}
                           </Button>
                         </div>
                         <p className="text-[10px] font-body text-text-muted/60">
-                          {"Le lien QR est inclus dans le message — WhatsApp affichera un aper\u00e7u automatiquement"}
+                          {"Le lien QR est inclus dans le message \u2014 WhatsApp affichera un aper\u00e7u automatiquement"}
                         </p>
                         {!isDone && (
                           <button
-                            onClick={() => markDone(1)}
+                            onClick={() => markDone(2)}
                             className="text-xs font-body text-primary hover:underline"
                           >
                             Marquer comme fait
@@ -1190,8 +1221,8 @@ function ActivationHero({ business }: { business: Business }) {
                       </div>
                     )}
 
-                    {/* Step 2: Discover dashboard */}
-                    {step.num === 2 && (
+                    {/* Step 3: Discover dashboard */}
+                    {step.num === 3 && (
                       <div className="space-y-2">
                         {[
                           { icon: Disc3, label: 'Ma Roue', desc: 'Personnalisez vos lots', href: '/dashboard/wheel' },
@@ -1204,7 +1235,7 @@ function ActivationHero({ business }: { business: Business }) {
                             <Link
                               key={item.href}
                               href={item.href}
-                              onClick={() => markDone(2)}
+                              onClick={() => markDone(3)}
                               className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-background transition-colors group"
                             >
                               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -1220,7 +1251,7 @@ function ActivationHero({ business }: { business: Business }) {
                         })}
                         {!isDone && (
                           <button
-                            onClick={() => markDone(2)}
+                            onClick={() => markDone(3)}
                             className="text-xs font-body text-primary hover:underline mt-2"
                           >
                             Marquer comme fait

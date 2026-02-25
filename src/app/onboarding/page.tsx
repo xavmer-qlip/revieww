@@ -1,42 +1,20 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronRight, Download, Copy, Send, ArrowRight, Trash2, Plus, X, MailCheck, ExternalLink, Shield } from 'lucide-react';
-import QRCode from 'qrcode';
+import { ChevronRight, MailCheck } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
-  TEXTS,
   PLAN_SPIN_LIMITS,
   PLAN_CONTACT_LIMITS,
-  PLAY_URL,
   SECTOR_PRESETS,
-  SECTOR_LABELS,
   mapGoogleCategoryToSector,
 } from '@/lib/constants';
-import type { SectorKey, SectorPreset } from '@/lib/constants';
-import { slugify, cn } from '@/lib/utils';
+import type { SectorKey } from '@/lib/constants';
+import { slugify } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import { generatePin } from '@/lib/pin';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface SelectedPreset extends SectorPreset {
-  enabled: boolean;
-  stock: number;
-}
-
-interface CreatedBusiness {
-  id: string;
-  slug: string;
-  name: string;
-}
 
 // ---------------------------------------------------------------------------
 // Step 0 — How it works
@@ -44,297 +22,24 @@ interface CreatedBusiness {
 
 const HOW_IT_WORKS: { emoji: string; title: string; description: string }[] = [
   {
-    emoji: '📱',
+    emoji: '\u{1F4F1}',
     title: 'Votre client scanne le QR code',
     description: 'Sur vos tables, au comptoir, dans l\'addition',
   },
   {
-    emoji: '🎡',
+    emoji: '\u{1F3A1}',
     title: 'Il tourne la roue',
-    description: 'Il découvre son lot en quelques secondes',
+    description: 'Il d\u00e9couvre son lot en quelques secondes',
   },
   {
-    emoji: '📧',
+    emoji: '\u{1F4E7}',
     title: 'Il laisse son email',
-    description: 'Vous récupérez un contact qualifié',
+    description: 'Vous r\u00e9cup\u00e9rez un contact qualifi\u00e9',
   },
 ];
 
-const EMOJI_GRID = [
-  '☕', '🎂', '🍺', '💰', '🎁', '🍽️',
-  '❌', '😢', '🎉', '🏆', '⭐', '💎',
-  '🌟', '🔥', '🌈', '🥳', '🥇', '🎯',
-  '💥', '🍀', '🍰', '🍩', '🍔', '🍕',
-  '🍿', '🥤', '🍷', '🍸', '🍓', '🍫',
-];
-
-
 // ---------------------------------------------------------------------------
-// Step 1 — Configure prizes with sector presets
-// ---------------------------------------------------------------------------
-
-function StepConfigurePrizes({
-  detectedSector,
-  currentSector,
-  onSectorChange,
-  presets,
-  onToggle,
-  onStockChange,
-  onLabelChange,
-  onEmojiChange,
-  onAddPreset,
-  onDeletePreset,
-  validation,
-  requirePin,
-  onRequirePinChange,
-}: {
-  detectedSector: SectorKey;
-  currentSector: SectorKey;
-  onSectorChange: (sector: SectorKey) => void;
-  presets: SelectedPreset[];
-  onToggle: (index: number) => void;
-  onStockChange: (index: number, stock: number) => void;
-  onLabelChange: (index: number, label: string) => void;
-  onEmojiChange: (index: number, emoji: string) => void;
-  onAddPreset: () => void;
-  onDeletePreset: (index: number) => void;
-  validation: { valid: boolean; message: string };
-  requirePin: boolean;
-  onRequirePinChange: (value: boolean) => void;
-}) {
-  const sectorKeys = Object.keys(SECTOR_LABELS) as SectorKey[];
-  const [openEmojiIndex, setOpenEmojiIndex] = useState<number | null>(null);
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          {TEXTS.onboarding.prizesTitle}
-        </h2>
-        <p className="mt-2 text-text-muted font-body">
-          {TEXTS.onboarding.prizesSubtitle}
-        </p>
-      </div>
-
-      {/* Sector badge + selector */}
-      <div className="flex flex-col items-center gap-3">
-        <Badge variant="primary" size="md">
-          {SECTOR_LABELS[detectedSector]} détecté
-        </Badge>
-        <div className="flex flex-wrap justify-center gap-2">
-          {sectorKeys.map((key) => (
-            <button
-              key={key}
-              onClick={() => onSectorChange(key)}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-display font-medium transition-all',
-                currentSector === key
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-background text-text-muted hover:bg-primary/10 border border-border/50'
-              )}
-            >
-              {SECTOR_LABELS[key]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Preset grid */}
-      <div className="space-y-3 max-w-lg mx-auto">
-        {presets.map((preset, index) => (
-          <motion.div
-            key={`${currentSector}-${index}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-          >
-            <Card
-              padding="sm"
-              className={cn(
-                'transition-all duration-200 p-3',
-                preset.enabled
-                  ? 'border-primary/30 bg-primary/5'
-                  : 'opacity-60'
-              )}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                {/* Row 1 mobile / inline desktop: checkbox + emoji + label */}
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <button
-                    onClick={() => onToggle(index)}
-                    className={cn(
-                      'w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all',
-                      preset.enabled
-                        ? 'border-primary bg-primary'
-                        : 'border-border hover:border-primary/40'
-                    )}
-                  >
-                    {preset.enabled && <Check size={12} className="text-white" strokeWidth={3} />}
-                  </button>
-
-                  <button
-                    onClick={() => setOpenEmojiIndex(openEmojiIndex === index ? null : index)}
-                    className="text-xl hover:scale-110 transition-transform shrink-0"
-                    title="Changer l'emoji"
-                  >
-                    {preset.emoji}
-                  </button>
-
-                  <input
-                    type="text"
-                    value={preset.label}
-                    onChange={(e) => onLabelChange(index, e.target.value)}
-                    className="text-xs sm:text-sm font-medium font-body text-text flex-1 min-w-0 px-2 py-1 rounded-lg bg-transparent border border-transparent focus:border-primary/30 focus:bg-background focus:outline-none transition-all"
-                  />
-                </div>
-
-                {/* Row 2 mobile / inline desktop: color dot + stock + delete */}
-                <div className="flex items-center gap-2 justify-end pl-8 sm:pl-0">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: preset.color }}
-                  />
-
-                  {preset.isWinning && preset.enabled ? (
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <input
-                        type="number"
-                        min={0}
-                        value={preset.stock}
-                        onChange={(e) => onStockChange(index, Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-14 px-2 py-1 text-xs font-body rounded-lg bg-background border border-border/50 text-text text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      />
-                      <span className="text-[10px] text-text-muted font-body">/mois</span>
-                    </div>
-                  ) : !preset.isWinning ? (
-                    <span className="text-[10px] text-text-muted font-body shrink-0">Illimité</span>
-                  ) : null}
-
-                  <button
-                    onClick={() => onDeletePreset(index)}
-                    className="p-1 rounded-lg text-text-muted/40 hover:text-danger hover:bg-danger/10 transition-all shrink-0"
-                    title="Supprimer"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Inline emoji picker */}
-              <AnimatePresence>
-                {openEmojiIndex === index && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="grid grid-cols-6 gap-1 pt-2 mt-2 border-t border-border/30">
-                      {EMOJI_GRID.map((emoji) => (
-                        <button
-                          key={emoji}
-                          onClick={() => {
-                            onEmojiChange(index, emoji);
-                            setOpenEmojiIndex(null);
-                          }}
-                          className={cn(
-                            'w-8 h-8 flex items-center justify-center rounded-lg text-lg transition-all',
-                            'hover:bg-primary/10 hover:scale-110',
-                            emoji === preset.emoji && 'bg-primary/15 ring-2 ring-primary/30',
-                          )}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Add preset button */}
-      <div className="max-w-lg mx-auto">
-        <button
-          onClick={onAddPreset}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border-2 border-dashed border-border/50 text-sm font-medium font-body text-text-muted hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all"
-        >
-          <Plus size={14} />
-          Ajouter un lot
-        </button>
-      </div>
-
-      {/* Validation message */}
-      {!validation.valid && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center text-xs text-warning font-body"
-        >
-          {validation.message}
-        </motion.p>
-      )}
-
-      {/* PIN anti-triche section */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="max-w-lg mx-auto"
-      >
-        <Card
-          padding="sm"
-          className={cn(
-            'transition-all duration-200 p-4',
-            requirePin ? 'border-primary/30 bg-primary/5' : ''
-          )}
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-              <Shield size={18} className="text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-display font-semibold text-text">
-                  Code PIN anti-triche
-                </h3>
-                <button
-                  onClick={() => onRequirePinChange(!requirePin)}
-                  className="shrink-0"
-                >
-                  <div
-                    className={cn(
-                      'w-10 h-5.5 rounded-full flex items-center transition-colors duration-200 px-0.5',
-                      requirePin ? 'bg-primary' : 'bg-border'
-                    )}
-                  >
-                    <motion.div
-                      animate={{ x: requirePin ? 18 : 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="w-4.5 h-4.5 rounded-full bg-white shadow-sm"
-                    />
-                  </div>
-                </button>
-              </div>
-              <p className="text-xs font-body text-text-muted mt-1 leading-relaxed">
-                Un code a 4 chiffres change chaque jour. Donnez-le a vos clients sur place pour qu&apos;ils puissent jouer. Cela empeche les abus a distance.
-              </p>
-              <p className="text-[10px] font-body text-text-muted/70 mt-1.5">
-                Modifiable a tout moment dans les parametres
-              </p>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
-
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 2 — Verify email
+// Step 1 — Verify email
 // ---------------------------------------------------------------------------
 
 function StepVerifyEmail({
@@ -399,10 +104,10 @@ function StepVerifyEmail({
         </motion.div>
 
         <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          Vérifiez votre email
+          V\u00e9rifiez votre email
         </h2>
         <p className="mt-2 text-text-muted font-body max-w-sm mx-auto">
-          Nous avons envoyé un lien de vérification à votre adresse email. Cliquez dessus pour activer votre page.
+          Nous avons envoy\u00e9 un lien de v\u00e9rification \u00e0 votre adresse email. Cliquez dessus pour activer votre page.
         </p>
       </div>
 
@@ -421,7 +126,7 @@ function StepVerifyEmail({
           loading={resending}
         >
           <MailCheck size={14} />
-          {resendSuccess ? 'Email envoyé !' : 'Renvoyer l\'email'}
+          {resendSuccess ? 'Email envoy\u00e9 !' : 'Renvoyer l\'email'}
         </Button>
       </motion.div>
 
@@ -437,154 +142,7 @@ function StepVerifyEmail({
           transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
           className="w-3 h-3 rounded-full border-2 border-sky/30 border-t-sky"
         />
-        <span className="text-xs font-body">En attente de vérification...</span>
-      </motion.div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Step 3 — QR code ready + sharing
-// ---------------------------------------------------------------------------
-
-function StepQRReady({
-  business,
-  qrDataUrl,
-  playUrl,
-}: {
-  business: CreatedBusiness;
-  qrDataUrl: string | null;
-  playUrl: string;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleDownload = useCallback(() => {
-    if (!qrDataUrl) return;
-    const link = document.createElement('a');
-    link.download = `qr-${business.slug}.png`;
-    link.href = qrDataUrl;
-    link.click();
-  }, [qrDataUrl, business.slug]);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(playUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
-  }, [playUrl]);
-
-  const handleWhatsApp = useCallback(() => {
-    const text = encodeURIComponent(
-      `Jouez à la roue de la fortune chez ${business.name} et gagnez un cadeau ! ${playUrl}`
-    );
-    window.open(`https://wa.me/?text=${text}`, '_blank');
-  }, [business.name, playUrl]);
-
-  const handleEmail = useCallback(() => {
-    const subject = encodeURIComponent(`Gagnez un cadeau chez ${business.name}`);
-    const body = encodeURIComponent(
-      `Bonjour,\n\nJouez à la roue de la fortune et gagnez un cadeau !\n${playUrl}\n\nMerci !`
-    );
-    window.open(`mailto:?subject=${subject}&body=${body}`);
-  }, [business.name, playUrl]);
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        {/* Success animation */}
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-          className="w-16 h-16 mx-auto mb-4 rounded-full bg-sky/10 flex items-center justify-center"
-        >
-          <Check className="w-8 h-8 text-sky" />
-        </motion.div>
-
-        <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          Votre roue est active !
-        </h2>
-        <p className="mt-2 text-text-muted font-body">
-          Partagez votre QR code pour commencer à animer votre commerce
-        </p>
-      </div>
-
-      {/* QR Code */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="flex flex-col items-center gap-3"
-      >
-        {qrDataUrl ? (
-          <div className="p-4 bg-white rounded-2xl shadow-lg border border-border/30">
-            <img
-              src={qrDataUrl}
-              alt="QR Code"
-              className="w-[180px] h-[180px]"
-            />
-          </div>
-        ) : (
-          <div className="w-[180px] h-[180px] bg-border/20 rounded-xl animate-pulse" />
-        )}
-      </motion.div>
-
-      {/* Share grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-w-sm mx-auto"
-      >
-        <Button variant="primary" size="sm" onClick={handleDownload}>
-          <Download size={14} />
-          Télécharger
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleWhatsApp}>
-          <Send size={14} />
-          WhatsApp
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleCopy}>
-          <Copy size={14} />
-          {copied ? 'Copié !' : 'Copier le lien'}
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleEmail}>
-          <Send size={14} />
-          Email
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.open(playUrl, '_blank')}
-        >
-          <ExternalLink size={14} />
-          Ouvrir le lien
-        </Button>
-      </motion.div>
-
-      {/* Team sharing section */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="max-w-sm mx-auto"
-      >
-        <p className="text-xs font-display font-semibold text-text mb-2">
-          Partagez avec votre équipe
-        </p>
-        <div
-          onClick={handleCopy}
-          className="flex items-center gap-2 rounded-xl border border-border/50 bg-background px-3 py-2.5 cursor-pointer hover:border-primary/30 transition-all"
-        >
-          <span className="flex-1 min-w-0 truncate text-xs font-mono text-text-muted">
-            {playUrl}
-          </span>
-          <ExternalLink size={14} className="text-text-muted shrink-0" />
-        </div>
-        <p className="text-[11px] text-text-muted/60 font-body mt-1">
-          Envoyez le lien à vos collaborateurs
-        </p>
+        <span className="text-xs font-body">En attente de v\u00e9rification...</span>
       </motion.div>
     </div>
   );
@@ -617,28 +175,16 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
 // ---------------------------------------------------------------------------
 
 export default function OnboardingPage() {
-  const router = useRouter();
-
   // Step state
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Business metadata from user
-  const [businessName, setBusinessName] = useState('');
-  const [googleCategory, setGoogleCategory] = useState<string | null>(null);
-
-  // Sector & presets
+  // Detected sector (for default presets)
   const [detectedSector, setDetectedSector] = useState<SectorKey>('autre');
-  const [currentSector, setCurrentSector] = useState<SectorKey>('autre');
-  const [presets, setPresets] = useState<SelectedPreset[]>([]);
 
-  // PIN anti-triche
-  const [requirePin, setRequirePin] = useState(true);
-
-  // Created business (after step 1 completes)
-  const [createdBusiness, setCreatedBusiness] = useState<CreatedBusiness | null>(null);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  // Created business (after step 0 completes)
+  const [createdBusiness, setCreatedBusiness] = useState<{ id: string } | null>(null);
 
   // --- Load user metadata on mount (with localStorage fallback for OAuth) ---
   useEffect(() => {
@@ -648,16 +194,14 @@ export default function OnboardingPage() {
       if (!user) return;
 
       const meta = user.user_metadata ?? {};
-      let name = (meta.business_name as string) || '';
       let cat = (meta.google_category as string) || null;
 
       // OAuth fallback: read business data saved before OAuth redirect
-      if (!name) {
+      if (!(meta.business_name as string)) {
         try {
           const stored = localStorage.getItem('oauth_business_data');
           if (stored) {
             const data = JSON.parse(stored);
-            name = data.business_name || '';
             cat = data.google_category || null;
             localStorage.removeItem('oauth_business_data');
 
@@ -681,244 +225,135 @@ export default function OnboardingPage() {
         }
       }
 
-      setBusinessName(name);
-      setGoogleCategory(cat);
-
-      const sector = mapGoogleCategoryToSector(cat);
-      setDetectedSector(sector);
-      setCurrentSector(sector);
-      initPresets(sector);
+      setDetectedSector(mapGoogleCategoryToSector(cat));
     }
     loadUser();
   }, []);
 
-  // --- Initialize presets from a sector ---
-  const initPresets = useCallback((sector: SectorKey) => {
-    const sectorPresets = SECTOR_PRESETS[sector];
-    setPresets(
-      sectorPresets.map((p) => ({
-        ...p,
-        enabled: true,
-        stock: p.suggestedStock,
-      }))
-    );
-  }, []);
-
-  // --- Change sector ---
-  const handleSectorChange = useCallback((sector: SectorKey) => {
-    setCurrentSector(sector);
-    initPresets(sector);
-  }, [initPresets]);
-
-  // --- Toggle preset ---
-  const togglePreset = useCallback((index: number) => {
-    setPresets((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, enabled: !p.enabled } : p))
-    );
-  }, []);
-
-  // --- Update stock ---
-  const updateStock = useCallback((index: number, stock: number) => {
-    setPresets((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, stock } : p))
-    );
-  }, []);
-
-  // --- Update label ---
-  const updateLabel = useCallback((index: number, label: string) => {
-    setPresets((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, label } : p))
-    );
-  }, []);
-
-  // --- Update emoji ---
-  const updateEmoji = useCallback((index: number, emoji: string) => {
-    setPresets((prev) =>
-      prev.map((p, i) => (i === index ? { ...p, emoji } : p))
-    );
-  }, []);
-
-  // --- Add custom preset ---
-  const addPreset = useCallback(() => {
-    setPresets((prev) => [
-      ...prev,
-      { emoji: '🎁', label: 'Mon lot', color: '#9C27B0', isWinning: true, enabled: true, stock: 5, suggestedStock: 5 },
-    ]);
-  }, []);
-
-  // --- Delete preset ---
-  const deletePreset = useCallback((index: number) => {
-    setPresets((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  // --- Validation ---
-  const enabledPresets = useMemo(() => presets.filter((p) => p.enabled), [presets]);
-  const validation = useMemo(() => {
-    const total = enabledPresets.length;
-    const winners = enabledPresets.filter((p) => p.isWinning).length;
-    const losers = enabledPresets.filter((p) => !p.isWinning).length;
-
-    if (total < 3) return { valid: false, message: 'Sélectionnez au moins 3 lots' };
-    if (winners < 1) return { valid: false, message: 'Il faut au moins 1 lot gagnant' };
-    if (losers < 1) return { valid: false, message: 'Il faut au moins 1 lot perdant' };
-    return { valid: true, message: '' };
-  }, [enabledPresets]);
-
-  // --- Play URL ---
-  const playUrl = createdBusiness ? `${PLAY_URL}/${createdBusiness.slug}` : '';
-
-  // --- Generate QR code when business is created ---
-  useEffect(() => {
-    if (!createdBusiness) return;
-    const url = `${PLAY_URL}/${createdBusiness.slug}`;
-    QRCode.toDataURL(url, {
-      width: 512,
-      margin: 2,
-      color: { dark: '#1B2A4A', light: '#FFFFFF' },
-      errorCorrectionLevel: 'H',
-    })
-      .then(setQrDataUrl)
-      .catch(() => {});
-  }, [createdBusiness]);
-
-  // --- Email verified callback ---
+  // --- Email verified → redirect to dashboard ---
   const handleEmailVerified = useCallback(() => {
-    setStep(2);
+    window.location.href = '/dashboard';
   }, []);
 
-  // --- Step navigation ---
+  // --- Step 0: "Suivant" — create business with default presets + send verification ---
   const handleNext = useCallback(async () => {
-    if (step === 0) {
-      if (!validation.valid) return;
+    if (step !== 0) return;
 
-      // Create business + segments directly (no flow choice step)
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        const supabase = createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+    try {
+      const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-        if (authError || !user) {
-          setError('Session expirée. Veuillez vous reconnecter.');
-          setLoading(false);
-          return;
-        }
-
-        const meta = user.user_metadata ?? {};
-        const name = (meta.business_name as string) || '';
-
-        if (!name.trim()) {
-          setError('Données du commerce introuvables. Veuillez vous réinscrire.');
-          setLoading(false);
-          return;
-        }
-
-        // Create business
-        const spinLimit = PLAN_SPIN_LIMITS.free;
-        const contactLimit = PLAN_CONTACT_LIMITS.free;
-
-        const { data: business, error: bizError } = await supabase
-          .from('businesses')
-          .insert({
-            user_id: user.id,
-            name: name.trim(),
-            slug: slugify(name.trim()) + '-' + Date.now().toString(36),
-            google_review_link: (meta.google_review_link as string) || null,
-            google_place_id: (meta.google_place_id as string) || null,
-            google_rating: (meta.google_rating as number) ?? null,
-            google_review_count: (meta.google_review_count as number) ?? 0,
-            google_business_category: (meta.google_category as string) || null,
-            address: (meta.business_address as string) || null,
-            phone: (meta.business_phone as string) || null,
-            website_url: (meta.business_website as string) || null,
-            plan_type: 'free',
-            monthly_spin_limit: spinLimit,
-            contact_limit: contactLimit,
-            subscription_status: 'free',
-            trial_ends_at: new Date().toISOString(),
-            primary_color: '#FF6B35',
-            secondary_color: '#1B2A4A',
-            onboarding_completed: true,
-            flow_type: 'lottery_first',
-            require_review: false,
-            require_pin: requirePin,
-            daily_pin: requirePin ? generatePin() : null,
-            pin_updated_at: requirePin ? new Date().toISOString() : null,
-          })
-          .select()
-          .single();
-
-        if (bizError || !business) {
-          console.error('Business creation error:', bizError);
-          setError('Erreur lors de la création du commerce. Réessayez.');
-          setLoading(false);
-          return;
-        }
-
-        // Calculate probabilities: 30% for losers, 70% for winners
-        const winners = enabledPresets.filter((p) => p.isWinning);
-        const losers = enabledPresets.filter((p) => !p.isWinning);
-        const loserProb = losers.length > 0 ? Math.floor(30 / losers.length) : 0;
-        const winnerProb = winners.length > 0 ? Math.floor(70 / winners.length) : 0;
-
-        // Adjust for remainder
-        const totalCalc = loserProb * losers.length + winnerProb * winners.length;
-        const remainder = 100 - totalCalc;
-
-        const segmentsToInsert = enabledPresets.map((preset, position) => {
-          const isLoser = !preset.isWinning;
-          const prob = isLoser ? loserProb : winnerProb;
-
-          return {
-            business_id: business.id,
-            label: preset.label,
-            emoji: preset.emoji,
-            color: preset.color,
-            is_winning: preset.isWinning,
-            probability: prob + (position === 0 ? remainder : 0),
-            position,
-            monthly_stock: preset.isWinning ? preset.stock : 0,
-          };
-        });
-
-        const { error: segError } = await supabase
-          .from('wheel_segments')
-          .insert(segmentsToInsert);
-
-        if (segError) {
-          console.error('Segments insertion error:', segError);
-        }
-
-        setCreatedBusiness({
-          id: business.id,
-          slug: business.slug,
-          name: business.name,
-        });
-        setStep(1);
-
-        // Fire-and-forget: send verification email
-        fetch('/api/send-verification', { method: 'POST' }).catch(() => {});
-      } catch (err) {
-        console.error('Onboarding error:', err);
-        setError('Une erreur est survenue. Réessayez.');
-      } finally {
+      if (authError || !user) {
+        setError('Session expir\u00e9e. Veuillez vous reconnecter.');
         setLoading(false);
+        return;
       }
-      return;
+
+      const meta = user.user_metadata ?? {};
+      const name = (meta.business_name as string) || '';
+
+      if (!name.trim()) {
+        setError('Donn\u00e9es du commerce introuvables. Veuillez vous r\u00e9inscrire.');
+        setLoading(false);
+        return;
+      }
+
+      // Build default presets from detected sector (all enabled, default stock)
+      const sectorPresets = SECTOR_PRESETS[detectedSector];
+      const enabledPresets = sectorPresets.map((p) => ({
+        ...p,
+        stock: p.suggestedStock,
+      }));
+
+      // Create business with defaults
+      const spinLimit = PLAN_SPIN_LIMITS.free;
+      const contactLimit = PLAN_CONTACT_LIMITS.free;
+
+      const { data: business, error: bizError } = await supabase
+        .from('businesses')
+        .insert({
+          user_id: user.id,
+          name: name.trim(),
+          slug: slugify(name.trim()) + '-' + Date.now().toString(36),
+          google_review_link: (meta.google_review_link as string) || null,
+          google_place_id: (meta.google_place_id as string) || null,
+          google_rating: (meta.google_rating as number) ?? null,
+          google_review_count: (meta.google_review_count as number) ?? 0,
+          google_business_category: (meta.google_category as string) || null,
+          address: (meta.business_address as string) || null,
+          phone: (meta.business_phone as string) || null,
+          website_url: (meta.business_website as string) || null,
+          plan_type: 'free',
+          monthly_spin_limit: spinLimit,
+          contact_limit: contactLimit,
+          subscription_status: 'free',
+          trial_ends_at: new Date().toISOString(),
+          primary_color: '#FF6B35',
+          secondary_color: '#1B2A4A',
+          onboarding_completed: true,
+          flow_type: 'lottery_first',
+          require_review: false,
+          require_pin: false,
+        })
+        .select()
+        .single();
+
+      if (bizError || !business) {
+        console.error('Business creation error:', bizError);
+        setError('Erreur lors de la cr\u00e9ation du commerce. R\u00e9essayez.');
+        setLoading(false);
+        return;
+      }
+
+      // Calculate probabilities: 30% for losers, 70% for winners
+      const winners = enabledPresets.filter((p) => p.isWinning);
+      const losers = enabledPresets.filter((p) => !p.isWinning);
+      const loserProb = losers.length > 0 ? Math.floor(30 / losers.length) : 0;
+      const winnerProb = winners.length > 0 ? Math.floor(70 / winners.length) : 0;
+
+      // Adjust for remainder
+      const totalCalc = loserProb * losers.length + winnerProb * winners.length;
+      const remainder = 100 - totalCalc;
+
+      const segmentsToInsert = enabledPresets.map((preset, position) => {
+        const isLoser = !preset.isWinning;
+        const prob = isLoser ? loserProb : winnerProb;
+
+        return {
+          business_id: business.id,
+          label: preset.label,
+          emoji: preset.emoji,
+          color: preset.color,
+          is_winning: preset.isWinning,
+          probability: prob + (position === 0 ? remainder : 0),
+          position,
+          monthly_stock: preset.isWinning ? preset.stock : 0,
+        };
+      });
+
+      const { error: segError } = await supabase
+        .from('wheel_segments')
+        .insert(segmentsToInsert);
+
+      if (segError) {
+        console.error('Segments insertion error:', segError);
+      }
+
+      setCreatedBusiness({ id: business.id });
+      setStep(1);
+
+      // Fire-and-forget: send verification email
+      fetch('/api/send-verification', { method: 'POST' }).catch(() => {});
+    } catch (err) {
+      console.error('Onboarding error:', err);
+      setError('Une erreur est survenue. R\u00e9essayez.');
+    } finally {
+      setLoading(false);
     }
-
-    // Step 1 is polling/auto — no button action needed
-
-    if (step === 2) {
-      window.location.href = '/dashboard';
-    }
-  }, [step, validation, enabledPresets, router]);
-
-  // --- Button visibility & label ---
-  const showButton = step !== 1; // Step 1 (verify email) has no main CTA
-  const buttonLabel = step === 2 ? 'Aller au dashboard' : 'Suivant';
-  const canProceed = (step === 0 && validation.valid) || step === 2;
+  }, [step, detectedSector]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -929,7 +364,7 @@ export default function OnboardingPage() {
 
       {/* Step indicator */}
       <div className="py-3">
-        <StepIndicator currentStep={step} totalSteps={3} />
+        <StepIndicator currentStep={step} totalSteps={2} />
       </div>
 
       {/* Content */}
@@ -949,21 +384,41 @@ export default function OnboardingPage() {
                   exit={{ opacity: 0, x: -50 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 >
-                  <StepConfigurePrizes
-                    detectedSector={detectedSector}
-                    currentSector={currentSector}
-                    onSectorChange={handleSectorChange}
-                    presets={presets}
-                    onToggle={togglePreset}
-                    onStockChange={updateStock}
-                    onLabelChange={updateLabel}
-                    onEmojiChange={updateEmoji}
-                    onAddPreset={addPreset}
-                    onDeletePreset={deletePreset}
-                    validation={validation}
-                    requirePin={requirePin}
-                    onRequirePinChange={setRequirePin}
-                  />
+                  {/* How it works */}
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
+                        Comment \u00e7a marche
+                      </h2>
+                      <p className="mt-2 text-text-muted font-body">
+                        Votre animation commerciale en 1 minute
+                      </p>
+                    </div>
+
+                    <div className="space-y-4 max-w-md mx-auto">
+                      {HOW_IT_WORKS.map((item, index) => (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.15 }}
+                          className="flex items-start gap-4"
+                        >
+                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 text-2xl">
+                            {item.emoji}
+                          </div>
+                          <div>
+                            <h3 className="text-sm font-display font-semibold text-text">
+                              {item.title}
+                            </h3>
+                            <p className="text-xs font-body text-text-muted mt-0.5">
+                              {item.description}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -981,22 +436,6 @@ export default function OnboardingPage() {
                   />
                 </motion.div>
               )}
-
-              {step === 2 && createdBusiness && (
-                <motion.div
-                  key="step-2"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                >
-                  <StepQRReady
-                    business={createdBusiness}
-                    qrDataUrl={qrDataUrl}
-                    playUrl={playUrl}
-                  />
-                </motion.div>
-              )}
             </AnimatePresence>
           </div>
 
@@ -1011,27 +450,17 @@ export default function OnboardingPage() {
             </motion.p>
           )}
 
-          {/* Footer action */}
-          {showButton && (
+          {/* Footer action — only on step 0 */}
+          {step === 0 && (
             <div className="mt-6 flex flex-col items-center gap-3">
               <Button
                 size="lg"
                 onClick={handleNext}
-                disabled={!canProceed}
                 loading={loading}
                 className="w-full sm:w-auto min-w-[200px]"
               >
-                {step === 2 ? (
-                  <>
-                    {buttonLabel}
-                    <ArrowRight size={16} />
-                  </>
-                ) : (
-                  <>
-                    {buttonLabel}
-                    <ChevronRight size={16} />
-                  </>
-                )}
+                Suivant
+                <ChevronRight size={16} />
               </Button>
             </div>
           )}
