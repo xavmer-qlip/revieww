@@ -18,21 +18,18 @@ const sizes = {
   xl: 'text-6xl',
 };
 
-// Slot-machine effect: 5 full rotations with deceleration, then idle
-// Os scale up while spinning ("O O") then shrink back to normal ("oo")
-const slotAnimation = {
-  rotateX: [0, 360, 720, 1080, 1440, 1620, 1800, 1800, 1800],
-  scale: [1, 1.3, 1.35, 1.35, 1.3, 1.15, 1.0, 1.0, 1.0],
-};
+// 2D wheel spin: 6 full rotations with progressive deceleration, then idle
+const wheelRotation = [0, 360, 720, 1080, 1440, 1800, 1980, 2160, 2160];
+const wheelScale = [1, 1.2, 1.25, 1.2, 1.15, 1.08, 1.02, 1, 1];
+const glowOpacity = [0, 0.8, 1, 0.9, 0.6, 0.3, 0.1, 0, 0];
+// Non-linear timing: fast rotations early, slower at end → deceleration feel
+const wheelTimes = [0, 0.05, 0.1, 0.16, 0.23, 0.31, 0.37, 0.42, 1];
 
-// Non-linear times create deceleration: fast at start, slow at end
-const slotTimes = [0, 0.06, 0.12, 0.22, 0.34, 0.44, 0.54, 0.62, 1];
-
-const slotTransition = {
-  duration: 8,
+const wheelTransition = {
+  duration: 5,
   repeat: Infinity,
   ease: 'linear' as const,
-  times: slotTimes,
+  times: wheelTimes,
 };
 
 export function Logo({
@@ -49,27 +46,12 @@ export function Logo({
           sizes[size],
           variant === 'dark' ? 'text-text' : 'text-white'
         )}
-        style={{ perspective: '200px' }}
       >
         w
         {shouldAnimate ? (
           <>
-            <motion.span
-              className="inline-block origin-center"
-              style={{ color: 'inherit' }}
-              animate={slotAnimation}
-              transition={slotTransition}
-            >
-              o
-            </motion.span>
-            <motion.span
-              className="inline-block origin-center"
-              style={{ color: 'inherit' }}
-              animate={slotAnimation}
-              transition={{ ...slotTransition, delay: 0.4 }}
-            >
-              o
-            </motion.span>
+            <SpinningO variant={variant} delay={0} />
+            <SpinningO variant={variant} delay={0.3} />
           </>
         ) : (
           <span>oo</span>
@@ -77,5 +59,38 @@ export function Logo({
         pla
       </span>
     </div>
+  );
+}
+
+function SpinningO({ variant, delay }: { variant: 'dark' | 'light'; delay: number }) {
+  // Glow matches text color: dark text on light bg, white on dark bg
+  const glowColor = variant === 'dark'
+    ? 'rgba(26, 26, 46, 0.4)'
+    : 'rgba(255, 255, 255, 0.5)';
+
+  return (
+    <span className="relative inline-block">
+      {/* The spinning letter */}
+      <motion.span
+        className="inline-block origin-center"
+        style={{ color: 'inherit' }}
+        animate={{
+          rotate: wheelRotation,
+          scale: wheelScale,
+        }}
+        transition={{ ...wheelTransition, delay }}
+      >
+        o
+      </motion.span>
+      {/* Glow ring behind — visible during spin, fades out when stopped */}
+      <motion.span
+        className="absolute inset-[-15%] rounded-full pointer-events-none"
+        style={{
+          boxShadow: `0 0 10px 3px ${glowColor}, inset 0 0 6px 1px ${glowColor}`,
+        }}
+        animate={{ opacity: glowOpacity }}
+        transition={{ ...wheelTransition, delay }}
+      />
+    </span>
   );
 }
