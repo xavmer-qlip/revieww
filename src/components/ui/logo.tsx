@@ -18,16 +18,21 @@ const sizes = {
   xl: 'text-6xl',
 };
 
-const spinAnimation = {
-  rotateX: [0, 0, 0, 360, 360],
-  scale: [1, 1, 1, 1.1, 1],
+// Slot-machine effect: 5 full rotations with deceleration, then idle
+// Os scale up while spinning ("O O") then shrink back to normal ("oo")
+const slotAnimation = {
+  rotateX: [0, 360, 720, 1080, 1440, 1620, 1800, 1800, 1800],
+  scale: [1, 1.3, 1.35, 1.35, 1.3, 1.15, 1.0, 1.0, 1.0],
 };
 
-const spinTransition = {
-  duration: 4,
+// Non-linear times create deceleration: fast at start, slow at end
+const slotTimes = [0, 0.06, 0.12, 0.22, 0.34, 0.44, 0.54, 0.62, 1];
+
+const slotTransition = {
+  duration: 8,
   repeat: Infinity,
-  ease: 'easeInOut' as const,
-  times: [0, 0.5, 0.6, 0.8, 1],
+  ease: 'linear' as const,
+  times: slotTimes,
 };
 
 export function Logo({
@@ -52,16 +57,16 @@ export function Logo({
             <motion.span
               className="inline-block origin-center"
               style={{ color: 'inherit' }}
-              animate={spinAnimation}
-              transition={spinTransition}
+              animate={slotAnimation}
+              transition={slotTransition}
             >
               o
             </motion.span>
             <motion.span
               className="inline-block origin-center"
               style={{ color: 'inherit' }}
-              animate={spinAnimation}
-              transition={{ ...spinTransition, delay: 0.2 }}
+              animate={slotAnimation}
+              transition={{ ...slotTransition, delay: 0.4 }}
             >
               o
             </motion.span>
