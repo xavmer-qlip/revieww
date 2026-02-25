@@ -18,11 +18,11 @@ const sizes = {
   xl: 'text-6xl',
 };
 
-// Spinning indicator: 6 full rotations decelerating, then idle
+// 6 full rotations decelerating, then idle (~42% active, ~58% rest)
 const spinRotation = [0, 360, 720, 1080, 1440, 1800, 1980, 2160, 2160];
-const spinOpacity = [0, 0.85, 1, 0.9, 0.7, 0.4, 0.15, 0, 0];
-const letterScale = [1, 1.25, 1.35, 1.3, 1.2, 1.1, 1.03, 1, 1];
-const spinTimes = [0, 0.05, 0.1, 0.16, 0.23, 0.31, 0.37, 0.42, 1];
+const spinOpacity =  [0, 0.9, 1,   0.9,  0.7,  0.4,  0.15, 0,    0];
+const letterScale =  [1, 1.25, 1.35, 1.3, 1.2,  1.1,  1.03, 1,    1];
+const spinTimes =    [0, 0.05, 0.1, 0.16, 0.23, 0.31, 0.37, 0.42, 1];
 
 const spinTransition = {
   duration: 5,
@@ -64,7 +64,7 @@ export function Logo({
 function SpinningO({ delay }: { delay: number }) {
   return (
     <span className="relative inline-block">
-      {/* The letter stays fixed — subtle scale pulse */}
+      {/* The "o" — grows to "O" during spin, shrinks back after */}
       <motion.span
         className="inline-block origin-center"
         style={{ color: 'inherit' }}
@@ -74,24 +74,27 @@ function SpinningO({ delay }: { delay: number }) {
         o
       </motion.span>
 
-      {/* Spinning indicator — triangle/arrow at the top of the "o" that orbits around */}
+      {/* Triangle that orbits around the "o" like a clock hand */}
       <motion.span
-        className="absolute inset-[-5%] pointer-events-none"
-        style={{ color: 'inherit' }}
+        className="absolute pointer-events-none"
+        style={{
+          inset: '-20%',
+          color: 'inherit',
+        }}
         animate={{
           rotate: spinRotation,
           opacity: spinOpacity,
         }}
         transition={{ ...spinTransition, delay }}
       >
-        {/* Small triangle pointing inward at 12 o'clock position */}
         <svg
           viewBox="0 0 100 100"
           className="w-full h-full"
-          style={{ color: 'inherit' }}
+          overflow="visible"
         >
+          {/* Triangle at 12 o'clock, pointing toward center */}
           <polygon
-            points="50,8 44,0 56,0"
+            points="50,18 43,4 57,4"
             fill="currentColor"
           />
         </svg>
