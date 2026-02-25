@@ -286,7 +286,7 @@ export function Sidebar({
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/40 transition-colors duration-200 hover:bg-danger/10 hover:text-danger"
             >
               <LogOut size={18} />
-              <span>D\u00e9connexion</span>
+              <span>Déconnexion</span>
             </motion.button>
           </form>
         </div>
