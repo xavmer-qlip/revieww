@@ -64,26 +64,26 @@ interface Stats {
 const HOW_IT_WORKS = [
   {
     icon: Store,
-    title: 'Des commerces complémentaires',
-    description: 'Votre commerce est automatiquement mis en relation avec des commerces d\'un secteur différent dans votre ville. Un coiffeur avec un café, une boutique avec un restaurant…',
+    title: 'Matching automatique',
+    description: 'woopla vous met en relation avec des commerces d\'un autre secteur dans votre ville. Jamais de concurrence directe, uniquement de la complémentarité.',
     color: '#FF6B35',
   },
   {
     icon: Gift,
     title: 'Vous choisissez vos lots',
-    description: 'Parmi vos lots gagnants existants, choisissez lesquels offrir aux clients des commerces partenaires, avec un stock mensuel dédié.',
+    description: 'Sélectionnez les lots de votre roue que vous souhaitez partager au réseau, avec un stock mensuel dédié que vous contrôlez.',
     color: '#4CAF50',
   },
   {
     icon: Sparkles,
-    title: 'Vos lots apparaissent chez eux',
-    description: 'Quand un client tourne la roue chez un partenaire, il a une petite chance de gagner un de vos lots. Et inversement pour vos clients !',
+    title: 'Échange de visibilité',
+    description: 'Vos lots apparaissent sur la roue des partenaires, et les leurs sur la vôtre. Chaque commerce envoie de nouveaux clients chez l\'autre.',
     color: '#2196F3',
   },
   {
     icon: QrCode,
-    title: 'Validation simple',
-    description: 'Le client gagnant reçoit un code XP- valable 15 jours. Il se présente chez vous et vous validez le lot comme d\'habitude.',
+    title: 'Validation identique',
+    description: 'Le client gagnant reçoit un code valable 15 jours. Il vient chez vous, vous validez le lot exactement comme d\'habitude.',
     color: '#9C27B0',
   },
 ];
@@ -242,19 +242,32 @@ export default function NetworkPage() {
           <Badge variant="primary" size="sm">Beta</Badge>
         </div>
         <p className="text-sm font-body text-text-muted">
-          Faites découvrir votre commerce aux clients d'autres enseignes de votre ville
+          Entraidez-vous entre commerçants de votre ville
         </p>
       </div>
 
       {/* ================================================================
-          Comment ça marche — toujours visible
+          Pitch — le concept gagnant-gagnant
           ================================================================ */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-surface rounded-2xl border border-border/40 p-6"
       >
-        <h2 className="text-base font-display font-bold text-text mb-4">Comment ça marche ?</h2>
+        <h2 className="text-base font-display font-bold text-text mb-3">
+          Le commerce local, ensemble
+        </h2>
+
+        <p className="text-sm font-body text-text-muted leading-relaxed mb-4">
+          Le réseau local connecte des commerçants de <span className="font-semibold text-text">secteurs différents</span> dans une même ville. Un coiffeur avec un café, une boutique avec un restaurant... Jamais un concurrent direct.
+        </p>
+
+        <p className="text-sm font-body text-text-muted leading-relaxed mb-5">
+          Le principe est simple : vous mettez certains de vos lots en jeu sur le réseau et, en échange, vos lots deviennent visibles par les clients des commerces partenaires. <span className="font-semibold text-text">Chacun envoie des clients chez l'autre. C'est gagnant-gagnant.</span>
+        </p>
+
+        {/* Comment ça marche — étapes */}
+        <h3 className="text-sm font-display font-semibold text-text mb-3">Comment ça marche ?</h3>
 
         <div className="grid gap-4 sm:grid-cols-2">
           {HOW_IT_WORKS.map((step, i) => {
@@ -287,7 +300,7 @@ export default function NetworkPage() {
           })}
         </div>
 
-        {/* Résumé des avantages */}
+        {/* Résumé */}
         <div className="mt-5 pt-4 border-t border-border/30 grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-xs font-body text-text-muted">Coût</p>
