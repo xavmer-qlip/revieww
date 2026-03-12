@@ -1196,37 +1196,115 @@ function LocalNetworkSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DEMO — Interactive Wheel
+   DEMO — Interactive Wheel with full flow
    ═══════════════════════════════════════════════════════════════════════════ */
+const DEMO_PRIZES = [
+  { emoji: '☕', label: 'Café offert !', color: C.coral },
+  { emoji: '🎂', label: 'Dessert offert !', color: C.sand },
+  { emoji: '💰', label: '-20% prochaine visite !', color: C.sky },
+  { emoji: '🎁', label: 'Surprise du chef !', color: C.yellow },
+  { emoji: '🍺', label: 'Boisson offerte !', color: C.surfaceLight },
+];
+
+// Demo flow steps: idle → spinning → result → review → code
+type DemoStep = 'idle' | 'spinning' | 'result' | 'review' | 'code';
+
 function DemoSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, amount: 0.05 });
-  const [spinning, setSpinning] = useState(false);
-  const [result, setResult] = useState<{ emoji: string; label: string } | null>(null);
+  const [demoStep, setDemoStep] = useState<DemoStep>('idle');
+  const [winnerIndex, setWinnerIndex] = useState(0);
   const [rotation, setRotation] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  const prizes = [
-    { emoji: '☕', label: 'Café offert !' },
-    { emoji: '🎂', label: 'Dessert offert !' },
-    { emoji: '💰', label: '-20% prochaine visite !' },
-    { emoji: '🎁', label: 'Surprise du chef !' },
-    { emoji: '🍺', label: 'Boisson offerte !' },
-  ];
+  const winner = DEMO_PRIZES[winnerIndex];
 
-  const spin = () => {
-    if (spinning) return;
-    setSpinning(true);
-    setResult(null);
-    setRotation((r) => r + 1800 + Math.random() * 360);
-    setTimeout(() => {
-      setSpinning(false);
-      setResult(prizes[Math.floor(Math.random() * prizes.length)]);
+  const spin = useCallback(() => {
+    if (demoStep !== 'idle') return;
+    // Pick a random winner and calculate the exact rotation to land on it
+    const idx = Math.floor(Math.random() * DEMO_PRIZES.length);
+    setWinnerIndex(idx);
+    setDemoStep('spinning');
+
+    // Each segment is 72°. Arrow is at top (0°/360°).
+    // Segment i occupies [i*72, (i+1)*72). Center of segment i = i*72 + 36.
+    // To land arrow on segment i: rotate so that segment center aligns with top.
+    // Rotation needed = -(i*72 + 36) mod 360, plus full rotations for effect.
+    const targetAngle = 360 - (idx * 72 + 36);
+    const fullSpins = 5 * 360; // 5 full rotations
+    setRotation((r) => r + fullSpins + ((targetAngle - (r % 360) + 360) % 360));
+
+    // After spin: show result, then auto-advance
+    timerRef.current = setTimeout(() => {
+      setDemoStep('result');
+      timerRef.current = setTimeout(() => {
+        setDemoStep('review');
+        timerRef.current = setTimeout(() => {
+          setDemoStep('code');
+        }, 2500);
+      }, 2500);
     }, 3500);
-  };
+  }, [demoStep]);
+
+  const reset = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setDemoStep('idle');
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
+
+  // Step indicator labels
+  const flowSteps = [
+    { key: 'spinning' as const, label: 'Roue', active: demoStep === 'spinning' || demoStep === 'idle' },
+    { key: 'result' as const, label: 'Résultat', active: demoStep === 'result' },
+    { key: 'review' as const, label: 'Avis Google', active: demoStep === 'review' },
+    { key: 'code' as const, label: 'Code', active: demoStep === 'code' },
+  ];
 
   return (
     <section id="demo" className="py-28 sm:py-36" style={{ background: C.bg }}>
       <div ref={sectionRef} className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-6"
+        >
+          <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Essayez maintenant</p>
+          <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
+            Votre client vit{' '}
+            <span style={{ color: C.yellow }}>cette expérience.</span>
+          </h2>
+          <p className="font-body text-lg max-w-lg mx-auto" style={{ color: C.muted }}>
+            Cliquez sur GO et découvrez le parcours complet : spin, résultat, avis Google, code de validation.
+          </p>
+        </motion.div>
+
+        {/* Flow step indicators */}
+        <div className="flex items-center justify-center gap-2 mb-12">
+          {flowSteps.map((s, i) => (
+            <div key={s.key} className="flex items-center gap-2">
+              <span
+                className="px-3 py-1.5 rounded-full text-[11px] font-display font-semibold transition-all duration-500"
+                style={{
+                  background: s.active ? `${C.coral}20` : 'rgba(255,255,255,0.04)',
+                  color: s.active ? C.coral : `${C.muted}60`,
+                  border: `1px solid ${s.active ? `${C.coral}30` : C.border}`,
+                }}
+              >
+                {s.label}
+              </span>
+              {i < flowSteps.length - 1 && (
+                <div className="w-4 h-px" style={{ background: `${C.muted}30` }} />
+              )}
+            </div>
+          ))}
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Wheel */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }} transition={{ duration: 0.7 }} className="flex justify-center order-2 lg:order-1">
@@ -1238,11 +1316,11 @@ function DemoSection() {
                   borderColor: C.border,
                   background: `conic-gradient(from 0deg, ${C.coral} 0deg 72deg, ${C.sand} 72deg 144deg, ${C.sky} 144deg 216deg, ${C.yellow} 216deg 288deg, ${C.surfaceLight} 288deg 360deg)`,
                   transform: `rotate(${rotation}deg)`,
-                  transition: spinning ? 'transform 3.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
+                  transition: demoStep === 'spinning' ? 'transform 3.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
                   boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
                 }}
               />
-              {['☕', '🎂', '💰', '🎁', '🍺'].map((e, i) => {
+              {DEMO_PRIZES.map((p, i) => {
                 const a = i * 72 + 36;
                 const r = ((a - 90) * Math.PI) / 180;
                 return (
@@ -1253,21 +1331,21 @@ function DemoSection() {
                       left: `calc(50% + ${Math.cos(r) * 90}px - 14px)`,
                       top: `calc(50% + ${Math.sin(r) * 90}px - 14px)`,
                       transform: `rotate(${rotation}deg)`,
-                      transition: spinning ? 'transform 3.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
+                      transition: demoStep === 'spinning' ? 'transform 3.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
                     }}
                   >
-                    {e}
+                    {p.emoji}
                   </span>
                 );
               })}
               <div className="absolute inset-0 flex items-center justify-center">
                 <button
-                  onClick={spin}
-                  disabled={spinning}
+                  onClick={demoStep === 'idle' ? spin : undefined}
+                  disabled={demoStep !== 'idle'}
                   className="w-20 h-20 rounded-full shadow-2xl flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-transform disabled:cursor-wait z-10 border"
                   style={{ background: C.bg, borderColor: C.border }}
                 >
-                  <span className="font-display font-extrabold text-base" style={{ color: C.coral }}>{spinning ? '...' : 'GO'}</span>
+                  <span className="font-display font-extrabold text-base" style={{ color: C.coral }}>{demoStep === 'spinning' ? '...' : 'GO'}</span>
                 </button>
               </div>
               <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20">
@@ -1276,46 +1354,116 @@ function DemoSection() {
             </div>
           </motion.div>
 
-          {/* Copy */}
+          {/* Right — flow steps */}
           <motion.div initial={{ opacity: 0, x: 30 }} animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }} transition={{ duration: 0.6, delay: inView ? 0.1 : 0 }} className="order-1 lg:order-2">
-            <p className="font-display font-semibold text-[13px] tracking-wider uppercase mb-4" style={{ color: C.coral }}>Essayez maintenant</p>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-4" style={{ color: C.text }}>
-              Votre client voit{' '}
-              <span style={{ color: C.yellow }}>exactement ça.</span>
-            </h2>
-            <p className="font-body text-lg leading-relaxed mb-8 max-w-md" style={{ color: C.muted }}>
-              Personnalisez les lots, les couleurs, les probabilités. Cliquez sur GO pour tester.
-            </p>
-            <div className="h-20 mb-8">
+            <div className="min-h-[320px] flex flex-col">
               <AnimatePresence mode="wait">
-                {result && (
-                  <motion.div key="r" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-4 p-4 rounded-2xl border" style={{ background: 'rgba(34,197,94,0.05)', borderColor: 'rgba(34,197,94,0.15)' }}>
-                    <span className="text-3xl">{result.emoji}</span>
-                    <div>
-                      <p className="font-display font-bold" style={{ color: C.text }}>Bravo !</p>
-                      <p className="font-body text-sm" style={{ color: C.muted }}>{result.label}</p>
-                    </div>
+                {/* IDLE */}
+                {demoStep === 'idle' && (
+                  <motion.div key="idle" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex flex-col justify-center">
+                    <p className="font-body text-lg leading-relaxed mb-6 max-w-md" style={{ color: C.muted }}>
+                      Personnalisez les lots, les couleurs, les probabilités. Tout est configurable depuis votre dashboard.
+                    </p>
+                    <p className="font-body text-base" style={{ color: C.muted }}>
+                      Cliquez sur <span className="font-display font-bold" style={{ color: C.coral }}>GO</span> pour lancer la démo
+                    </p>
                   </motion.div>
                 )}
-                {!result && !spinning && (
-                  <motion.p key="h" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="font-body" style={{ color: C.muted }}>
-                    Cliquez sur GO pour lancer la roue
-                  </motion.p>
+
+                {/* SPINNING */}
+                {demoStep === 'spinning' && (
+                  <motion.div key="spinning" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex flex-col justify-center">
+                    <p className="font-display font-bold text-xl animate-pulse" style={{ color: C.coral }}>
+                      La roue tourne...
+                    </p>
+                    <p className="font-body text-sm mt-2" style={{ color: C.muted }}>
+                      L&apos;excitation monte, le client attend son lot !
+                    </p>
+                  </motion.div>
                 )}
-                {spinning && (
-                  <motion.p key="s" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="font-body font-semibold animate-pulse" style={{ color: C.coral }}>
-                    La roue tourne...
-                  </motion.p>
+
+                {/* RESULT */}
+                {demoStep === 'result' && (
+                  <motion.div key="result" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, y: -10 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }} className="flex-1 flex flex-col justify-center">
+                    <div className="flex items-center gap-4 p-5 rounded-2xl border mb-4" style={{ background: 'rgba(34,197,94,0.05)', borderColor: 'rgba(34,197,94,0.15)' }}>
+                      <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5 }} className="text-4xl">{winner.emoji}</motion.span>
+                      <div>
+                        <p className="font-display font-bold text-lg" style={{ color: C.green }}>Bravo !</p>
+                        <p className="font-display font-semibold" style={{ color: C.text }}>{winner.label}</p>
+                      </div>
+                    </div>
+                    <p className="font-body text-sm" style={{ color: C.muted }}>
+                      Le client découvre son lot instantanément. Prochaine étape...
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* REVIEW */}
+                {demoStep === 'review' && (
+                  <motion.div key="review" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex flex-col justify-center">
+                    <div className="rounded-2xl border p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', borderColor: C.border }}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                        </div>
+                        <div>
+                          <p className="font-display font-bold text-sm" style={{ color: C.text }}>Laissez un avis Google</p>
+                          <p className="font-body text-[11px]" style={{ color: C.muted }}>Optionnel — ne conditionne jamais le lot</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 mb-3">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                        ))}
+                      </div>
+                      <p className="font-body text-[12px]" style={{ color: C.muted }}>
+                        Le client est dans un état d&apos;esprit positif — le moment idéal pour un avis !
+                      </p>
+                    </div>
+                    <p className="font-body text-sm" style={{ color: C.muted }}>
+                      Vous récupérez aussi son email pour vos futures campagnes...
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* CODE */}
+                {demoStep === 'code' && (
+                  <motion.div key="code" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex flex-col justify-center">
+                    <div className="rounded-2xl border p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', borderColor: C.border }}>
+                      <div className="text-center mb-4">
+                        <span className="text-3xl mb-2 block">{winner.emoji}</span>
+                        <p className="font-display font-bold text-sm" style={{ color: C.text }}>{winner.label}</p>
+                      </div>
+                      <div className="rounded-xl p-3 text-center mb-3" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                        <p className="font-body text-[10px] mb-1" style={{ color: C.muted }}>Code de validation</p>
+                        <p className="font-display font-bold text-lg tracking-[0.2em]" style={{ color: C.sky }}>WP-7K3M</p>
+                      </div>
+                      <p className="font-body text-[11px] text-center" style={{ color: C.muted }}>
+                        Valable 7 jours · Présentez ce code en caisse
+                      </p>
+                    </div>
+                    <button
+                      onClick={reset}
+                      className="self-start px-5 py-2.5 rounded-full font-display font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer border"
+                      style={{ borderColor: C.border, color: C.muted }}
+                    >
+                      Rejouer la démo
+                    </button>
+                  </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* CTA — always visible */}
+              <div className="mt-6 pt-4" style={{ borderTop: `1px solid ${C.border}` }}>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-2 px-7 py-3.5 font-display font-bold text-sm rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] text-white"
+                  style={{ backgroundColor: C.coral, boxShadow: '0 8px 24px rgba(248,131,121,0.2)' }}
+                >
+                  Créer ma roue <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
             </div>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 px-7 py-3.5 font-display font-bold text-sm rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] text-white"
-              style={{ backgroundColor: C.coral, boxShadow: '0 8px 24px rgba(248,131,121,0.2)' }}
-            >
-              Créer ma roue <ArrowRight className="w-4 h-4" />
-            </Link>
           </motion.div>
         </div>
       </div>
