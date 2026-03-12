@@ -18,16 +18,34 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'woopla — spin & win',
+    default:
+      'woopla — Roue de la fortune pour commerçants | Fidélisation & avis Google',
     template: '%s | woopla',
   },
   description:
-    'Animez votre commerce avec une roue de la fortune. Vos clients scannent, jouent, gagnent. Vous récupérez leurs emails.',
+    'Fidélisez vos clients et collectez des avis Google grâce à une roue de la fortune interactive. QR code, loterie, fichier client. Solution suisse pour restaurants, cafés et commerces.',
   metadataBase: new URL('https://woopla.ch'),
+  keywords: [
+    'roue de la fortune',
+    'fidélisation client',
+    'avis Google',
+    'loterie commerce',
+    'QR code restaurant',
+    'animation commerciale',
+    'collecte emails',
+    'fichier client',
+    'commerçant suisse',
+    'woopla',
+    'spin and win',
+    'gamification commerce',
+    'programme fidélité',
+    'restaurant Suisse',
+    'café fidélisation',
+  ],
   openGraph: {
-    title: 'woopla — spin & win',
+    title: 'woopla — Roue de la fortune pour commerçants suisses',
     description:
-      'Fidélisez vos clients avec une roue de la fortune engageante. Fichier client, lots, animation commerciale.',
+      'Vos clients scannent un QR code, laissent un avis Google, tournent la roue et gagnent un lot. Vous récupérez leurs emails. Essai gratuit 7 jours.',
     url: 'https://woopla.ch',
     siteName: 'woopla',
     locale: 'fr_CH',
@@ -35,13 +53,23 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'woopla — spin & win',
+    title: 'woopla — Roue de la fortune pour commerçants',
     description:
-      'Animez votre commerce avec une roue de la fortune. Fichier client, lots, engagement.',
+      'Fidélisez vos clients avec une roue de la fortune. Collectez des avis Google et des emails automatiquement.',
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: 'https://woopla.ch',
   },
 };
 
@@ -52,6 +80,35 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'woopla',
+              url: 'https://woopla.ch',
+              applicationCategory: 'BusinessApplication',
+              operatingSystem: 'Web',
+              description:
+                'Solution de fidélisation client par roue de la fortune pour commerçants suisses. Collectez des avis Google et des emails automatiquement.',
+              offers: {
+                '@type': 'AggregateOffer',
+                priceCurrency: 'CHF',
+                lowPrice: '19',
+                highPrice: '79',
+                offerCount: 3,
+              },
+              provider: {
+                '@type': 'Organization',
+                name: 'woopla',
+                url: 'https://woopla.ch',
+              },
+            }),
+          }}
+        />
+      </head>
       <body className={`${geom.variable} ${dmSans.variable} antialiased`}>
         {children}
       </body>
