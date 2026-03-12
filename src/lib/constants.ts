@@ -376,6 +376,7 @@ export const TEXTS = {
     partnerPrizeValidity: 'Valable 15 jours',
     partnerPrizeCta: 'Voir sur Google Maps',
     partnerBadge: 'Lot partenaire',
+    regionNotAvailable: 'Le réseau local est actuellement disponible uniquement dans le canton de Genève. D\'autres cantons ouvriront prochainement !',
   },
   onboarding: {
     step1Title: 'Trouvez votre commerce',

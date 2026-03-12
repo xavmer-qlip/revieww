@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { mapGoogleCategoryToSector, SECTOR_LABELS } from '@/lib/constants';
+import { isInCrossPromoRegion } from '@/lib/utils';
 
 export async function GET() {
   try {
@@ -13,7 +14,7 @@ export async function GET() {
 
     const { data: business } = await supabase
       .from('businesses')
-      .select('id, city, google_business_category, cross_promo_enabled')
+      .select('id, city, address, google_business_category, cross_promo_enabled')
       .eq('user_id', user.id)
       .single();
 
@@ -21,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 
-    if (!business.cross_promo_enabled || !business.city) {
+    if (!business.cross_promo_enabled || !business.city || !isInCrossPromoRegion(business.address)) {
       return NextResponse.json({ partners: [], city: business.city });
     }
 
@@ -39,9 +40,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch partners' }, { status: 500 });
     }
 
-    // Filter by different sector and count shared offers
+    // Filter by different sector, allowed region, and count shared offers
     const partners = [];
     for (const candidate of candidates ?? []) {
+      if (!isInCrossPromoRegion(candidate.address)) continue;
       const candidateSector = mapGoogleCategoryToSector(candidate.google_business_category);
       if (candidateSector === mySector) continue;
 

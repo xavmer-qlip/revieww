@@ -107,6 +107,32 @@ export function normalizeCity(address: string | null): string | null {
   return null;
 }
 
+/**
+ * Extract Swiss postal code (NPA) from an address string.
+ */
+export function extractPostalCode(address: string | null): number | null {
+  if (!address) return null;
+  const match = address.match(/\b(\d{4})\b/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
+ * Cantons ouverts au réseau local (cross-promo).
+ * NPA ranges par canton — pour le moment, uniquement Genève.
+ */
+const CROSS_PROMO_ALLOWED_NPA_RANGES: [number, number][] = [
+  [1200, 1299], // Genève
+];
+
+/**
+ * Vérifie si une adresse est dans un canton autorisé pour le cross-promo.
+ */
+export function isInCrossPromoRegion(address: string | null): boolean {
+  const npa = extractPostalCode(address);
+  if (npa === null) return false;
+  return CROSS_PROMO_ALLOWED_NPA_RANGES.some(([min, max]) => npa >= min && npa <= max);
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

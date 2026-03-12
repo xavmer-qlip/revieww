@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS, mapGoogleCategoryToSector } from '@/lib/constants';
 import { Business, WheelSegment } from '@/lib/types';
+import { isInCrossPromoRegion } from '@/lib/utils';
 import crypto from 'crypto';
 
 // ---------------------------------------------------------------------------
@@ -250,6 +251,9 @@ export async function getEligiblePartnerSegments(
 ): Promise<PartnerSegment[]> {
   if (!business.cross_promo_enabled || !business.city) return [];
 
+  // Region check: only Geneva canton for now
+  if (!isInCrossPromoRegion(business.address)) return [];
+
   const businessSector = mapGoogleCategoryToSector(business.google_business_category);
 
   // Fetch all active cross-promo offers from businesses in the same city
@@ -301,9 +305,10 @@ export async function getEligiblePartnerSegments(
       color: string;
     };
 
-    // Must be same city, enabled, different sector
+    // Must be same city, enabled, different sector, in allowed region
     if (!partnerBiz.cross_promo_enabled) continue;
     if (partnerBiz.city !== business.city) continue;
+    if (!isInCrossPromoRegion(partnerBiz.address)) continue;
     const partnerSector = mapGoogleCategoryToSector(partnerBiz.google_business_category);
     if (partnerSector === businessSector) continue;
 

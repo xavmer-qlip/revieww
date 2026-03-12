@@ -268,6 +268,21 @@ export default function OnboardingPage() {
         stock: p.suggestedStock,
       }));
 
+      // Check google_place_id uniqueness
+      const placeId = (meta.google_place_id as string) || null;
+      if (placeId) {
+        const { count } = await supabase
+          .from('businesses')
+          .select('*', { count: 'exact', head: true })
+          .eq('google_place_id', placeId);
+
+        if ((count ?? 0) > 0) {
+          setError('Ce commerce est déjà inscrit sur woopla. Contactez-nous si vous êtes le propriétaire.');
+          setLoading(false);
+          return;
+        }
+      }
+
       // Create business with defaults
       const spinLimit = PLAN_SPIN_LIMITS.free;
       const contactLimit = PLAN_CONTACT_LIMITS.free;

@@ -76,6 +76,7 @@ export default function NetworkPage() {
   const [stats, setStats] = useState<Stats>({ given: 0, received: 0, claimed: 0 });
 
   const [savingSegment, setSavingSegment] = useState<string | null>(null);
+  const [regionError, setRegionError] = useState<string | null>(null);
 
   // ---- Fetch all data ----
   const fetchData = useCallback(async () => {
@@ -152,6 +153,12 @@ export default function NetworkPage() {
         body: JSON.stringify({ enabled: !enabled }),
       });
       const data = await res.json();
+
+      if (data.error === 'region_not_available') {
+        setRegionError(data.message);
+        setToggling(false);
+        return;
+      }
 
       if (data.error === 'city_required') {
         setShowCityForm(true);
@@ -282,6 +289,16 @@ export default function NetworkPage() {
             )}
           </button>
         </div>
+
+        {regionError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mt-4 px-4 py-3 bg-warning/10 border border-warning/20 rounded-xl"
+          >
+            <p className="text-sm font-body text-warning">{regionError}</p>
+          </motion.div>
+        )}
 
         {showCityForm && !city && (
           <motion.div

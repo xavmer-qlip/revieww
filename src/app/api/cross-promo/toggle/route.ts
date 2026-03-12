@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { normalizeCity } from '@/lib/utils';
+import { normalizeCity, isInCrossPromoRegion } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +22,17 @@ export async function POST(request: NextRequest) {
 
     if (bizError || !business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+    }
+
+    // Region check: only Geneva canton for now
+    if (enabled && !isInCrossPromoRegion(business.address)) {
+      return NextResponse.json(
+        {
+          error: 'region_not_available',
+          message: 'Le réseau local est actuellement disponible uniquement dans le canton de Genève. D\'autres cantons ouvriront prochainement !',
+        },
+        { status: 403 }
+      );
     }
 
     // Determine city value
