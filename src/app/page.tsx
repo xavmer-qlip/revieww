@@ -1198,12 +1198,14 @@ function LocalNetworkSection() {
 /* ═══════════════════════════════════════════════════════════════════════════
    DEMO — Interactive Wheel with full flow
    ═══════════════════════════════════════════════════════════════════════════ */
+const SEGMENT_DEG = 60; // 6 segments × 60°
 const DEMO_PRIZES = [
-  { emoji: '☕', label: 'Café offert !', color: C.coral },
-  { emoji: '🎂', label: 'Dessert offert !', color: C.sand },
-  { emoji: '💰', label: '-20% prochaine visite !', color: C.sky },
-  { emoji: '🎁', label: 'Surprise du chef !', color: C.yellow },
-  { emoji: '🍺', label: 'Boisson offerte !', color: C.surfaceLight },
+  { emoji: '☕', label: 'Café offert !', color: C.coral, partner: false },
+  { emoji: '🎂', label: 'Dessert offert !', color: C.sand, partner: false },
+  { emoji: '💰', label: '-20% prochaine visite !', color: C.sky, partner: false },
+  { emoji: '🎁', label: 'Brushing offert !', color: '#DAA520', partner: true, partnerName: 'Salon Bella' },
+  { emoji: '🍸', label: 'Surprise du chef !', color: C.yellow, partner: false },
+  { emoji: '🍺', label: 'Boisson offerte !', color: C.surfaceLight, partner: false },
 ];
 
 // Demo flow steps: idle → spinning → result → review → code
@@ -1221,29 +1223,32 @@ function DemoSection() {
 
   const spin = useCallback(() => {
     if (demoStep !== 'idle') return;
-    // Pick a random winner and calculate the exact rotation to land on it
     const idx = Math.floor(Math.random() * DEMO_PRIZES.length);
     setWinnerIndex(idx);
     setDemoStep('spinning');
 
-    // Each segment is 72°. Arrow is at top (0°/360°).
-    // Segment i occupies [i*72, (i+1)*72). Center of segment i = i*72 + 36.
-    // To land arrow on segment i: rotate so that segment center aligns with top.
-    // Rotation needed = -(i*72 + 36) mod 360, plus full rotations for effect.
-    const targetAngle = 360 - (idx * 72 + 36);
-    const fullSpins = 5 * 360; // 5 full rotations
-    setRotation((r) => r + fullSpins + ((targetAngle - (r % 360) + 360) % 360));
+    // Land solidly in the center of the winning segment.
+    // Segment i center = i * 60 + 30. Arrow points at top = 0°.
+    // We need to rotate so segment center ends up at top (0°).
+    const segCenter = idx * SEGMENT_DEG + SEGMENT_DEG / 2;
+    const targetAngle = (360 - segCenter + 360) % 360;
+    const fullSpins = 7 * 360; // 7 full rotations for dramatic effect
+    setRotation((r) => {
+      const currentMod = r % 360;
+      const delta = ((targetAngle - currentMod) + 360) % 360;
+      return r + fullSpins + delta;
+    });
 
-    // After spin: show result, then auto-advance
+    // After spin (4.5s): result → review → code, each 4s apart
     timerRef.current = setTimeout(() => {
       setDemoStep('result');
       timerRef.current = setTimeout(() => {
         setDemoStep('review');
         timerRef.current = setTimeout(() => {
           setDemoStep('code');
-        }, 2500);
-      }, 2500);
-    }, 3500);
+        }, 4000);
+      }, 4000);
+    }, 4500);
   }, [demoStep]);
 
   const reset = useCallback(() => {
@@ -1256,11 +1261,13 @@ function DemoSection() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, []);
 
+  const isPartnerWin = winner.partner;
+
   // Step indicator labels
   const flowSteps = [
     { key: 'spinning' as const, label: 'Roue', active: demoStep === 'spinning' || demoStep === 'idle' },
     { key: 'result' as const, label: 'Résultat', active: demoStep === 'result' },
-    { key: 'review' as const, label: 'Avis Google', active: demoStep === 'review' },
+    { key: 'review' as const, label: 'Email & Avis', active: demoStep === 'review' },
     { key: 'code' as const, label: 'Code', active: demoStep === 'code' },
   ];
 
@@ -1314,27 +1321,47 @@ function DemoSection() {
                 className="absolute inset-0 rounded-full shadow-2xl border-2"
                 style={{
                   borderColor: C.border,
-                  background: `conic-gradient(from 0deg, ${C.coral} 0deg 72deg, ${C.sand} 72deg 144deg, ${C.sky} 144deg 216deg, ${C.yellow} 216deg 288deg, ${C.surfaceLight} 288deg 360deg)`,
+                  background: `conic-gradient(from 0deg, ${DEMO_PRIZES[0].color} 0deg 60deg, ${DEMO_PRIZES[1].color} 60deg 120deg, ${DEMO_PRIZES[2].color} 120deg 180deg, ${DEMO_PRIZES[3].color} 180deg 240deg, ${DEMO_PRIZES[4].color} 240deg 300deg, ${DEMO_PRIZES[5].color} 300deg 360deg)`,
                   transform: `rotate(${rotation}deg)`,
-                  transition: demoStep === 'spinning' ? 'transform 3.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
+                  transition: demoStep === 'spinning' ? 'transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
                   boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
                 }}
               />
+              {/* Partner segment gold dashed border overlay */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  transform: `rotate(${rotation}deg)`,
+                  transition: demoStep === 'spinning' ? 'transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
+                }}
+              >
+                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
+                  {/* Gold dashed arc over the partner segment (segment 3 = 180°-240°) */}
+                  <path
+                    d={`M ${160 + 158 * Math.cos(Math.PI)} ${160 + 158 * Math.sin(Math.PI)} A 158 158 0 0 1 ${160 + 158 * Math.cos(4 * Math.PI / 3)} ${160 + 158 * Math.sin(4 * Math.PI / 3)}`}
+                    fill="none"
+                    stroke="#DAA520"
+                    strokeWidth="3"
+                    strokeDasharray="8 4"
+                  />
+                </svg>
+              </div>
               {DEMO_PRIZES.map((p, i) => {
-                const a = i * 72 + 36;
+                const a = i * SEGMENT_DEG + SEGMENT_DEG / 2;
                 const r = ((a - 90) * Math.PI) / 180;
+                const emojiRadius = 85;
                 return (
                   <span
                     key={i}
                     className="absolute text-2xl pointer-events-none"
                     style={{
-                      left: `calc(50% + ${Math.cos(r) * 90}px - 14px)`,
-                      top: `calc(50% + ${Math.sin(r) * 90}px - 14px)`,
+                      left: `calc(50% + ${Math.cos(r) * emojiRadius}px - 14px)`,
+                      top: `calc(50% + ${Math.sin(r) * emojiRadius}px - 14px)`,
                       transform: `rotate(${rotation}deg)`,
-                      transition: demoStep === 'spinning' ? 'transform 3.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
+                      transition: demoStep === 'spinning' ? 'transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
                     }}
                   >
-                    {p.emoji}
+                    {p.partner ? '🎁' : p.emoji}
                   </span>
                 );
               })}
@@ -1390,18 +1417,45 @@ function DemoSection() {
                       <div>
                         <p className="font-display font-bold text-lg" style={{ color: C.green }}>Bravo !</p>
                         <p className="font-display font-semibold" style={{ color: C.text }}>{winner.label}</p>
+                        {isPartnerWin && 'partnerName' in winner && (
+                          <p className="font-body text-[12px] mt-1" style={{ color: C.muted }}>
+                            Lot partenaire chez <span className="font-semibold" style={{ color: C.yellow }}>{(winner as typeof winner & { partnerName: string }).partnerName}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
                     <p className="font-body text-sm" style={{ color: C.muted }}>
-                      Le client découvre son lot instantanément. Prochaine étape...
+                      {isPartnerWin
+                        ? 'Un lot d\'un commerce partenaire du réseau local !'
+                        : 'Le client découvre son lot instantanément.'}
+                      {' '}Prochaine étape...
                     </p>
                   </motion.div>
                 )}
 
-                {/* REVIEW */}
+                {/* EMAIL + REVIEW */}
                 {demoStep === 'review' && (
-                  <motion.div key="review" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex flex-col justify-center">
-                    <div className="rounded-2xl border p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', borderColor: C.border }}>
+                  <motion.div key="review" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex flex-col justify-center gap-4">
+                    {/* Email + phone form */}
+                    <div className="rounded-2xl border p-5" style={{ background: 'rgba(255,255,255,0.02)', borderColor: C.border }}>
+                      <p className="font-display font-bold text-sm mb-3" style={{ color: C.text }}>Pour recevoir votre lot :</p>
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 border" style={{ borderColor: `${C.border}`, background: 'rgba(255,255,255,0.03)' }}>
+                          <Mail className="w-4 h-4 shrink-0" style={{ color: C.muted }} />
+                          <span className="font-body text-[13px]" style={{ color: `${C.muted}90` }}>marie@email.ch</span>
+                        </div>
+                        <div className="flex items-center gap-2 rounded-xl px-3 py-2.5 border" style={{ borderColor: `${C.border}`, background: 'rgba(255,255,255,0.03)' }}>
+                          <span className="text-[13px] shrink-0" style={{ color: C.muted }}>📱</span>
+                          <span className="font-body text-[13px]" style={{ color: `${C.muted}90` }}>+41 79 123 45 67</span>
+                        </div>
+                      </div>
+                      <p className="font-body text-[11px]" style={{ color: `${C.muted}80` }}>
+                        Vous récupérez un contact qualifié pour vos futures campagnes
+                      </p>
+                    </div>
+
+                    {/* Google review */}
+                    <div className="rounded-2xl border p-5" style={{ background: 'rgba(255,255,255,0.02)', borderColor: C.border }}>
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                           <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
@@ -1411,35 +1465,36 @@ function DemoSection() {
                           <p className="font-body text-[11px]" style={{ color: C.muted }}>Optionnel — ne conditionne jamais le lot</p>
                         </div>
                       </div>
-                      <div className="flex gap-1 mb-3">
+                      <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((s) => (
                           <Star key={s} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
                         ))}
                       </div>
-                      <p className="font-body text-[12px]" style={{ color: C.muted }}>
-                        Le client est dans un état d&apos;esprit positif — le moment idéal pour un avis !
-                      </p>
                     </div>
-                    <p className="font-body text-sm" style={{ color: C.muted }}>
-                      Vous récupérez aussi son email pour vos futures campagnes...
-                    </p>
                   </motion.div>
                 )}
 
                 {/* CODE */}
                 {demoStep === 'code' && (
                   <motion.div key="code" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex-1 flex flex-col justify-center">
-                    <div className="rounded-2xl border p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', borderColor: C.border }}>
+                    <div className="rounded-2xl border p-5 mb-4" style={{ background: 'rgba(255,255,255,0.02)', borderColor: isPartnerWin ? 'rgba(218,165,32,0.3)' : C.border }}>
                       <div className="text-center mb-4">
                         <span className="text-3xl mb-2 block">{winner.emoji}</span>
                         <p className="font-display font-bold text-sm" style={{ color: C.text }}>{winner.label}</p>
+                        {isPartnerWin && 'partnerName' in winner && (
+                          <p className="font-body text-[12px] mt-1" style={{ color: C.muted }}>
+                            Chez <span className="font-semibold" style={{ color: C.yellow }}>{(winner as typeof winner & { partnerName: string }).partnerName}</span> · Rue du Marché 12, Genève
+                          </p>
+                        )}
                       </div>
                       <div className="rounded-xl p-3 text-center mb-3" style={{ background: 'rgba(255,255,255,0.04)' }}>
                         <p className="font-body text-[10px] mb-1" style={{ color: C.muted }}>Code de validation</p>
                         <p className="font-display font-bold text-lg tracking-[0.2em]" style={{ color: C.sky }}>WP-7K3M</p>
                       </div>
                       <p className="font-body text-[11px] text-center" style={{ color: C.muted }}>
-                        Valable 7 jours · Présentez ce code en caisse
+                        {isPartnerWin
+                          ? 'Valable 15 jours · Présentez ce code chez le partenaire'
+                          : 'Valable 7 jours · Présentez ce code en caisse'}
                       </p>
                     </div>
                     <button
