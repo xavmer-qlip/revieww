@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'woopla — spin & win',
+    name: 'woopla, spin & win',
     short_name: 'woopla',
     description:
       'Fidélisez vos clients avec une roue de la fortune interactive. Avis Google, loterie, fichier client.',

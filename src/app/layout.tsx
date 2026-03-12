@@ -19,7 +19,7 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: {
     default:
-      'woopla — Roue de la fortune pour commerçants | Fidélisation & avis Google',
+      'woopla | Roue de la fortune pour commerçants, fidélisation et avis Google',
     template: '%s | woopla',
   },
   description:
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     'café fidélisation',
   ],
   openGraph: {
-    title: 'woopla — Roue de la fortune pour commerçants suisses',
+    title: 'woopla | Roue de la fortune pour commerçants suisses',
     description:
       'Vos clients scannent un QR code, laissent un avis Google, tournent la roue et gagnent un lot. Vous récupérez leurs emails. Essai gratuit 7 jours.',
     url: 'https://woopla.ch',
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'woopla — Roue de la fortune pour commerçants',
+    title: 'woopla | Roue de la fortune pour commerçants',
     description:
       'Fidélisez vos clients avec une roue de la fortune. Collectez des avis Google et des emails automatiquement.',
   },
