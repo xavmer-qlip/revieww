@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Handshake,
   ToggleLeft,
@@ -9,11 +9,15 @@ import {
   Gift,
   Users,
   ArrowDownUp,
+  ArrowRight,
   Check,
   Loader2,
+  MapPin,
+  Store,
+  Sparkles,
+  QrCode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn, getInitials } from '@/lib/utils';
 import { TEXTS } from '@/lib/constants';
@@ -27,12 +31,6 @@ interface Offer {
   segment_id: string;
   monthly_stock: number;
   is_active: boolean;
-  wheel_segments: {
-    id: string;
-    label: string;
-    emoji: string;
-    color: string;
-  };
 }
 
 interface Segment {
@@ -41,6 +39,7 @@ interface Segment {
   emoji: string;
   color: string;
   is_winning: boolean;
+  monthly_stock: number;
 }
 
 interface Partner {
@@ -59,6 +58,37 @@ interface Stats {
 }
 
 // ---------------------------------------------------------------------------
+// How-it-works steps
+// ---------------------------------------------------------------------------
+
+const HOW_IT_WORKS = [
+  {
+    icon: Store,
+    title: 'Des commerces complémentaires',
+    description: 'Votre commerce est automatiquement mis en relation avec des commerces d\'un secteur différent dans votre ville. Un coiffeur avec un café, une boutique avec un restaurant…',
+    color: '#FF6B35',
+  },
+  {
+    icon: Gift,
+    title: 'Vous choisissez vos lots',
+    description: 'Parmi vos lots gagnants existants, choisissez lesquels offrir aux clients des commerces partenaires, avec un stock mensuel dédié.',
+    color: '#4CAF50',
+  },
+  {
+    icon: Sparkles,
+    title: 'Vos lots apparaissent chez eux',
+    description: 'Quand un client tourne la roue chez un partenaire, il a une petite chance de gagner un de vos lots. Et inversement pour vos clients !',
+    color: '#2196F3',
+  },
+  {
+    icon: QrCode,
+    title: 'Validation simple',
+    description: 'Le client gagnant reçoit un code XP- valable 15 jours. Il se présente chez vous et vous validez le lot comme d\'habitude.',
+    color: '#9C27B0',
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -66,9 +96,8 @@ export default function NetworkPage() {
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
   const [city, setCity] = useState<string | null>(null);
-  const [cityInput, setCityInput] = useState('');
-  const [showCityForm, setShowCityForm] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [regionError, setRegionError] = useState<string | null>(null);
 
   const [offers, setOffers] = useState<Offer[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
@@ -76,7 +105,6 @@ export default function NetworkPage() {
   const [stats, setStats] = useState<Stats>({ given: 0, received: 0, claimed: 0 });
 
   const [savingSegment, setSavingSegment] = useState<string | null>(null);
-  const [regionError, setRegionError] = useState<string | null>(null);
 
   // ---- Fetch all data ----
   const fetchData = useCallback(async () => {
@@ -108,22 +136,7 @@ export default function NetworkPage() {
     }
   }, []);
 
-  // ---- Fetch enabled state from business ----
   useEffect(() => {
-    async function fetchBusiness() {
-      try {
-        const res = await fetch('/api/cross-promo/partners');
-        const data = await res.json();
-        setCity(data.city ?? null);
-        // If we have partners, the feature is enabled
-        // Also check toggle state via a separate mechanism
-      } catch { /* */ }
-    }
-    fetchBusiness();
-  }, []);
-
-  useEffect(() => {
-    // Initial enabled state: fetch from business data
     async function init() {
       try {
         const res = await fetch('/api/dashboard/business');
@@ -140,12 +153,9 @@ export default function NetworkPage() {
 
   // ---- Toggle cross-promo ----
   async function handleToggle() {
-    if (!enabled && !city) {
-      setShowCityForm(true);
-      return;
-    }
-
     setToggling(true);
+    setRegionError(null);
+
     try {
       const res = await fetch('/api/cross-promo/toggle', {
         method: 'POST',
@@ -160,36 +170,9 @@ export default function NetworkPage() {
         return;
       }
 
-      if (data.error === 'city_required') {
-        setShowCityForm(true);
-        setToggling(false);
-        return;
-      }
-
       if (data.success) {
         setEnabled(data.cross_promo_enabled);
         setCity(data.city);
-        fetchData();
-      }
-    } catch { /* */ }
-    setToggling(false);
-  }
-
-  // ---- Submit city then enable ----
-  async function handleCitySubmit() {
-    if (!cityInput.trim()) return;
-    setToggling(true);
-    try {
-      const res = await fetch('/api/cross-promo/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: true, city: cityInput.trim() }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setEnabled(true);
-        setCity(data.city);
-        setShowCityForm(false);
         fetchData();
       }
     } catch { /* */ }
@@ -243,10 +226,13 @@ export default function NetworkPage() {
   }
 
   const T = TEXTS.crossPromo;
+  const sharedCount = offers.length;
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
+    <div className="space-y-6 max-w-3xl">
+      {/* ================================================================
+          Header
+          ================================================================ */}
       <div>
         <div className="flex items-center gap-3 mb-1">
           <Handshake className="w-6 h-6 text-primary" />
@@ -256,38 +242,140 @@ export default function NetworkPage() {
           <Badge variant="primary" size="sm">Beta</Badge>
         </div>
         <p className="text-sm font-body text-text-muted">
-          {T.pageSubtitle}
+          Faites découvrir votre commerce aux clients d'autres enseignes de votre ville
         </p>
       </div>
 
       {/* ================================================================
-          Card 1: Activation
+          Comment ça marche — toujours visible
           ================================================================ */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-surface rounded-2xl border border-border/40 p-6"
       >
-        <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-display font-bold text-text mb-4">Comment ça marche ?</h2>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {HOW_IT_WORKS.map((step, i) => {
+            const Icon = step.icon;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className="flex gap-3"
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${step.color}15` }}
+                >
+                  <Icon className="w-4.5 h-4.5" style={{ color: step.color }} />
+                </div>
+                <div>
+                  <p className="text-sm font-display font-semibold text-text mb-0.5">
+                    <span className="text-text-muted font-body mr-1">{i + 1}.</span>
+                    {step.title}
+                  </p>
+                  <p className="text-xs font-body text-text-muted leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Résumé des avantages */}
+        <div className="mt-5 pt-4 border-t border-border/30 grid grid-cols-3 gap-3 text-center">
           <div>
-            <h2 className="text-lg font-display font-bold text-text">{T.activationTitle}</h2>
-            <p className="text-sm font-body text-text-muted mt-1">
-              {T.activationDescription}
-            </p>
+            <p className="text-xs font-body text-text-muted">Coût</p>
+            <p className="text-sm font-display font-bold text-success">Gratuit</p>
           </div>
-          <button
-            onClick={handleToggle}
-            disabled={toggling}
-            className="shrink-0"
-          >
-            {toggling ? (
-              <Loader2 className="w-8 h-8 animate-spin text-text-muted" />
-            ) : enabled ? (
-              <ToggleRight className="w-10 h-10 text-primary" />
+          <div>
+            <p className="text-xs font-body text-text-muted">Engagement</p>
+            <p className="text-sm font-display font-bold text-text">Aucun</p>
+          </div>
+          <div>
+            <p className="text-xs font-body text-text-muted">Validité lots</p>
+            <p className="text-sm font-display font-bold text-text">15 jours</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ================================================================
+          Activation — CTA clair
+          ================================================================ */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className={cn(
+          'rounded-2xl border p-6 transition-colors',
+          enabled
+            ? 'bg-primary/5 border-primary/30'
+            : 'bg-surface border-border/40'
+        )}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1 mr-4">
+            <div className="flex items-center gap-2 mb-1">
+              {enabled ? (
+                <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              ) : (
+                <div className="w-2 h-2 rounded-full bg-text-muted/30" />
+              )}
+              <h2 className="text-lg font-display font-bold text-text">
+                {enabled ? 'Réseau activé' : 'Rejoindre le réseau'}
+              </h2>
+            </div>
+            {enabled && city ? (
+              <div className="flex items-center gap-1.5 text-sm font-body text-text-muted">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>
+                  {partners.length} partenaire{partners.length > 1 ? 's' : ''} à{' '}
+                  <span className="font-semibold capitalize text-text">{city}</span>
+                </span>
+                {sharedCount > 0 && (
+                  <>
+                    <span className="mx-1">·</span>
+                    <span>{sharedCount} lot{sharedCount > 1 ? 's' : ''} partagé{sharedCount > 1 ? 's' : ''}</span>
+                  </>
+                )}
+              </div>
             ) : (
-              <ToggleLeft className="w-10 h-10 text-text-muted" />
+              <p className="text-sm font-body text-text-muted">
+                Votre ville est détectée automatiquement depuis votre adresse
+              </p>
             )}
-          </button>
+          </div>
+
+          {enabled ? (
+            <button
+              onClick={handleToggle}
+              disabled={toggling}
+              className="shrink-0"
+              title="Désactiver le réseau"
+            >
+              {toggling ? (
+                <Loader2 className="w-8 h-8 animate-spin text-text-muted" />
+              ) : (
+                <ToggleRight className="w-10 h-10 text-primary" />
+              )}
+            </button>
+          ) : (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleToggle}
+              loading={toggling}
+              disabled={toggling}
+            >
+              {!toggling && <Handshake className="w-4 h-4" />}
+              Activer
+            </Button>
+          )}
         </div>
 
         {regionError && (
@@ -299,210 +387,190 @@ export default function NetworkPage() {
             <p className="text-sm font-body text-warning">{regionError}</p>
           </motion.div>
         )}
-
-        {showCityForm && !city && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="flex items-end gap-3 mt-4"
-          >
-            <div className="flex-1">
-              <Input
-                id="city"
-                label={T.cityLabel}
-                placeholder={T.cityPlaceholder}
-                value={cityInput}
-                onChange={(e) => setCityInput(e.target.value)}
-              />
-            </div>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={handleCitySubmit}
-              disabled={!cityInput.trim() || toggling}
-              loading={toggling}
-            >
-              <Check className="w-4 h-4" />
-              Activer
-            </Button>
-          </motion.div>
-        )}
-
-        {enabled && city && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex items-center gap-2 mt-2 px-3 py-2 bg-primary/5 rounded-xl"
-          >
-            <Users className="w-4 h-4 text-primary" />
-            <span className="text-sm font-body text-text">
-              {partners.length} {T.partnersCount}{' '}
-              <span className="font-semibold capitalize">{city}</span>
-            </span>
-          </motion.div>
-        )}
       </motion.div>
 
       {/* ================================================================
-          Card 2: Mes lots partagés
+          Lots partagés — visible uniquement si activé
           ================================================================ */}
-      {enabled && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-surface rounded-2xl border border-border/40 p-6"
-        >
-          <div className="mb-4">
-            <h2 className="text-lg font-display font-bold text-text">{T.offersTitle}</h2>
-            <p className="text-sm font-body text-text-muted mt-1">
-              {T.offersDescription}
-            </p>
-          </div>
+      <AnimatePresence>
+        {enabled && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            transition={{ delay: 0.1 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-surface rounded-2xl border border-border/40 p-6">
+              <div className="mb-2">
+                <h2 className="text-lg font-display font-bold text-text">Quels lots partager ?</h2>
+                <p className="text-sm font-body text-text-muted mt-1">
+                  Voici vos lots gagnants. Activez ceux que vous souhaitez offrir aux clients des commerces partenaires et définissez un stock mensuel dédié.
+                </p>
+              </div>
 
-          <div className="space-y-3">
-            {segments.map((seg) => {
-              const offer = offers.find((o) => o.segment_id === seg.id);
-              const isShared = !!offer;
+              <div className="space-y-2 mt-4">
+                {segments.map((seg) => {
+                  const offer = offers.find((o) => o.segment_id === seg.id);
+                  const isShared = !!offer;
 
-              return (
-                <div
-                  key={seg.id}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors',
-                    isShared ? 'border-primary/30 bg-primary/5' : 'border-border/40 bg-background'
-                  )}
-                >
-                  <span className="text-xl">{seg.emoji}</span>
-                  <span className="flex-1 text-sm font-body font-medium text-text">
-                    {seg.label}
-                  </span>
-
-                  {isShared && (
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs font-body text-text-muted">{T.offersStockLabel}:</label>
-                      <select
-                        value={offer.monthly_stock}
-                        onChange={(e) => handleUpdateStock(seg.id, parseInt(e.target.value))}
-                        className="text-sm border border-border/40 rounded-lg px-2 py-1 bg-surface text-text"
-                      >
-                        {[1, 2, 3, 5, 10, 15, 20, 30, 50].map((n) => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => handleToggleOffer(seg.id)}
-                    disabled={savingSegment === seg.id}
-                    className="shrink-0"
-                  >
-                    {savingSegment === seg.id ? (
-                      <Loader2 className="w-5 h-5 animate-spin text-text-muted" />
-                    ) : isShared ? (
-                      <ToggleRight className="w-8 h-8 text-primary" />
-                    ) : (
-                      <ToggleLeft className="w-8 h-8 text-text-muted" />
-                    )}
-                  </button>
-                </div>
-              );
-            })}
-
-            {segments.length === 0 && (
-              <p className="text-sm font-body text-text-muted text-center py-6">
-                Aucun lot gagnant configuré sur votre roue.
-              </p>
-            )}
-          </div>
-
-          <p className="text-xs font-body text-text-muted mt-4">
-            {T.offersValidityNote}
-          </p>
-        </motion.div>
-      )}
-
-      {/* ================================================================
-          Card 3: Mon réseau
-          ================================================================ */}
-      {enabled && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-surface rounded-2xl border border-border/40 p-6"
-        >
-          <div className="mb-4">
-            <h2 className="text-lg font-display font-bold text-text">{T.networkTitle}</h2>
-          </div>
-
-          {partners.length > 0 ? (
-            <>
-              <div className="space-y-3 mb-6">
-                {partners.map((partner) => (
-                  <div
-                    key={partner.id}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/40 bg-background"
-                  >
-                    {partner.logo_url ? (
-                      <img
-                        src={partner.logo_url}
-                        alt={partner.name}
-                        className="w-9 h-9 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                        {getInitials(partner.name)}
+                  return (
+                    <div
+                      key={seg.id}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-3 rounded-xl border transition-all',
+                        isShared ? 'border-primary/30 bg-primary/5' : 'border-border/30 bg-background'
+                      )}
+                    >
+                      <span className="text-xl shrink-0">{seg.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-body font-medium text-text truncate">{seg.label}</p>
+                        <p className="text-[11px] font-body text-text-muted">
+                          Stock roue : {seg.monthly_stock > 0 ? `${seg.monthly_stock}/mois` : 'illimité'}
+                        </p>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-display font-semibold text-text truncate">
-                        {partner.name}
-                      </p>
-                      <p className="text-xs font-body text-text-muted">
-                        {partner.sector}
-                      </p>
+
+                      {isShared && (
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[11px] font-body text-text-muted hidden sm:inline">Réseau :</span>
+                          <select
+                            value={offer.monthly_stock}
+                            onChange={(e) => handleUpdateStock(seg.id, parseInt(e.target.value))}
+                            className="text-sm border border-border/40 rounded-lg px-2 py-1 bg-surface text-text w-16"
+                          >
+                            {[1, 2, 3, 5, 10, 15, 20, 30, 50].map((n) => (
+                              <option key={n} value={n}>{n}/m</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => handleToggleOffer(seg.id)}
+                        disabled={savingSegment === seg.id}
+                        className="shrink-0"
+                        title={isShared ? 'Retirer du réseau' : 'Partager au réseau'}
+                      >
+                        {savingSegment === seg.id ? (
+                          <Loader2 className="w-5 h-5 animate-spin text-text-muted" />
+                        ) : isShared ? (
+                          <ToggleRight className="w-8 h-8 text-primary" />
+                        ) : (
+                          <ToggleLeft className="w-8 h-8 text-text-muted" />
+                        )}
+                      </button>
                     </div>
-                    <Badge variant="muted" size="sm">
-                      {partner.shared_offers} lots
-                    </Badge>
+                  );
+                })}
+
+                {segments.length === 0 && (
+                  <div className="text-center py-6">
+                    <Gift className="w-8 h-8 text-text-muted/30 mx-auto mb-2" />
+                    <p className="text-sm font-body text-text-muted">
+                      Aucun lot gagnant configuré sur votre roue.
+                    </p>
+                    <p className="text-xs font-body text-text-muted mt-1">
+                      Ajoutez des lots depuis la page "Ma Roue" pour les partager ici.
+                    </p>
                   </div>
-                ))}
+                )}
               </div>
 
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-background rounded-xl p-4 text-center">
-                  <Gift className="w-5 h-5 text-primary mx-auto mb-1" />
-                  <p className="text-xl font-display font-bold text-text">{stats.given}</p>
-                  <p className="text-xs font-body text-text-muted">{T.statsGiven}</p>
-                </div>
-                <div className="bg-background rounded-xl p-4 text-center">
-                  <ArrowDownUp className="w-5 h-5 text-accent mx-auto mb-1" />
-                  <p className="text-xl font-display font-bold text-text">{stats.received}</p>
-                  <p className="text-xs font-body text-text-muted">{T.statsReceived}</p>
-                </div>
-                <div className="bg-background rounded-xl p-4 text-center">
-                  <Check className="w-5 h-5 text-success mx-auto mb-1" />
-                  <p className="text-xl font-display font-bold text-text">{stats.claimed}</p>
-                  <p className="text-xs font-body text-text-muted">{T.statsClaimed}</p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-8">
-              <Handshake className="w-12 h-12 text-text-muted/30 mx-auto mb-3" />
-              <p className="text-sm font-body text-text-muted mb-1">
-                {T.networkEmpty}{city ? ` à ${city}` : ''}.
-              </p>
-              <p className="text-xs font-body text-text-muted">
-                {T.networkEmptyInvite}
+              <p className="text-xs font-body text-text-muted mt-4 flex items-center gap-1.5">
+                <Gift className="w-3.5 h-3.5 shrink-0" />
+                Ce stock est indépendant de votre roue. Les lots réseau sont valables 15 jours.
               </p>
             </div>
-          )}
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ================================================================
+          Mon réseau + stats — visible uniquement si activé
+          ================================================================ */}
+      <AnimatePresence>
+        {enabled && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            transition={{ delay: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-surface rounded-2xl border border-border/40 p-6">
+              <h2 className="text-lg font-display font-bold text-text mb-4">
+                Partenaires à {city && <span className="capitalize">{city}</span>}
+              </h2>
+
+              {partners.length > 0 ? (
+                <>
+                  <div className="space-y-2 mb-6">
+                    {partners.map((partner) => (
+                      <div
+                        key={partner.id}
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/30 bg-background"
+                      >
+                        {partner.logo_url ? (
+                          <img
+                            src={partner.logo_url}
+                            alt={partner.name}
+                            className="w-9 h-9 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                            {getInitials(partner.name)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-display font-semibold text-text truncate">
+                            {partner.name}
+                          </p>
+                          <p className="text-xs font-body text-text-muted">
+                            {partner.sector}
+                          </p>
+                        </div>
+                        <Badge variant="muted" size="sm">
+                          {partner.shared_offers} lot{partner.shared_offers > 1 ? 's' : ''}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Stats */}
+                  <h3 className="text-sm font-display font-semibold text-text mb-3">Ce mois-ci</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-background rounded-xl p-4 text-center">
+                      <Gift className="w-5 h-5 text-primary mx-auto mb-1" />
+                      <p className="text-xl font-display font-bold text-text">{stats.given}</p>
+                      <p className="text-[11px] font-body text-text-muted leading-tight">{T.statsGiven}</p>
+                    </div>
+                    <div className="bg-background rounded-xl p-4 text-center">
+                      <ArrowDownUp className="w-5 h-5 text-accent mx-auto mb-1" />
+                      <p className="text-xl font-display font-bold text-text">{stats.received}</p>
+                      <p className="text-[11px] font-body text-text-muted leading-tight">{T.statsReceived}</p>
+                    </div>
+                    <div className="bg-background rounded-xl p-4 text-center">
+                      <Check className="w-5 h-5 text-success mx-auto mb-1" />
+                      <p className="text-xl font-display font-bold text-text">{stats.claimed}</p>
+                      <p className="text-[11px] font-body text-text-muted leading-tight">{T.statsClaimed}</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="w-12 h-12 text-text-muted/20 mx-auto mb-3" />
+                  <p className="text-sm font-body text-text-muted mb-1">
+                    Aucun partenaire pour le moment{city ? ` à ${city}` : ''}.
+                  </p>
+                  <p className="text-xs font-body text-text-muted">
+                    D'autres commerces rejoindront bientôt le réseau !
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
