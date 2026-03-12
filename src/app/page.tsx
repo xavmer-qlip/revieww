@@ -1218,6 +1218,7 @@ function DemoSection() {
   const [winnerIndex, setWinnerIndex] = useState(0);
   const [rotation, setRotation] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const targetRotRef = useRef(0);
 
   const winner = DEMO_PRIZES[winnerIndex];
 
@@ -1227,17 +1228,25 @@ function DemoSection() {
     setWinnerIndex(idx);
     setDemoStep('spinning');
 
-    // Land solidly in the center of the winning segment.
-    // Segment i center = i * 60 + 30. Arrow points at top = 0°.
-    // We need to rotate so segment center ends up at top (0°).
-    const segCenter = idx * SEGMENT_DEG + SEGMENT_DEG / 2;
-    const targetAngle = (360 - segCenter + 360) % 360;
-    const fullSpins = 7 * 360; // 7 full rotations for dramatic effect
-    setRotation((r) => {
-      const currentMod = r % 360;
-      const delta = ((targetAngle - currentMod) + 360) % 360;
-      return r + fullSpins + delta;
-    });
+    // CSS conic-gradient(from 0deg) starts at 12 o'clock, going clockwise.
+    // Segment i center is at (i * 60 + 30)° from top.
+    // Arrow is fixed at top. When wheel rotates R° clockwise,
+    // the arrow points at original position (360 - R%360)%360.
+    // We want arrow on segment center: (360 - R%360)%360 = i*60+30
+    // → R%360 = (360 - (i*60+30))%360 = (330 - i*60 + 360)%360
+    const segCenter = idx * 60 + 30;
+    const targetMod = (360 - segCenter + 360) % 360;
+
+    // Always spin forward: at least 7 full rotations from current target
+    const prev = targetRotRef.current;
+    const base = prev + 7 * 360;
+    // Find the next rotation ≥ base that has the right modulo
+    const remainder = base % 360;
+    const extra = ((targetMod - remainder) + 360) % 360;
+    const nextRot = base + extra;
+
+    targetRotRef.current = nextRot;
+    setRotation(nextRot);
 
     // After spin (4.5s): result → review → code, each 4s apart
     timerRef.current = setTimeout(() => {
@@ -1317,64 +1326,88 @@ function DemoSection() {
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }} transition={{ duration: 0.7 }} className="flex justify-center order-2 lg:order-1">
             <div className="relative w-[280px] h-[280px] sm:w-[320px] sm:h-[320px]">
               <div className="absolute inset-[-10%] rounded-full blur-[50px]" style={{ background: C.coralGlow }} />
+              {/* Wheel disc — SVG for precise segment rendering */}
               <div
-                className="absolute inset-0 rounded-full shadow-2xl border-2"
-                style={{
-                  borderColor: C.border,
-                  background: `conic-gradient(from 0deg, ${DEMO_PRIZES[0].color} 0deg 60deg, ${DEMO_PRIZES[1].color} 60deg 120deg, ${DEMO_PRIZES[2].color} 120deg 180deg, ${DEMO_PRIZES[3].color} 180deg 240deg, ${DEMO_PRIZES[4].color} 240deg 300deg, ${DEMO_PRIZES[5].color} 300deg 360deg)`,
-                  transform: `rotate(${rotation}deg)`,
-                  transition: demoStep === 'spinning' ? 'transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-                }}
-              />
-              {/* Partner segment gold dashed border overlay */}
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
+                className="absolute inset-0"
                 style={{
                   transform: `rotate(${rotation}deg)`,
                   transition: demoStep === 'spinning' ? 'transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
                 }}
               >
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
-                  {/* Gold dashed arc over the partner segment (segment 3 = 180°-240°) */}
-                  <path
-                    d={`M ${160 + 158 * Math.cos(Math.PI)} ${160 + 158 * Math.sin(Math.PI)} A 158 158 0 0 1 ${160 + 158 * Math.cos(4 * Math.PI / 3)} ${160 + 158 * Math.sin(4 * Math.PI / 3)}`}
-                    fill="none"
-                    stroke="#DAA520"
-                    strokeWidth="3"
-                    strokeDasharray="8 4"
-                  />
+                <svg viewBox="0 0 320 320" className="w-full h-full drop-shadow-2xl">
+                  {DEMO_PRIZES.map((p, i) => {
+                    // Each segment: 60° arc from center
+                    const startDeg = i * 60 - 90; // -90 so 0° = top
+                    const endDeg = startDeg + 60;
+                    const startRad = (startDeg * Math.PI) / 180;
+                    const endRad = (endDeg * Math.PI) / 180;
+                    const cx = 160, cy = 160, r = 155;
+                    const x1 = cx + r * Math.cos(startRad);
+                    const y1 = cy + r * Math.sin(startRad);
+                    const x2 = cx + r * Math.cos(endRad);
+                    const y2 = cy + r * Math.sin(endRad);
+                    const path = `M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`;
+
+                    // Emoji position at ~65% radius
+                    const midRad = ((startDeg + 30) * Math.PI) / 180;
+                    const emojiR = r * 0.62;
+                    const ex = cx + emojiR * Math.cos(midRad);
+                    const ey = cy + emojiR * Math.sin(midRad);
+
+                    return (
+                      <g key={i}>
+                        <path
+                          d={path}
+                          fill={p.color}
+                          stroke={p.partner ? '#DAA520' : 'rgba(255,255,255,0.15)'}
+                          strokeWidth={p.partner ? 3 : 1}
+                          strokeDasharray={p.partner ? '8 4' : undefined}
+                        />
+                        {/* Separator lines */}
+                        <line
+                          x1={cx} y1={cy}
+                          x2={x1} y2={y1}
+                          stroke="rgba(255,255,255,0.25)"
+                          strokeWidth="1.5"
+                        />
+                        {/* Emoji */}
+                        <text
+                          x={ex} y={ey}
+                          textAnchor="middle" dominantBaseline="central"
+                          fontSize="24"
+                        >
+                          {p.partner ? '🎁' : p.emoji}
+                        </text>
+                        {/* Partner label */}
+                        {p.partner && 'partnerName' in p && (
+                          <text
+                            x={cx + (emojiR * 0.85) * Math.cos(midRad)}
+                            y={cy + (emojiR * 0.85) * Math.sin(midRad) + 14}
+                            textAnchor="middle" dominantBaseline="central"
+                            fontSize="8" fontWeight="600" fill="#fff" opacity="0.7"
+                            fontFamily="var(--font-sora), system-ui"
+                          >
+                            {(p as typeof p & { partnerName: string }).partnerName}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                  {/* Center hub */}
+                  <circle cx="160" cy="160" r="36" fill={C.bg} stroke={C.border} strokeWidth="2" />
+                  <text x="160" y="163" textAnchor="middle" dominantBaseline="central" fontSize="16" fontWeight="800" fill={C.coral} fontFamily="var(--font-sora), system-ui">
+                    {demoStep === 'spinning' ? '...' : 'GO'}
+                  </text>
                 </svg>
               </div>
-              {DEMO_PRIZES.map((p, i) => {
-                const a = i * SEGMENT_DEG + SEGMENT_DEG / 2;
-                const r = ((a - 90) * Math.PI) / 180;
-                const emojiRadius = 85;
-                return (
-                  <span
-                    key={i}
-                    className="absolute text-2xl pointer-events-none"
-                    style={{
-                      left: `calc(50% + ${Math.cos(r) * emojiRadius}px - 14px)`,
-                      top: `calc(50% + ${Math.sin(r) * emojiRadius}px - 14px)`,
-                      transform: `rotate(${rotation}deg)`,
-                      transition: demoStep === 'spinning' ? 'transform 4.5s cubic-bezier(0.12, 0.8, 0.08, 1)' : 'none',
-                    }}
-                  >
-                    {p.partner ? '🎁' : p.emoji}
-                  </span>
-                );
-              })}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <button
-                  onClick={demoStep === 'idle' ? spin : undefined}
-                  disabled={demoStep !== 'idle'}
-                  className="w-20 h-20 rounded-full shadow-2xl flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-transform disabled:cursor-wait z-10 border"
-                  style={{ background: C.bg, borderColor: C.border }}
-                >
-                  <span className="font-display font-extrabold text-base" style={{ color: C.coral }}>{demoStep === 'spinning' ? '...' : 'GO'}</span>
-                </button>
-              </div>
+              {/* Clickable center overlay */}
+              <button
+                onClick={demoStep === 'idle' ? spin : undefined}
+                disabled={demoStep !== 'idle'}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[72px] h-[72px] rounded-full cursor-pointer z-10 opacity-0"
+                aria-label="Lancer la roue"
+              />
+              {/* Arrow pointer — fixed at top */}
               <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-20">
                 <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[18px]" style={{ borderTopColor: C.coral }} />
               </div>
