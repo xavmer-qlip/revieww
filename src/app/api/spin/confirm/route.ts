@@ -122,12 +122,11 @@ export async function POST(request: NextRequest) {
       promoCode = typedSegment.promo_code;
     }
 
-    // Generate validation code
-    const codePrefix = isPartnerPrize ? 'XP' : 'WP';
+    // Generate validation code (always WP- prefix, no distinction for customers)
     let validationCode: string | null = null;
     if (payload.isWinning) {
       for (let attempt = 0; attempt < 5; attempt++) {
-        const candidate = generateValidationCode(codePrefix);
+        const candidate = generateValidationCode('WP');
         // Check collision in both spins and cross_promo_prizes
         const { count: spinCount } = await supabase
           .from('spins')

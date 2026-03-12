@@ -262,8 +262,12 @@ export default function NetworkPage() {
           Le réseau local connecte des commerçants de <span className="font-semibold text-text">secteurs différents</span> dans une même ville. Un coiffeur avec un café, une boutique avec un restaurant... Jamais un concurrent direct.
         </p>
 
+        <p className="text-sm font-body text-text-muted leading-relaxed mb-4">
+          Le principe est simple : vous mettez certains de vos lots en jeu sur le réseau. En retour, <span className="font-semibold text-text">des lots de vos partenaires apparaissent automatiquement sur votre roue</span>. Quand un de vos clients gagne un lot partenaire, il découvre un nouveau commerce. Et quand un client d'un partenaire gagne un de vos lots, il vient chez vous.
+        </p>
+
         <p className="text-sm font-body text-text-muted leading-relaxed mb-5">
-          Le principe est simple : vous mettez certains de vos lots en jeu sur le réseau et, en échange, vos lots deviennent visibles par les clients des commerces partenaires. <span className="font-semibold text-text">Chacun envoie des clients chez l'autre. C'est gagnant-gagnant.</span>
+          <span className="font-semibold text-text">C'est gagnant-gagnant</span> : chaque commerce du réseau profite de la clientèle des autres pour se faire connaître, tout en favorisant le commerce local et l'entraide entre commerçants.
         </p>
 
         {/* Comment ça marche — étapes */}

@@ -80,7 +80,7 @@ const PLAN_META: Record<PlanType, { label: string; variant: 'primary' | 'success
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
+function NavLink({ item, isActive, onNavigate }: { item: NavItem; isActive: boolean; onNavigate?: () => void }) {
   const Icon = item.icon;
 
   const content = (
@@ -128,7 +128,7 @@ function NavLink({ item, isActive }: { item: NavItem; isActive: boolean }) {
   }
 
   return (
-    <Link href={item.href} prefetch>
+    <Link href={item.href} prefetch onClick={onNavigate}>
       {content}
     </Link>
   );
@@ -255,7 +255,7 @@ export function Sidebar({
       {/* ---- Navigation ---- */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map((item) => (
-          <NavLink key={item.href} item={item} isActive={isActive(item.href)} />
+          <NavLink key={item.href} item={item} isActive={isActive(item.href)} onNavigate={onMobileClose} />
         ))}
       </nav>
 

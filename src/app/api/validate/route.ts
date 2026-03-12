@@ -15,8 +15,15 @@ export async function POST(request: NextRequest) {
     const code = validationCode.toUpperCase();
     const serviceClient = await createServiceClient();
 
-    // ---- Cross-promo prize (XP- prefix) ----
-    if (code.startsWith('XP-')) {
+    // ---- Try regular prize first (spins table) ----
+    const { data: spin, error: spinError } = await serviceClient
+      .from('spins')
+      .select('*, businesses!inner(name, prize_validity_days)')
+      .eq('validation_code', code)
+      .single();
+
+    // ---- If not found in spins, check cross-promo prizes ----
+    if (spinError || !spin) {
       const { data: prize, error: prizeError } = await serviceClient
         .from('cross_promo_prizes')
         .select(`
@@ -41,7 +48,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check expiry
       const expiresAt = new Date(prize.expires_at);
       if (new Date() > expiresAt) {
         return NextResponse.json(
@@ -50,14 +56,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Mark as claimed
-      const { error: updateError } = await serviceClient
+      const { error: xpUpdateError } = await serviceClient
         .from('cross_promo_prizes')
         .update({ claimed: true, claimed_at: new Date().toISOString() })
         .eq('id', prize.id);
 
-      if (updateError) {
-        console.error('Error claiming cross-promo prize:', updateError);
+      if (xpUpdateError) {
+        console.error('Error claiming cross-promo prize:', xpUpdateError);
         return NextResponse.json(
           { error: 'Failed to claim prize' },
           { status: 500 }
@@ -79,21 +84,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ---- Regular prize (WP- or RW- prefix) ----
-    const { data: spin, error: spinError } = await serviceClient
-      .from('spins')
-      .select('*, businesses!inner(name, prize_validity_days)')
-      .eq('validation_code', code)
-      .single();
-
-    if (spinError || !spin) {
-      return NextResponse.json(
-        { error: 'not_found' },
-        { status: 404 }
-      );
-    }
-
-    // ---- Already claimed check ----
+    // ---- Regular prize: already claimed check ----
     if (spin.claimed) {
       return NextResponse.json(
         { error: 'already_claimed', claimed_at: spin.claimed_at },

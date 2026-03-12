@@ -21,7 +21,8 @@ import {
   Heart,
   Store,
   Users,
-  Globe,
+  Handshake,
+  MapPin,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { FREE_PLAN, PAID_PLANS, TEXTS, APP_DOMAIN } from '@/lib/constants';
@@ -46,6 +47,32 @@ const C = {
   sand: '#E6D8C4',
   green: '#34d399',
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GENEVA COAT OF ARMS — simplified shield
+   ═══════════════════════════════════════════════════════════════════════════ */
+function GenevaShield({ size = 40, className }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size * 1.15} viewBox="0 0 80 92" fill="none" className={className}>
+      {/* Shield shape */}
+      <path d="M4 4h72v52c0 20-36 32-36 32S4 76 4 56V4z" fill="#CE1126" stroke="#DAA520" strokeWidth="3" />
+      {/* Vertical divider */}
+      <line x1="40" y1="4" x2="40" y2="78" stroke="#DAA520" strokeWidth="2" />
+      {/* Left: half eagle (simplified) */}
+      <path d="M20 28c-2-4 0-8 4-10 2-1 4 0 5 2l3 5v8l-4 6-4 2c-3-1-5-4-4-7v-6z" fill="#000" opacity="0.85" />
+      <path d="M24 20l2-3 1 1-2 3z M28 22l2-2 1 1-2 2z" fill="#DAA520" />
+      {/* Right: key (simplified) */}
+      <g transform="translate(48, 18)">
+        <rect x="4" y="0" width="4" height="28" rx="1" fill="#DAA520" />
+        <circle cx="6" cy="5" r="5" fill="none" stroke="#DAA520" strokeWidth="3" />
+        <rect x="8" y="22" width="6" height="3" rx="0.5" fill="#DAA520" />
+        <rect x="8" y="17" width="5" height="3" rx="0.5" fill="#DAA520" />
+      </g>
+      {/* IHS sun (simplified top element) */}
+      <circle cx="40" cy="52" r="6" fill="#DAA520" opacity="0.3" />
+    </svg>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    PHONE MOCKUP
@@ -238,6 +265,7 @@ function Navbar() {
 
   const links = [
     { label: 'Fonctionnement', id: 'how' },
+    { label: 'Réseau local', id: 'network' },
     { label: 'Tarifs', id: 'pricing' },
     { label: 'FAQ', id: 'faq' },
   ];
@@ -543,9 +571,9 @@ function LocalMerchantsSection() {
       color: C.coral,
     },
     {
-      icon: Store,
-      title: 'Créez un réseau de quartier',
-      desc: 'Imaginez : un client gagne chez vous un bon pour le café d\'à côté. Et les clients du café découvrent votre restaurant. Les commerçants du quartier se soutiennent et partagent leurs communautés. Tout le monde y gagne.',
+      icon: Handshake,
+      title: 'Rejoignez le réseau local',
+      desc: 'Vos lots apparaissent sur les roues de commerçants partenaires, et les leurs sur la vôtre. Un coiffeur envoie ses clients chez le café, et inversement. Chaque commerce fait découvrir les autres. C\'est gagnant-gagnant — disponible dès maintenant à Genève.',
       color: C.green,
     },
   ];
@@ -920,45 +948,80 @@ function ClientExperienceSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   LOCAL VISION — Future teaser
+   LOCAL NETWORK — Live in Geneva
    ═══════════════════════════════════════════════════════════════════════════ */
-function LocalVisionSection() {
+function LocalNetworkSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, amount: 0.05 });
+
+  const steps = [
+    { num: '1', title: 'Activez le réseau', desc: 'Un clic depuis votre dashboard suffit. woopla détecte automatiquement votre ville et votre secteur.', color: C.coral },
+    { num: '2', title: 'Choisissez vos lots', desc: 'Sélectionnez quels lots de votre roue partager au réseau, avec un stock mensuel dédié que vous contrôlez.', color: C.yellow },
+    { num: '3', title: 'Échange automatique', desc: 'Vos lots apparaissent sur les roues de vos partenaires. Leurs lots apparaissent sur la vôtre. Tout est automatique.', color: C.sky },
+    { num: '4', title: 'Nouveaux clients', desc: 'Un client gagne votre lot chez un partenaire ? Il vient chez vous le récupérer. Et inversement. C\'est gagnant-gagnant.', color: C.green },
+  ];
+
   return (
-    <section className="py-28 sm:py-36 relative overflow-hidden" style={{ background: C.surface }}>
+    <section id="network" className="py-28 sm:py-36 relative overflow-hidden" style={{ background: C.surface }}>
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[150px]" style={{ background: C.skyGlow }} />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[130px]" style={{ background: C.yellowGlow }} />
       </div>
       <div ref={sectionRef} className="max-w-5xl mx-auto px-6 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <span
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[12px] font-display font-semibold border mb-6"
+            style={{ borderColor: `${C.green}30`, background: `${C.green}08`, color: C.green }}
+          >
+            <Handshake className="w-3.5 h-3.5" />
+            Disponible maintenant
+          </span>
+          <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl mb-5 leading-tight" style={{ color: C.text }}>
+            Le réseau local{' '}
+            <span style={{ color: C.sky }}>des commerçants.</span>
+          </h2>
+          <p className="font-body text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: C.muted }}>
+            Les commerçants d&apos;une même ville, de secteurs différents, s&apos;entraident en partageant leurs lots sur leurs roues respectives. Jamais de concurrent direct — uniquement de la complémentarité.
+          </p>
+        </motion.div>
+
+        <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+          {/* Left — steps */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-5"
           >
-            <span
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[12px] font-display font-semibold border mb-6"
-              style={{ borderColor: `${C.sky}30`, background: `${C.sky}08`, color: C.sky }}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              Bientôt
-            </span>
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl mb-5 leading-tight" style={{ color: C.text }}>
-              Le réseau{' '}
-              <span style={{ color: C.sky }}>des commerçants locaux.</span>
-            </h2>
-            <p className="font-body text-[16px] leading-relaxed mb-6" style={{ color: C.muted }}>
-              Imaginez : un client gagne sur votre roue un bon pour le café d&apos;à côté. Et les clients du café découvrent votre restaurant. Les commerçants d&apos;une même ville se soutiennent et partagent leurs communautés.
-            </p>
-            <p className="font-body text-[15px] leading-relaxed mb-6" style={{ color: C.muted }}>
-              Événements, ouvertures, offres spéciales — tout passe par la roue. Une vraie visibilité locale, entre voisins.
-            </p>
-            <p className="font-display font-semibold text-sm" style={{ color: C.sky }}>
-              C&apos;est notre vision. Et on y travaille.
-            </p>
+            {steps.map((s, i) => (
+              <motion.div
+                key={s.num}
+                initial={{ opacity: 0, x: -20 }}
+                animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+                transition={{ duration: 0.5, delay: inView ? i * 0.1 : 0 }}
+                className="flex gap-4 items-start"
+              >
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 font-display font-bold text-sm"
+                  style={{ background: `${s.color}15`, color: s.color }}
+                >
+                  {s.num}
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-[15px] mb-1" style={{ color: C.text }}>{s.title}</h3>
+                  <p className="font-body text-[14px] leading-relaxed" style={{ color: C.muted }}>{s.desc}</p>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
+
+          {/* Right — network visualization */}
           <motion.div
             initial={{ opacity: 0, x: 30, scale: 0.95 }}
             animate={inView ? { opacity: 1, x: 0, scale: 1 } : { opacity: 0, x: 30, scale: 0.95 }}
@@ -966,7 +1029,6 @@ function LocalVisionSection() {
             className="flex justify-center"
           >
             <div className="relative">
-              {/* Network visualization */}
               <div className="w-[300px] h-[300px] sm:w-[340px] sm:h-[340px] relative">
                 {/* Center node */}
                 <motion.div
@@ -1006,7 +1068,7 @@ function LocalVisionSection() {
                   );
                 })}
                 {/* Connection lines */}
-                <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.15 }}>
+                <svg className="absolute inset-0 w-full h-full" style={{ opacity: 0.2 }}>
                   {[0, 72, 144, 216, 288].map((angle, i) => {
                     const rad = ((angle - 90) * Math.PI) / 180;
                     const radius = 120;
@@ -1017,7 +1079,7 @@ function LocalVisionSection() {
                         x2={`${50 + (Math.cos(rad) * radius / 3.4)}%`}
                         y2={`${50 + (Math.sin(rad) * radius / 3.4)}%`}
                         stroke={C.sky}
-                        strokeWidth="1"
+                        strokeWidth="1.5"
                         strokeDasharray="4 4"
                         initial={{ pathLength: 0 }}
                         animate={inView ? { pathLength: 1 } : { pathLength: 0 }}
@@ -1030,6 +1092,61 @@ function LocalVisionSection() {
             </div>
           </motion.div>
         </div>
+
+        {/* Geneva availability banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: inView ? 0.4 : 0 }}
+          className="max-w-2xl mx-auto"
+        >
+          <div
+            className="rounded-2xl p-6 sm:p-8 border text-center"
+            style={{ background: `${C.bg}`, borderColor: `${C.sky}20` }}
+          >
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-4">
+                <GenevaShield size={44} />
+                <div className="text-left">
+                  <h3 className="font-display font-bold text-lg" style={{ color: C.text }}>
+                    Disponible dans le canton de Genève
+                  </h3>
+                  <p className="font-body text-[13px] mt-0.5" style={{ color: C.muted }}>
+                    Premier canton à bénéficier du réseau local woopla
+                  </p>
+                </div>
+              </div>
+
+              <p className="font-body text-[14px] leading-relaxed max-w-lg" style={{ color: C.muted }}>
+                Le réseau local est actuellement disponible pour tous les commerçants genevois. Gratuit, sans engagement, inclus dans tous les plans. D&apos;autres cantons ouvriront prochainement.
+              </p>
+
+              <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border" style={{ borderColor: C.border, background: 'rgba(255,255,255,0.02)' }}>
+                  <MapPin className="w-3.5 h-3.5" style={{ color: C.sky }} />
+                  <span className="font-display font-semibold text-[12px]" style={{ color: C.muted }}>Genève</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border" style={{ borderColor: C.border, background: 'rgba(255,255,255,0.02)' }}>
+                  <Gift className="w-3.5 h-3.5" style={{ color: C.green }} />
+                  <span className="font-display font-semibold text-[12px]" style={{ color: C.muted }}>Gratuit</span>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border" style={{ borderColor: C.border, background: 'rgba(255,255,255,0.02)' }}>
+                  <Handshake className="w-3.5 h-3.5" style={{ color: C.coral }} />
+                  <span className="font-display font-semibold text-[12px]" style={{ color: C.muted }}>Tous les plans</span>
+                </div>
+              </div>
+
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 px-6 py-3 font-display font-bold text-sm rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] text-white mt-2"
+                style={{ backgroundColor: C.coral, boxShadow: '0 6px 20px rgba(248,131,121,0.2)' }}
+              >
+                Rejoindre le réseau
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -1357,6 +1474,10 @@ function FAQSection() {
       a: 'Oui, sans aucune condition. Pas d\'engagement, pas de frais cachés, pas de période minimale. Vous pouvez annuler depuis votre dashboard en un clic — l\'abonnement reste actif jusqu\'à la fin de la période payée. Le plan gratuit (30 spins) ne nécessite même pas de carte bancaire.',
     },
     {
+      q: 'Comment fonctionne le réseau local ?',
+      a: 'Quand vous activez le réseau local, vous choisissez quels lots de votre roue partager avec un stock mensuel dédié. woopla vous met automatiquement en relation avec des commerçants d\'un autre secteur dans votre ville — jamais un concurrent. Vos lots apparaissent sur leurs roues, et les leurs sur la vôtre. Quand un de leurs clients gagne un de vos lots, il vient chez vous le récupérer. C\'est gagnant-gagnant. Actuellement disponible dans le canton de Genève, gratuit et inclus dans tous les plans.',
+    },
+    {
       q: 'C\'est adapté à quel type de commerce ?',
       a: 'Restaurants, cafés, salons de coiffure, spas, escape games, boutiques, bars, boulangeries, fitness, food trucks… Tout commerce qui reçoit des clients sur place. Nos lots prédéfinis s\'adaptent automatiquement à votre secteur d\'activité. Que vous ayez 10 ou 500 clients par jour, woopla s\'adapte à votre volume.',
     },
@@ -1488,7 +1609,7 @@ export default function LandingPage() {
       <HowItWorksSection />
       <LocalMerchantsSection />
       <ClientExperienceSection />
-      <LocalVisionSection />
+      <LocalNetworkSection />
       <DemoSection />
       <PricingSection />
       <FAQSection />
