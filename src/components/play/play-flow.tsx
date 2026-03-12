@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Phone, ChevronRight, Clock, Gift, AlertCircle, Check, Globe, Instagram, Facebook, Star } from 'lucide-react';
+import { Mail, Phone, ChevronRight, Clock, Gift, AlertCircle, Check, Globe, Instagram, Facebook, Star, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/logo';
@@ -32,6 +32,10 @@ interface SpinResult {
   is_winning: boolean;
   promo_code: string | null;
   validation_code: string | null;
+  is_partner_prize?: boolean;
+  partner_business_name?: string | null;
+  partner_business_address?: string | null;
+  validity_days?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -221,6 +225,8 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     label: string;
     emoji: string;
     is_winning: boolean;
+    is_partner?: boolean;
+    partner_name?: string;
   } | null>(null);
 
   // Email form
@@ -331,6 +337,8 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
         label: data.segment.label,
         emoji: data.segment.emoji,
         is_winning: data.segment.is_winning,
+        is_partner: data.segment.is_partner ?? false,
+        partner_name: data.segment.partner_name ?? undefined,
       });
       setTargetSegmentId(data.segment.id);
 
@@ -392,6 +400,10 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
           is_winning: data.segment.is_winning,
           promo_code: data.segment.promo_code,
           validation_code: data.validation_code ?? null,
+          is_partner_prize: data.is_partner_prize ?? false,
+          partner_business_name: data.partner_business_name ?? null,
+          partner_business_address: data.partner_business_address ?? null,
+          validity_days: data.validity_days ?? undefined,
         });
         saveSpin(business.slug);
         goTo('result');
@@ -1024,7 +1036,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     transition={{ delay: 0.3 }}
                     className="text-2xl font-display font-extrabold text-text mb-1"
                   >
-                    {TEXTS.play.wonTitle}
+                    {spinResult.is_partner_prize && spinResult.partner_business_name
+                      ? `${TEXTS.crossPromo.partnerPrizeTitle} ${spinResult.partner_business_name} !`
+                      : TEXTS.play.wonTitle}
                   </motion.h2>
 
                   <motion.p
@@ -1097,6 +1111,39 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     </motion.div>
                   )}
 
+                  {/* Partner prize info */}
+                  {spinResult.is_partner_prize && spinResult.partner_business_name && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.65 }}
+                      className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4"
+                    >
+                      <p className="text-sm font-display font-bold text-amber-800 mb-1">
+                        {TEXTS.crossPromo.partnerPrizeTitle} {spinResult.partner_business_name} !
+                      </p>
+                      {spinResult.partner_business_address && (
+                        <div className="flex items-start gap-2 mt-2">
+                          <MapPin className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                          <p className="text-xs font-body text-amber-700">
+                            {spinResult.partner_business_address}
+                          </p>
+                        </div>
+                      )}
+                      {spinResult.partner_business_address && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spinResult.partner_business_address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-2 text-xs font-display font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+                        >
+                          <MapPin className="w-3.5 h-3.5" />
+                          {TEXTS.crossPromo.partnerPrizeCta}
+                        </a>
+                      )}
+                    </motion.div>
+                  )}
+
                   {/* Instruction */}
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -1106,7 +1153,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   >
                     <Gift className="w-4 h-4" />
                     <p className="font-body text-sm font-medium">
-                      {TEXTS.play.wonInstruction}
+                      {spinResult.is_partner_prize
+                        ? `Présentez ce code chez ${spinResult.partner_business_name}`
+                        : TEXTS.play.wonInstruction}
                     </p>
                   </motion.div>
 
@@ -1117,7 +1166,9 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     transition={{ delay: 0.8 }}
                     className="mt-3 text-text-muted font-body text-xs"
                   >
-                    Valable 7 jours
+                    {spinResult.is_partner_prize
+                      ? TEXTS.crossPromo.partnerPrizeValidity
+                      : `Valable ${business.prize_validity_days ?? 7} jours`}
                   </motion.p>
 
                   {/* Google review CTA — prominent, but optional */}

@@ -8,8 +8,13 @@ import type { WheelSegment } from '@/lib/types';
 // Types
 // ---------------------------------------------------------------------------
 
+interface ExtendedSegment extends WheelSegment {
+  is_partner?: boolean;
+  partner_name?: string;
+}
+
 interface WheelCanvasProps {
-  segments: WheelSegment[];
+  segments: (WheelSegment | ExtendedSegment)[];
   size?: number;
   spinning?: boolean;
   onSpinEnd?: (segment: WheelSegment) => void;
@@ -373,55 +378,79 @@ export function WheelCanvas({
           ))}
 
           {/* ---- Segments ---- */}
-          {segmentDefs.map((seg) => (
-            <g key={seg.id}>
-              {/* Segment arc */}
-              <path
-                d={seg.path}
-                fill={`url(#grad-${seg.id})`}
-                stroke="rgba(255,255,255,0.15)"
-                strokeWidth="1"
-              />
+          {segmentDefs.map((seg) => {
+            const isPartner = 'is_partner' in seg && (seg as ExtendedSegment).is_partner;
+            const partnerName = isPartner ? (seg as ExtendedSegment).partner_name : null;
 
-              {/* Separator line */}
-              <line
-                x1={cx}
-                y1={cy}
-                x2={cx + radius * Math.cos(toRad(seg.startAngle))}
-                y2={cy + radius * Math.sin(toRad(seg.startAngle))}
-                stroke="rgba(255,255,255,0.25)"
-                strokeWidth="1.5"
-              />
+            return (
+              <g key={seg.id}>
+                {/* Segment arc */}
+                <path
+                  d={seg.path}
+                  fill={`url(#grad-${seg.id})`}
+                  stroke={isPartner ? 'rgba(255,215,0,0.5)' : 'rgba(255,255,255,0.15)'}
+                  strokeWidth={isPartner ? 2 : 1}
+                  strokeDasharray={isPartner ? '6 3' : undefined}
+                />
 
-              {/* Emoji */}
-              <text
-                x={seg.emojiX}
-                y={seg.emojiY}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={s * 0.065}
-                transform={`rotate(${seg.midAngle + 90}, ${seg.emojiX}, ${seg.emojiY})`}
-              >
-                {seg.emoji}
-              </text>
+                {/* Separator line */}
+                <line
+                  x1={cx}
+                  y1={cy}
+                  x2={cx + radius * Math.cos(toRad(seg.startAngle))}
+                  y2={cy + radius * Math.sin(toRad(seg.startAngle))}
+                  stroke="rgba(255,255,255,0.25)"
+                  strokeWidth="1.5"
+                />
 
-              {/* Label text */}
-              <text
-                x={seg.textX}
-                y={seg.textY}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={Math.min(s * 0.032, 12)}
-                fontWeight="600"
-                fontFamily="var(--font-sora), system-ui, sans-serif"
-                fill={textColor(seg.color)}
-                transform={`rotate(${seg.midAngle + 90}, ${seg.textX}, ${seg.textY})`}
-                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
-              >
-                {seg.label.length > 14 ? seg.label.slice(0, 13) + '\u2026' : seg.label}
-              </text>
-            </g>
-          ))}
+                {/* Emoji — show gift badge for partner segments */}
+                <text
+                  x={seg.emojiX}
+                  y={seg.emojiY}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={s * 0.065}
+                  transform={`rotate(${seg.midAngle + 90}, ${seg.emojiX}, ${seg.emojiY})`}
+                >
+                  {isPartner ? '🎁' : seg.emoji}
+                </text>
+
+                {/* Label text */}
+                <text
+                  x={seg.textX}
+                  y={seg.textY}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fontSize={Math.min(s * 0.032, 12)}
+                  fontWeight="600"
+                  fontFamily="var(--font-sora), system-ui, sans-serif"
+                  fill={textColor(seg.color)}
+                  transform={`rotate(${seg.midAngle + 90}, ${seg.textX}, ${seg.textY})`}
+                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.2)' }}
+                >
+                  {seg.label.length > 14 ? seg.label.slice(0, 13) + '\u2026' : seg.label}
+                </text>
+
+                {/* Partner name — small text under label */}
+                {isPartner && partnerName && (
+                  <text
+                    x={seg.textX}
+                    y={seg.textY + Math.min(s * 0.04, 14)}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={Math.min(s * 0.022, 8)}
+                    fontWeight="500"
+                    fontFamily="var(--font-sora), system-ui, sans-serif"
+                    fill={textColor(seg.color)}
+                    opacity={0.7}
+                    transform={`rotate(${seg.midAngle + 90}, ${seg.textX}, ${seg.textY + Math.min(s * 0.04, 14)})`}
+                  >
+                    {partnerName.length > 12 ? partnerName.slice(0, 11) + '\u2026' : partnerName}
+                  </text>
+                )}
+              </g>
+            );
+          })}
 
           {/* ---- Center hub ---- */}
           {/* Outer ring of hub */}

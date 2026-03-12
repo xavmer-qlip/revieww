@@ -34,6 +34,8 @@ export interface Business {
   require_pin: boolean;
   daily_pin: string | null;
   pin_updated_at: string | null;
+  city: string | null;
+  cross_promo_enabled: boolean;
 }
 
 export interface WheelSegment {
@@ -93,4 +95,28 @@ export interface Plan {
   description: string;
   popular?: boolean;
   features?: string[];
+}
+
+export interface CrossPromoOffer {
+  id: string;
+  business_id: string;
+  segment_id: string;
+  monthly_stock: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface CrossPromoPrize {
+  id: string;
+  spin_id: string;
+  source_business_id: string;
+  partner_business_id: string;
+  offer_id: string;
+  prize_label: string;
+  prize_emoji: string | null;
+  validation_code: string;
+  expires_at: string;
+  claimed: boolean;
+  claimed_at: string | null;
+  created_at: string;
 }

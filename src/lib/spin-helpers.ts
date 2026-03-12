@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server';
-import { PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS } from '@/lib/constants';
+import { PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS, mapGoogleCategoryToSector } from '@/lib/constants';
 import { Business, WheelSegment } from '@/lib/types';
 import crypto from 'crypto';
 
@@ -173,6 +173,9 @@ interface ReservationPayload {
   segmentId: string;
   isWinning: boolean;
   exp: number; // unix timestamp (seconds)
+  isPartnerPrize?: boolean;
+  partnerBusinessId?: string;
+  offerId?: string;
 }
 
 /**
@@ -219,4 +222,175 @@ export function verifyReservationToken(token: string): ReservationPayload | null
   } catch {
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Cross-promo helpers
+// ---------------------------------------------------------------------------
+
+export interface PartnerSegment {
+  offer_id: string;
+  segment_id: string;
+  label: string;
+  emoji: string;
+  color: string;
+  partner_business_id: string;
+  partner_name: string;
+  partner_logo_url: string | null;
+  partner_address: string | null;
+}
+
+/**
+ * Fetch eligible partner segments for cross-promo.
+ * Returns segments from other businesses in the same city, different sector, with available stock.
+ */
+export async function getEligiblePartnerSegments(
+  supabase: Awaited<ReturnType<typeof createServiceClient>>,
+  business: Business
+): Promise<PartnerSegment[]> {
+  if (!business.cross_promo_enabled || !business.city) return [];
+
+  const businessSector = mapGoogleCategoryToSector(business.google_business_category);
+
+  // Fetch all active cross-promo offers from businesses in the same city
+  const { data: offers, error } = await supabase
+    .from('cross_promo_offers')
+    .select(`
+      id,
+      segment_id,
+      monthly_stock,
+      business_id,
+      businesses!inner (
+        id,
+        name,
+        logo_url,
+        address,
+        city,
+        cross_promo_enabled,
+        google_business_category
+      ),
+      wheel_segments!inner (
+        label,
+        emoji,
+        color
+      )
+    `)
+    .eq('is_active', true)
+    .neq('business_id', business.id);
+
+  if (error || !offers || offers.length === 0) return [];
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const eligible: PartnerSegment[] = [];
+
+  for (const offer of offers) {
+    const partnerBiz = offer.businesses as unknown as {
+      id: string;
+      name: string;
+      logo_url: string | null;
+      address: string | null;
+      city: string | null;
+      cross_promo_enabled: boolean;
+      google_business_category: string | null;
+    };
+    const seg = offer.wheel_segments as unknown as {
+      label: string;
+      emoji: string;
+      color: string;
+    };
+
+    // Must be same city, enabled, different sector
+    if (!partnerBiz.cross_promo_enabled) continue;
+    if (partnerBiz.city !== business.city) continue;
+    const partnerSector = mapGoogleCategoryToSector(partnerBiz.google_business_category);
+    if (partnerSector === businessSector) continue;
+
+    // Check monthly stock usage
+    const { count: usedThisMonth } = await supabase
+      .from('cross_promo_prizes')
+      .select('*', { count: 'exact', head: true })
+      .eq('offer_id', offer.id)
+      .gte('created_at', monthStart);
+
+    if ((usedThisMonth ?? 0) >= offer.monthly_stock) continue;
+
+    eligible.push({
+      offer_id: offer.id,
+      segment_id: offer.segment_id,
+      label: seg.label,
+      emoji: seg.emoji,
+      color: seg.color,
+      partner_business_id: partnerBiz.id,
+      partner_name: partnerBiz.name,
+      partner_logo_url: partnerBiz.logo_url,
+      partner_address: partnerBiz.address,
+    });
+  }
+
+  return eligible;
+}
+
+/**
+ * Merge up to 2 partner segments into the pool with fixed low probability (3% each).
+ * Adjusts existing segment probabilities proportionally.
+ */
+export interface MergedSegment extends WheelSegment {
+  is_partner?: boolean;
+  partner_name?: string;
+  partner_logo_url?: string | null;
+  partner_address?: string | null;
+  offer_id?: string;
+  partner_business_id?: string;
+}
+
+export function mergePartnerSegments(
+  segments: WheelSegment[],
+  partnerSegments: PartnerSegment[]
+): { merged: MergedSegment[]; selectedPartners: PartnerSegment[] } {
+  if (partnerSegments.length === 0) {
+    return { merged: segments.map((s) => ({ ...s })), selectedPartners: [] };
+  }
+
+  // Pick up to 2 random partner segments
+  const shuffled = [...partnerSegments].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 2);
+
+  const partnerProbEach = 3; // 3% per partner segment
+  const totalPartnerProb = selected.length * partnerProbEach;
+
+  // Scale down existing probabilities
+  const totalOriginal = segments.reduce((sum, s) => sum + s.probability, 0);
+  const scaleFactor = (totalOriginal - totalPartnerProb) / totalOriginal;
+
+  const merged: MergedSegment[] = segments.map((s) => ({
+    ...s,
+    probability: Math.max(1, Math.round(s.probability * scaleFactor)),
+  }));
+
+  // Add partner segments as virtual wheel segments
+  for (const ps of selected) {
+    merged.push({
+      id: `partner-${ps.offer_id}`,
+      business_id: ps.partner_business_id,
+      label: ps.label,
+      emoji: ps.emoji,
+      probability: partnerProbEach,
+      color: ps.color,
+      position: merged.length,
+      is_winning: true,
+      promo_code: null,
+      monthly_stock: 0,
+      created_at: '',
+      is_partner: true,
+      partner_name: ps.partner_name,
+      partner_logo_url: ps.partner_logo_url,
+      partner_address: ps.partner_address,
+      offer_id: ps.offer_id,
+      partner_business_id: ps.partner_business_id,
+    });
+  }
+
+  return { merged, selectedPartners: selected };
 }

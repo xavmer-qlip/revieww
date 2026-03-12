@@ -9,6 +9,7 @@ import {
   QrCode,
   Users,
   ShieldCheck,
+  Handshake,
   MessageSquare,
   Settings,
   CreditCard,
@@ -52,6 +53,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: QrCode, label: 'Mon QR Code', href: '/dashboard/qrcode' },
   { icon: Users, label: 'Fichier client', href: '/dashboard/clients' },
   { icon: ShieldCheck, label: 'Valider un lot', href: '/dashboard/validate' },
+  { icon: Handshake, label: 'Réseau local', href: '/dashboard/network', badge: 'Beta' },
   {
     icon: MessageSquare,
     label: 'Messages',

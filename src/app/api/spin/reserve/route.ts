@@ -5,6 +5,8 @@ import {
   validateBusinessForSpin,
   checkSpinQuotas,
   getEligibleSegments,
+  getEligiblePartnerSegments,
+  mergePartnerSegments,
   createReservationToken,
 } from '@/lib/spin-helpers';
 
@@ -59,12 +61,16 @@ export async function POST(request: NextRequest) {
 
     const eligibleSegments = (segResult as { segments: WheelSegment[] }).segments;
 
-    // Pick weighted segment
+    // Cross-promo: fetch and merge partner segments
+    const partnerSegments = await getEligiblePartnerSegments(supabase, business);
+    const { merged, selectedPartners } = mergePartnerSegments(eligibleSegments, partnerSegments);
+
+    // Pick weighted segment from merged pool
     const winningSegmentId = pickWeightedSegment(
-      eligibleSegments.map((s) => ({ id: s.id, probability: s.probability }))
+      merged.map((s) => ({ id: s.id, probability: s.probability }))
     );
 
-    const winningSegment = eligibleSegments.find((s) => s.id === winningSegmentId);
+    const winningSegment = merged.find((s) => s.id === winningSegmentId);
     if (!winningSegment) {
       return NextResponse.json(
         { error: 'Internal server error' },
@@ -72,12 +78,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine if it's a partner prize
+    const isPartner = 'is_partner' in winningSegment && winningSegment.is_partner === true;
+    const partnerInfo = isPartner ? winningSegment as typeof winningSegment & {
+      partner_business_id: string;
+      partner_name: string;
+      partner_logo_url: string | null;
+      partner_address: string | null;
+      offer_id: string;
+    } : null;
+
     // Create HMAC token (10 min expiry)
     const token = createReservationToken({
       businessId,
-      segmentId: winningSegment.id,
+      segmentId: isPartner ? winningSegment.id : winningSegment.id,
       isWinning: winningSegment.is_winning,
       exp: Math.floor(Date.now() / 1000) + 600,
+      ...(isPartner && partnerInfo ? {
+        isPartnerPrize: true,
+        partnerBusinessId: partnerInfo.partner_business_id,
+        offerId: partnerInfo.offer_id,
+      } : {}),
     });
 
     return NextResponse.json({
@@ -88,6 +109,12 @@ export async function POST(request: NextRequest) {
         label: winningSegment.label,
         emoji: winningSegment.emoji,
         is_winning: winningSegment.is_winning,
+        ...(isPartner && partnerInfo ? {
+          is_partner: true,
+          partner_name: partnerInfo.partner_name,
+          partner_logo_url: partnerInfo.partner_logo_url,
+          partner_address: partnerInfo.partner_address,
+        } : {}),
       },
     });
   } catch (error) {
