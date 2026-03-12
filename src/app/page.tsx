@@ -52,24 +52,67 @@ const C = {
    GENEVA COAT OF ARMS — simplified shield
    ═══════════════════════════════════════════════════════════════════════════ */
 function GenevaShield({ size = 40, className }: { size?: number; className?: string }) {
+  const h = Math.round(size * 1.2);
   return (
-    <svg width={size} height={size * 1.15} viewBox="0 0 80 92" fill="none" className={className}>
-      {/* Shield shape */}
-      <path d="M4 4h72v52c0 20-36 32-36 32S4 76 4 56V4z" fill="#CE1126" stroke="#DAA520" strokeWidth="3" />
-      {/* Vertical divider */}
-      <line x1="40" y1="4" x2="40" y2="78" stroke="#DAA520" strokeWidth="2" />
-      {/* Left: half eagle (simplified) */}
-      <path d="M20 28c-2-4 0-8 4-10 2-1 4 0 5 2l3 5v8l-4 6-4 2c-3-1-5-4-4-7v-6z" fill="#000" opacity="0.85" />
-      <path d="M24 20l2-3 1 1-2 3z M28 22l2-2 1 1-2 2z" fill="#DAA520" />
-      {/* Right: key (simplified) */}
-      <g transform="translate(48, 18)">
-        <rect x="4" y="0" width="4" height="28" rx="1" fill="#DAA520" />
-        <circle cx="6" cy="5" r="5" fill="none" stroke="#DAA520" strokeWidth="3" />
-        <rect x="8" y="22" width="6" height="3" rx="0.5" fill="#DAA520" />
-        <rect x="8" y="17" width="5" height="3" rx="0.5" fill="#DAA520" />
+    <svg width={size} height={h} viewBox="0 0 200 240" fill="none" className={className}>
+      <defs>
+        <clipPath id="ge-shield">
+          <path d="M4 4h192v148c0 44-96 84-96 84S4 196 4 152V4z" />
+        </clipPath>
+      </defs>
+      {/* Shield outline */}
+      <path d="M4 4h192v148c0 44-96 84-96 84S4 196 4 152V4z" fill="#DAA520" />
+      <g clipPath="url(#ge-shield)">
+        {/* Left half — gold background */}
+        <rect x="6" y="6" width="94" height="230" fill="#FFD700" />
+        {/* Right half — red background */}
+        <rect x="100" y="6" width="94" height="230" fill="#CE1126" />
+
+        {/* ─── LEFT: Half imperial eagle (black on gold) ─── */}
+        <g transform="translate(10, 12)">
+          {/* Crown */}
+          <path d="M72 18c0-4 3-7 7-7h4c4 0 7 3 7 7v3H72v-3z" fill="#CE1126" stroke="#DAA520" strokeWidth="1.5" />
+          <circle cx="79" cy="10" r="2" fill="#DAA520" />
+          <circle cx="86" cy="10" r="2" fill="#DAA520" />
+          <circle cx="83" cy="7" r="2.5" fill="#CE1126" stroke="#DAA520" strokeWidth="1" />
+          {/* Head */}
+          <path d="M78 22c2-2 8-3 10 0l2 6c1 3 0 6-3 7l-8-2c-3-1-4-4-3-7l2-4z" fill="#1a1a1a" />
+          {/* Beak */}
+          <path d="M90 28l8-2c1 0 2 1 1 2l-6 4-3-4z" fill="#CE1126" />
+          {/* Eye */}
+          <circle cx="84" cy="28" r="1.5" fill="#FFD700" />
+          {/* Body / breast */}
+          <path d="M72 35c-2 5-3 16 0 30l8 20 10 10 5-2-6-14-4-22c-1-10-3-18-8-22h-5z" fill="#1a1a1a" />
+          {/* Wing feathers — spread */}
+          <path d="M68 38c-8 2-20 6-30 14l-4 8 6-3c10-6 22-12 30-14l-2-5z" fill="#1a1a1a" />
+          <path d="M64 44c-10 4-22 10-32 20l-3 8 6-4c10-8 22-16 32-20l-3-4z" fill="#1a1a1a" />
+          <path d="M60 52c-10 6-22 14-30 26l-2 8 5-5c8-10 20-20 30-26l-3-3z" fill="#1a1a1a" />
+          <path d="M58 60c-8 8-18 18-24 32l-1 7 5-5c6-12 14-24 24-32l-4-2z" fill="#1a1a1a" />
+          <path d="M56 68c-6 10-12 22-16 36l0 6 4-5c4-12 10-26 16-36l-4-1z" fill="#1a1a1a" />
+          {/* Talon / claw */}
+          <path d="M80 96l4 18c1 3 0 5-2 6l-3 1-2 8h-4l1-9-4-2c-2-1-3-3-2-5l4-17h8z" fill="#CE1126" />
+          <path d="M72 128l-6 4-2-3 6-5 2 4z M78 128l4 5-3 2-4-5 3-2z M85 122l6 2-1 3-6-2 1-3z" fill="#CE1126" />
+        </g>
+
+        {/* ─── RIGHT: Golden key on red ─── */}
+        <g transform="translate(108, 20)">
+          {/* Key shaft */}
+          <rect x="30" y="50" width="8" height="120" rx="3" fill="#DAA520" />
+          {/* Key handle — ornate diamond */}
+          <path d="M34 50L22 30 34 10 46 30z" fill="none" stroke="#DAA520" strokeWidth="6" strokeLinejoin="round" />
+          <circle cx="34" cy="30" r="5" fill="#CE1126" stroke="#DAA520" strokeWidth="2" />
+          {/* Key bit — cross-shaped teeth */}
+          <rect x="38" y="140" width="20" height="8" rx="1" fill="#DAA520" />
+          <rect x="48" y="132" width="10" height="8" rx="1" fill="#DAA520" />
+          <rect x="38" y="155" width="20" height="8" rx="1" fill="#DAA520" />
+          <rect x="48" y="147" width="10" height="8" rx="1" fill="#DAA520" />
+          {/* Cross on key bit top */}
+          <rect x="44" y="108" width="16" height="6" rx="1" fill="#DAA520" />
+          <rect x="49" y="102" width="6" height="18" rx="1" fill="#DAA520" />
+        </g>
       </g>
-      {/* IHS sun (simplified top element) */}
-      <circle cx="40" cy="52" r="6" fill="#DAA520" opacity="0.3" />
+      {/* Shield border */}
+      <path d="M4 4h192v148c0 44-96 84-96 84S4 196 4 152V4z" fill="none" stroke="#1a1a1a" strokeWidth="4" />
     </svg>
   );
 }
