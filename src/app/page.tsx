@@ -1335,9 +1335,17 @@ function DemoSection() {
                 }}
               >
                 <svg viewBox="0 0 320 320" className="w-full h-full drop-shadow-2xl">
+                  <defs>
+                    {/* Gold shimmer gradient for partner segment */}
+                    <linearGradient id="partner-gold" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#F5D060" />
+                      <stop offset="40%" stopColor="#DAA520" />
+                      <stop offset="70%" stopColor="#F5D060" />
+                      <stop offset="100%" stopColor="#C8962E" />
+                    </linearGradient>
+                  </defs>
                   {DEMO_PRIZES.map((p, i) => {
-                    // Each segment: 60° arc from center
-                    const startDeg = i * 60 - 90; // -90 so 0° = top
+                    const startDeg = i * 60 - 90;
                     const endDeg = startDeg + 60;
                     const startRad = (startDeg * Math.PI) / 180;
                     const endRad = (endDeg * Math.PI) / 180;
@@ -1346,53 +1354,48 @@ function DemoSection() {
                     const y1 = cy + r * Math.sin(startRad);
                     const x2 = cx + r * Math.cos(endRad);
                     const y2 = cy + r * Math.sin(endRad);
-                    const path = `M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`;
+                    const segPath = `M${cx},${cy} L${x1},${y1} A${r},${r} 0 0,1 ${x2},${y2} Z`;
 
-                    // Emoji position at ~65% radius
                     const midRad = ((startDeg + 30) * Math.PI) / 180;
-                    const emojiR = r * 0.62;
+                    const emojiR = r * 0.58;
                     const ex = cx + emojiR * Math.cos(midRad);
                     const ey = cy + emojiR * Math.sin(midRad);
 
                     return (
                       <g key={i}>
                         <path
-                          d={path}
-                          fill={p.color}
-                          stroke={p.partner ? '#DAA520' : 'rgba(255,255,255,0.15)'}
-                          strokeWidth={p.partner ? 3 : 1}
-                          strokeDasharray={p.partner ? '8 4' : undefined}
+                          d={segPath}
+                          fill={p.partner ? 'url(#partner-gold)' : p.color}
+                          stroke="rgba(255,255,255,0.2)"
+                          strokeWidth="1"
                         />
-                        {/* Separator lines */}
                         <line
-                          x1={cx} y1={cy}
-                          x2={x1} y2={y1}
-                          stroke="rgba(255,255,255,0.25)"
-                          strokeWidth="1.5"
+                          x1={cx} y1={cy} x2={x1} y2={y1}
+                          stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"
                         />
-                        {/* Emoji */}
+                        {/* Main emoji */}
                         <text
-                          x={ex} y={ey}
+                          x={ex} y={p.partner ? ey - 6 : ey}
                           textAnchor="middle" dominantBaseline="central"
-                          fontSize="24"
+                          fontSize="22"
                         >
                           {p.partner ? '🎁' : p.emoji}
                         </text>
-                        {/* Partner label */}
-                        {p.partner && 'partnerName' in p && (
+                        {/* Partner: small handshake below */}
+                        {p.partner && (
                           <text
-                            x={cx + (emojiR * 0.85) * Math.cos(midRad)}
-                            y={cy + (emojiR * 0.85) * Math.sin(midRad) + 14}
+                            x={ex} y={ey + 12}
                             textAnchor="middle" dominantBaseline="central"
-                            fontSize="8" fontWeight="600" fill="#fff" opacity="0.7"
-                            fontFamily="var(--font-sora), system-ui"
+                            fontSize="11"
                           >
-                            {(p as typeof p & { partnerName: string }).partnerName}
+                            🤝
                           </text>
                         )}
                       </g>
                     );
                   })}
+                  {/* Outer ring for polish */}
+                  <circle cx="160" cy="160" r="156" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
                   {/* Center hub */}
                   <circle cx="160" cy="160" r="36" fill={C.bg} stroke={C.border} strokeWidth="2" />
                   <text x="160" y="163" textAnchor="middle" dominantBaseline="central" fontSize="16" fontWeight="800" fill={C.coral} fontFamily="var(--font-sora), system-ui">
