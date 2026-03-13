@@ -33,6 +33,7 @@ interface SpinResult {
   promo_code: string | null;
   validation_code: string | null;
   is_partner_prize?: boolean;
+  is_group_prize?: boolean;
   partner_business_name?: string | null;
   partner_business_address?: string | null;
   validity_days?: number;
@@ -226,6 +227,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
     emoji: string;
     is_winning: boolean;
     is_partner?: boolean;
+    is_group_prize?: boolean;
     partner_name?: string;
   } | null>(null);
 
@@ -338,6 +340,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
         emoji: data.segment.emoji,
         is_winning: data.segment.is_winning,
         is_partner: data.segment.is_partner ?? false,
+        is_group_prize: data.segment.is_group_prize ?? false,
         partner_name: data.segment.partner_name ?? undefined,
       });
       setTargetSegmentId(data.segment.id);
@@ -401,6 +404,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
           promo_code: data.segment.promo_code,
           validation_code: data.validation_code ?? null,
           is_partner_prize: data.is_partner_prize ?? false,
+          is_group_prize: data.is_group_prize ?? false,
           partner_business_name: data.partner_business_name ?? null,
           partner_business_address: data.partner_business_address ?? null,
           validity_days: data.validity_days ?? undefined,
@@ -1036,9 +1040,11 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     transition={{ delay: 0.3 }}
                     className="text-2xl font-display font-extrabold text-text mb-1"
                   >
-                    {spinResult.is_partner_prize && spinResult.partner_business_name
-                      ? `${TEXTS.crossPromo.partnerPrizeTitle} ${spinResult.partner_business_name} !`
-                      : TEXTS.play.wonTitle}
+                    {spinResult.is_group_prize && spinResult.partner_business_name
+                      ? `${TEXTS.group.groupPrizeTitle} ${spinResult.partner_business_name} !`
+                      : spinResult.is_partner_prize && spinResult.partner_business_name
+                        ? `${TEXTS.crossPromo.partnerPrizeTitle} ${spinResult.partner_business_name} !`
+                        : TEXTS.play.wonTitle}
                   </motion.h2>
 
                   <motion.p
@@ -1111,21 +1117,37 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     </motion.div>
                   )}
 
-                  {/* Partner prize info */}
-                  {spinResult.is_partner_prize && spinResult.partner_business_name && (
+                  {/* Partner / Group prize info */}
+                  {(spinResult.is_partner_prize || spinResult.is_group_prize) && spinResult.partner_business_name && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.65 }}
-                      className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4"
+                      className={cn(
+                        'rounded-2xl px-4 py-3 mb-4',
+                        spinResult.is_group_prize
+                          ? 'bg-blue-50 border border-blue-200'
+                          : 'bg-amber-50 border border-amber-200'
+                      )}
                     >
-                      <p className="text-sm font-display font-bold text-amber-800 mb-1">
-                        {TEXTS.crossPromo.partnerPrizeTitle} {spinResult.partner_business_name} !
+                      <p className={cn(
+                        'text-sm font-display font-bold mb-1',
+                        spinResult.is_group_prize ? 'text-blue-800' : 'text-amber-800'
+                      )}>
+                        {spinResult.is_group_prize
+                          ? `${TEXTS.group.groupPrizeTitle} ${spinResult.partner_business_name} !`
+                          : `${TEXTS.crossPromo.partnerPrizeTitle} ${spinResult.partner_business_name} !`}
                       </p>
                       {spinResult.partner_business_address && (
                         <div className="flex items-start gap-2 mt-2">
-                          <MapPin className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                          <p className="text-xs font-body text-amber-700">
+                          <MapPin className={cn(
+                            'w-4 h-4 mt-0.5 shrink-0',
+                            spinResult.is_group_prize ? 'text-blue-600' : 'text-amber-600'
+                          )} />
+                          <p className={cn(
+                            'text-xs font-body',
+                            spinResult.is_group_prize ? 'text-blue-700' : 'text-amber-700'
+                          )}>
                             {spinResult.partner_business_address}
                           </p>
                         </div>
@@ -1135,7 +1157,12 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(spinResult.partner_business_address)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 mt-2 text-xs font-display font-semibold text-amber-700 hover:text-amber-900 transition-colors"
+                          className={cn(
+                            'inline-flex items-center gap-1.5 mt-2 text-xs font-display font-semibold transition-colors',
+                            spinResult.is_group_prize
+                              ? 'text-blue-700 hover:text-blue-900'
+                              : 'text-amber-700 hover:text-amber-900'
+                          )}
                         >
                           <MapPin className="w-3.5 h-3.5" />
                           {TEXTS.crossPromo.partnerPrizeCta}
@@ -1153,7 +1180,7 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                   >
                     <Gift className="w-4 h-4" />
                     <p className="font-body text-sm font-medium">
-                      {spinResult.is_partner_prize
+                      {(spinResult.is_partner_prize || spinResult.is_group_prize) && spinResult.partner_business_name
                         ? `Présentez ce code chez ${spinResult.partner_business_name}`
                         : TEXTS.play.wonInstruction}
                     </p>
@@ -1166,9 +1193,11 @@ export function PlayFlow({ business, segments }: PlayFlowProps) {
                     transition={{ delay: 0.8 }}
                     className="mt-3 text-text-muted font-body text-xs"
                   >
-                    {spinResult.is_partner_prize
-                      ? TEXTS.crossPromo.partnerPrizeValidity
-                      : `Valable ${business.prize_validity_days ?? 7} jours`}
+                    {spinResult.is_group_prize && spinResult.validity_days
+                      ? `Valable ${spinResult.validity_days} ${TEXTS.group.groupPrizeValidity}`
+                      : spinResult.is_partner_prize
+                        ? TEXTS.crossPromo.partnerPrizeValidity
+                        : `Valable ${business.prize_validity_days ?? 7} jours`}
                   </motion.p>
 
                   {/* Google review CTA — prominent, but optional */}

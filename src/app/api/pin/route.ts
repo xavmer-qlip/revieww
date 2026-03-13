@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generatePin } from '@/lib/pin';
 import { getOrRefreshPin } from '@/lib/pin-server';
+import { getActiveBusinessForApi } from '@/lib/active-business';
 
 /**
  * GET /api/pin — Return the current daily PIN for the authenticated user's business.
@@ -17,11 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: business } = await supabase
-      .from('businesses')
-      .select('id, require_pin, pin_updated_at')
-      .eq('user_id', user.id)
-      .single();
+    const business = await getActiveBusinessForApi(supabase, user.id, null);
 
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
@@ -54,11 +51,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: business } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
+    const business = await getActiveBusinessForApi(supabase, user.id, null);
 
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });

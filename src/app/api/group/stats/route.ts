@@ -11,8 +11,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const business = await getActiveBusinessForApi(supabase, user.id, null);
-
+    const business = await getActiveBusinessForApi(supabase, user.id);
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
@@ -20,25 +19,27 @@ export async function GET() {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    // Lots given: my prizes won by clients from other businesses
+    // Lots given: this business provided prizes won by clients at other establishments
     const { count: given } = await supabase
-      .from('cross_promo_prizes')
+      .from('group_prizes')
       .select('*', { count: 'exact', head: true })
-      .eq('partner_business_id', business.id)
+      .eq('prize_business_id', business.id)
+      .neq('source_business_id', business.id)
       .gte('created_at', monthStart);
 
-    // Lots received: partner prizes won by my clients
+    // Lots received: clients at this business won prizes from other establishments
     const { count: received } = await supabase
-      .from('cross_promo_prizes')
+      .from('group_prizes')
       .select('*', { count: 'exact', head: true })
       .eq('source_business_id', business.id)
+      .neq('prize_business_id', business.id)
       .gte('created_at', monthStart);
 
-    // Claimed (my lots that were redeemed)
+    // Lots claimed
     const { count: claimed } = await supabase
-      .from('cross_promo_prizes')
+      .from('group_prizes')
       .select('*', { count: 'exact', head: true })
-      .eq('partner_business_id', business.id)
+      .eq('prize_business_id', business.id)
       .eq('claimed', true)
       .gte('created_at', monthStart);
 
@@ -48,7 +49,7 @@ export async function GET() {
       claimed: claimed ?? 0,
     });
   } catch (error) {
-    console.error('Cross-promo stats error:', error);
+    console.error('Group stats error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

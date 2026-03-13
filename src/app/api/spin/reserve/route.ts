@@ -7,6 +7,8 @@ import {
   getEligibleSegments,
   getEligiblePartnerSegments,
   mergePartnerSegments,
+  getEligibleGroupSegments,
+  mergeGroupSegments,
   createReservationToken,
 } from '@/lib/spin-helpers';
 
@@ -65,12 +67,16 @@ export async function POST(request: NextRequest) {
     const partnerSegments = await getEligiblePartnerSegments(supabase, business);
     const { merged, selectedPartners } = mergePartnerSegments(eligibleSegments, partnerSegments);
 
+    // Multi-establishment: fetch and merge group segments
+    const groupSegments = await getEligibleGroupSegments(supabase, business);
+    const { merged: finalMerged, selectedGroup } = mergeGroupSegments(merged, groupSegments);
+
     // Pick weighted segment from merged pool
     const winningSegmentId = pickWeightedSegment(
-      merged.map((s) => ({ id: s.id, probability: s.probability }))
+      finalMerged.map((s) => ({ id: s.id, probability: s.probability }))
     );
 
-    const winningSegment = merged.find((s) => s.id === winningSegmentId);
+    const winningSegment = finalMerged.find((s) => s.id === winningSegmentId);
     if (!winningSegment) {
       return NextResponse.json(
         { error: 'Internal server error' },
@@ -78,8 +84,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Determine if it's a partner prize
+    // Determine if it's a partner prize or group prize
     const isPartner = 'is_partner' in winningSegment && winningSegment.is_partner === true;
+    const isGroupPrize = 'is_group_prize' in winningSegment && winningSegment.is_group_prize === true;
+
     const partnerInfo = isPartner ? winningSegment as typeof winningSegment & {
       partner_business_id: string;
       partner_name: string;
@@ -88,16 +96,29 @@ export async function POST(request: NextRequest) {
       offer_id: string;
     } : null;
 
+    const groupInfo = isGroupPrize ? winningSegment as typeof winningSegment & {
+      prize_business_id: string;
+      partner_name: string;
+      partner_logo_url: string | null;
+      partner_address: string | null;
+      group_offer_id: string;
+    } : null;
+
     // Create HMAC token (10 min expiry)
     const token = createReservationToken({
       businessId,
-      segmentId: isPartner ? winningSegment.id : winningSegment.id,
+      segmentId: winningSegment.id,
       isWinning: winningSegment.is_winning,
       exp: Math.floor(Date.now() / 1000) + 600,
       ...(isPartner && partnerInfo ? {
         isPartnerPrize: true,
         partnerBusinessId: partnerInfo.partner_business_id,
         offerId: partnerInfo.offer_id,
+      } : {}),
+      ...(isGroupPrize && groupInfo ? {
+        isGroupPrize: true,
+        prizeBusinessId: groupInfo.prize_business_id,
+        groupOfferId: groupInfo.group_offer_id,
       } : {}),
     });
 
@@ -114,6 +135,12 @@ export async function POST(request: NextRequest) {
           partner_name: partnerInfo.partner_name,
           partner_logo_url: partnerInfo.partner_logo_url,
           partner_address: partnerInfo.partner_address,
+        } : {}),
+        ...(isGroupPrize && groupInfo ? {
+          is_group_prize: true,
+          partner_name: groupInfo.partner_name,
+          partner_logo_url: groupInfo.partner_logo_url,
+          partner_address: groupInfo.partner_address,
         } : {}),
       },
     });

@@ -80,14 +80,15 @@ export async function POST(request: NextRequest) {
     }
 
     const isPartnerPrize = payload.isPartnerPrize === true;
+    const isGroupPrize = payload.isGroupPrize === true;
 
-    // For partner prizes, fetch segment from the partner's wheel_segments via the offer
+    // Fetch prize label/emoji based on type
     let prizeLabel: string;
     let prizeEmoji: string | null;
     let promoCode: string | null = null;
 
     if (isPartnerPrize && payload.offerId) {
-      // Fetch offer + segment data
+      // Cross-promo prize: fetch segment from the partner's offer
       const { data: offer } = await supabase
         .from('cross_promo_offers')
         .select(`
@@ -99,6 +100,24 @@ export async function POST(request: NextRequest) {
 
       if (!offer) {
         return NextResponse.json({ error: 'Partner offer not found' }, { status: 404 });
+      }
+
+      const seg = offer.wheel_segments as unknown as { label: string; emoji: string };
+      prizeLabel = seg.label;
+      prizeEmoji = seg.emoji;
+    } else if (isGroupPrize && payload.groupOfferId) {
+      // Group prize: fetch segment from group_shared_offers
+      const { data: offer } = await supabase
+        .from('group_shared_offers')
+        .select(`
+          id,
+          wheel_segments!inner (label, emoji)
+        `)
+        .eq('id', payload.groupOfferId)
+        .single();
+
+      if (!offer) {
+        return NextResponse.json({ error: 'Group offer not found' }, { status: 404 });
       }
 
       const seg = offer.wheel_segments as unknown as { label: string; emoji: string };
@@ -122,12 +141,12 @@ export async function POST(request: NextRequest) {
       promoCode = typedSegment.promo_code;
     }
 
-    // Generate validation code (always WP- prefix, no distinction for customers)
+    // Generate validation code (always WP- prefix)
     let validationCode: string | null = null;
     if (payload.isWinning) {
       for (let attempt = 0; attempt < 5; attempt++) {
         const candidate = generateValidationCode('WP');
-        // Check collision in both spins and cross_promo_prizes
+        // Check collision in spins, cross_promo_prizes, and group_prizes
         const { count: spinCount } = await supabase
           .from('spins')
           .select('*', { count: 'exact', head: true })
@@ -136,7 +155,11 @@ export async function POST(request: NextRequest) {
           .from('cross_promo_prizes')
           .select('*', { count: 'exact', head: true })
           .eq('validation_code', candidate);
-        if ((spinCount ?? 0) === 0 && (xpCount ?? 0) === 0) {
+        const { count: gpCount } = await supabase
+          .from('group_prizes')
+          .select('*', { count: 'exact', head: true })
+          .eq('validation_code', candidate);
+        if ((spinCount ?? 0) === 0 && (xpCount ?? 0) === 0 && (gpCount ?? 0) === 0) {
           validationCode = candidate;
           break;
         }
@@ -156,7 +179,7 @@ export async function POST(request: NextRequest) {
         business_id: payload.businessId,
         email: body.email.toLowerCase().trim(),
         phone: body.phone || null,
-        segment_id: isPartnerPrize ? null : payload.segmentId,
+        segment_id: (isPartnerPrize || isGroupPrize) ? null : payload.segmentId,
         prize_label: prizeLabel,
         prize_emoji: prizeEmoji,
         is_winner: payload.isWinning,
@@ -165,7 +188,7 @@ export async function POST(request: NextRequest) {
         confidence_score: body.confidenceScore ?? 0,
         time_on_google_seconds: body.timeOnGoogleSeconds ?? null,
         self_reported_stars: body.selfReportedStars ?? null,
-        validation_code: isPartnerPrize ? null : validationCode,
+        validation_code: (isPartnerPrize || isGroupPrize) ? null : validationCode,
       })
       .select('id')
       .single();
@@ -178,7 +201,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If partner prize, also insert into cross_promo_prizes
+    // If partner prize, insert into cross_promo_prizes
     let partnerBusinessName: string | null = null;
     let partnerBusinessAddress: string | null = null;
     if (isPartnerPrize && payload.partnerBusinessId && payload.offerId && validationCode) {
@@ -215,14 +238,58 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send prize email (awaited — fire-and-forget gets killed on Vercel serverless)
+    // If group prize, insert into group_prizes
+    let groupBusinessName: string | null = null;
+    let groupBusinessAddress: string | null = null;
+    let groupValidityDays: number | null = null;
+    if (isGroupPrize && payload.prizeBusinessId && payload.groupOfferId && validationCode) {
+      // Fetch prize business for validity days
+      const { data: prizeBiz } = await supabase
+        .from('businesses')
+        .select('name, address, prize_validity_days')
+        .eq('id', payload.prizeBusinessId)
+        .single();
+
+      const validityDays = prizeBiz?.prize_validity_days ?? 7;
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + validityDays);
+
+      const { error: gpInsertError } = await supabase
+        .from('group_prizes')
+        .insert({
+          spin_id: insertedSpin.id,
+          source_business_id: payload.businessId,
+          prize_business_id: payload.prizeBusinessId,
+          offer_id: payload.groupOfferId,
+          prize_label: prizeLabel,
+          prize_emoji: prizeEmoji,
+          validation_code: validationCode,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (gpInsertError) {
+        console.error('Error inserting group prize:', gpInsertError);
+      }
+
+      if (prizeBiz) {
+        groupBusinessName = prizeBiz.name;
+        groupBusinessAddress = prizeBiz.address;
+        groupValidityDays = validityDays;
+      }
+    }
+
+    // Send prize email
     if (payload.isWinning && process.env.RESEND_API_KEY) {
       try {
+        const emailBusinessName = isGroupPrize && groupBusinessName
+          ? groupBusinessName
+          : isPartnerPrize && partnerBusinessName
+            ? partnerBusinessName
+            : business.name;
+
         await sendPrizeWonEmail({
           to: body.email.toLowerCase().trim(),
-          businessName: isPartnerPrize && partnerBusinessName
-            ? partnerBusinessName
-            : business.name,
+          businessName: emailBusinessName,
           prizeEmoji: prizeEmoji,
           prizeLabel: prizeLabel,
           promoCode: promoCode,
@@ -253,6 +320,12 @@ export async function POST(request: NextRequest) {
         partner_business_address: partnerBusinessAddress,
         cross_promo_validation_code: validationCode,
         validity_days: 15,
+      } : {}),
+      ...(isGroupPrize ? {
+        is_group_prize: true,
+        partner_business_name: groupBusinessName,
+        partner_business_address: groupBusinessAddress,
+        validity_days: groupValidityDays,
       } : {}),
     });
   } catch (error) {

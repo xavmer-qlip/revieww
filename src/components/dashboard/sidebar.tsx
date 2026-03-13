@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Home,
@@ -10,11 +11,15 @@ import {
   Users,
   ShieldCheck,
   Handshake,
+  Building2,
   MessageSquare,
   Settings,
   CreditCard,
   LogOut,
   X,
+  ChevronDown,
+  Check,
+  Plus,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +36,14 @@ interface NavItem {
   href: string;
   disabled?: boolean;
   badge?: string;
+  requiredPlan?: PlanType[];
+}
+
+interface BusinessSummary {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  plan_type: PlanType;
 }
 
 interface SidebarProps {
@@ -41,6 +54,8 @@ interface SidebarProps {
   spinsLimit: number;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  businesses: BusinessSummary[];
+  activeBusinessId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +69,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: Users, label: 'Fichier client', href: '/dashboard/clients' },
   { icon: ShieldCheck, label: 'Valider un lot', href: '/dashboard/validate' },
   { icon: Handshake, label: 'Réseau local', href: '/dashboard/network', badge: 'Beta' },
+  { icon: Building2, label: 'Mes établissements', href: '/dashboard/group', badge: 'New', requiredPlan: ['growth', 'pro'] },
   {
     icon: MessageSquare,
     label: 'Messages',
@@ -80,20 +96,24 @@ const PLAN_META: Record<PlanType, { label: string; variant: 'primary' | 'success
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function NavLink({ item, isActive, onNavigate }: { item: NavItem; isActive: boolean; onNavigate?: () => void }) {
+function NavLink({ item, isActive, onNavigate, planType }: { item: NavItem; isActive: boolean; onNavigate?: () => void; planType: PlanType }) {
   const Icon = item.icon;
+
+  // Check plan requirement
+  const meetsRequirement = !item.requiredPlan || item.requiredPlan.includes(planType);
+  const isLocked = item.requiredPlan && !meetsRequirement;
 
   const content = (
     <motion.div
-      whileHover={item.disabled ? undefined : { x: 4 }}
-      whileTap={item.disabled ? undefined : { scale: 0.98 }}
+      whileHover={item.disabled || isLocked ? undefined : { x: 4 }}
+      whileTap={item.disabled || isLocked ? undefined : { scale: 0.98 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn(
         'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors duration-200',
-        item.disabled && 'cursor-not-allowed opacity-50',
+        (item.disabled || isLocked) && 'cursor-not-allowed opacity-50',
         isActive
           ? 'bg-sidebar-hover/80 text-white'
-          : !item.disabled && 'text-white/60 hover:bg-sidebar-hover hover:text-white'
+          : !(item.disabled || isLocked) && 'text-white/60 hover:bg-sidebar-hover hover:text-white'
       )}
     >
       {/* Active indicator — orange left bar */}
@@ -115,15 +135,19 @@ function NavLink({ item, isActive, onNavigate }: { item: NavItem; isActive: bool
 
       <span className="truncate">{item.label}</span>
 
-      {item.badge && (
+      {isLocked ? (
+        <Badge variant="muted" size="sm" className="ml-auto bg-white/10 text-white/40 text-[10px]">
+          Growth
+        </Badge>
+      ) : item.badge ? (
         <Badge variant="muted" size="sm" className="ml-auto bg-white/10 text-white/40 text-[10px]">
           {item.badge}
         </Badge>
-      )}
+      ) : null}
     </motion.div>
   );
 
-  if (item.disabled) {
+  if (item.disabled || isLocked) {
     return <div>{content}</div>;
   }
 
@@ -178,35 +202,144 @@ function BusinessCard({
   businessName,
   businessLogoUrl,
   planType,
+  businesses,
+  activeBusinessId,
 }: {
   businessName: string;
   businessLogoUrl: string | null;
   planType: PlanType;
+  businesses: BusinessSummary[];
+  activeBusinessId: string;
 }) {
+  const [open, setOpen] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const router = useRouter();
   const plan = PLAN_META[planType];
+  const hasMultiple = businesses.length > 1;
+
+  async function handleSwitch(businessId: string) {
+    if (businessId === activeBusinessId) {
+      setOpen(false);
+      return;
+    }
+    setSwitching(true);
+    try {
+      const res = await fetch('/api/dashboard/switch-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId }),
+      });
+      if (res.ok) {
+        router.refresh();
+        setOpen(false);
+      }
+    } finally {
+      setSwitching(false);
+    }
+  }
 
   return (
-    <div className="flex items-center gap-3 px-3 py-3">
-      {/* Avatar */}
-      {businessLogoUrl ? (
-        <img
-          src={businessLogoUrl}
-          alt={businessName}
-          className="h-9 w-9 rounded-lg object-cover ring-1 ring-white/10"
-        />
-      ) : (
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-dark text-xs font-bold text-white ring-1 ring-white/10">
-          {getInitials(businessName)}
-        </div>
-      )}
+    <div className="relative">
+      <button
+        onClick={() => hasMultiple && setOpen(!open)}
+        className={cn(
+          'flex items-center gap-3 px-3 py-3 w-full text-left',
+          hasMultiple && 'cursor-pointer hover:bg-sidebar-hover rounded-xl transition-colors'
+        )}
+      >
+        {/* Avatar */}
+        {businessLogoUrl ? (
+          <img
+            src={businessLogoUrl}
+            alt={businessName}
+            className="h-9 w-9 rounded-lg object-cover ring-1 ring-white/10"
+          />
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary-dark text-xs font-bold text-white ring-1 ring-white/10">
+            {getInitials(businessName)}
+          </div>
+        )}
 
-      {/* Name + Plan */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-white">{businessName}</p>
-        <Badge variant={plan.variant} size="sm" className="mt-0.5">
-          {plan.label}
-        </Badge>
-      </div>
+        {/* Name + Plan */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-white">{businessName}</p>
+          <Badge variant={plan.variant} size="sm" className="mt-0.5">
+            {plan.label}
+          </Badge>
+        </div>
+
+        {hasMultiple && (
+          <ChevronDown
+            size={16}
+            className={cn(
+              'text-white/40 transition-transform',
+              open && 'rotate-180'
+            )}
+          />
+        )}
+      </button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {open && hasMultiple && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: 8, height: 0 }}
+            className="absolute bottom-full left-2 right-2 mb-1 bg-sidebar-hover rounded-xl border border-white/10 overflow-hidden z-50"
+          >
+            <div className="py-1 max-h-48 overflow-y-auto">
+              {businesses.map((biz) => {
+                const isActive = biz.id === activeBusinessId;
+                const bizPlan = PLAN_META[biz.plan_type];
+                return (
+                  <button
+                    key={biz.id}
+                    onClick={() => handleSwitch(biz.id)}
+                    disabled={switching}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 w-full text-left transition-colors',
+                      isActive ? 'bg-white/10' : 'hover:bg-white/5',
+                      switching && 'opacity-50'
+                    )}
+                  >
+                    {biz.logo_url ? (
+                      <img
+                        src={biz.logo_url}
+                        alt={biz.name}
+                        className="h-7 w-7 rounded-md object-cover ring-1 ring-white/10"
+                      />
+                    ) : (
+                      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/20 text-[10px] font-bold text-white">
+                        {getInitials(biz.name)}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-white">{biz.name}</p>
+                      <Badge variant={bizPlan.variant} size="sm" className="mt-0.5 text-[9px]">
+                        {bizPlan.label}
+                      </Badge>
+                    </div>
+                    {isActive && <Check size={14} className="text-sidebar-active shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Add new establishment */}
+            <div className="border-t border-white/10 p-1">
+              <Link
+                href="/onboarding?add=true"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors"
+                onClick={() => setOpen(false)}
+              >
+                <Plus size={14} />
+                <span>Ajouter un établissement</span>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -223,6 +356,8 @@ export function Sidebar({
   spinsLimit,
   mobileOpen = false,
   onMobileClose,
+  businesses,
+  activeBusinessId,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -255,7 +390,7 @@ export function Sidebar({
       {/* ---- Navigation ---- */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map((item) => (
-          <NavLink key={item.href} item={item} isActive={isActive(item.href)} onNavigate={onMobileClose} />
+          <NavLink key={item.href} item={item} isActive={isActive(item.href)} onNavigate={onMobileClose} planType={planType} />
         ))}
       </nav>
 
@@ -275,6 +410,8 @@ export function Sidebar({
           businessName={businessName}
           businessLogoUrl={businessLogoUrl}
           planType={planType}
+          businesses={businesses}
+          activeBusinessId={activeBusinessId}
         />
 
         {/* Logout */}

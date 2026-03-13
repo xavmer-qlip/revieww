@@ -7,6 +7,13 @@ import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
 import type { PlanType } from '@/lib/types';
 
+interface BusinessSummary {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  plan_type: PlanType;
+}
+
 interface DashboardShellProps {
   children: React.ReactNode;
   businessName: string;
@@ -15,6 +22,8 @@ interface DashboardShellProps {
   spinsUsed: number;
   spinsLimit: number;
   emailVerified: boolean;
+  businesses: BusinessSummary[];
+  activeBusinessId: string;
 }
 
 export function DashboardShell({
@@ -25,6 +34,8 @@ export function DashboardShell({
   spinsUsed,
   spinsLimit,
   emailVerified,
+  businesses,
+  activeBusinessId,
 }: DashboardShellProps) {
   const searchParams = useSearchParams();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -68,6 +79,8 @@ export function DashboardShell({
         spinsLimit={spinsLimit}
         mobileOpen={mobileMenuOpen}
         onMobileClose={closeMenu}
+        businesses={businesses}
+        activeBusinessId={activeBusinessId}
       />
 
       {/* Main content area — offset by sidebar width on desktop */}

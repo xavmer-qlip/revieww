@@ -3,6 +3,7 @@ import { getStripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
 import { APP_URL } from '@/lib/constants';
 import { Business } from '@/lib/types';
+import { getActiveBusinessForApi } from '@/lib/active-business';
 
 export async function POST() {
   try {
@@ -21,20 +22,16 @@ export async function POST() {
     }
 
     // ---- Fetch business record ----
-    const { data: business, error: bizError } = await supabase
-      .from('businesses')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    const business = await getActiveBusinessForApi(supabase, user.id, null);
 
-    if (bizError || !business) {
+    if (!business) {
       return NextResponse.json(
         { error: 'Business not found' },
         { status: 404 }
       );
     }
 
-    const typedBusiness = business as Business;
+    const typedBusiness = business;
 
     if (!typedBusiness.stripe_customer_id) {
       return NextResponse.json(

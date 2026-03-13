@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendVerificationEmail } from '@/lib/emails/verify-email';
+import { getActiveBusinessForApi } from '@/lib/active-business';
 
 export async function POST() {
   const supabase = await createClient();
@@ -13,13 +14,9 @@ export async function POST() {
     return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
   }
 
-  const { data: business, error } = await supabase
-    .from('businesses')
-    .select('name, verification_token, email_verified')
-    .eq('user_id', user.id)
-    .single();
+  const business = await getActiveBusinessForApi(supabase, user.id, null);
 
-  if (error || !business) {
+  if (!business) {
     return NextResponse.json({ error: 'Commerce introuvable' }, { status: 404 });
   }
 
@@ -28,7 +25,8 @@ export async function POST() {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const verificationLink = `${appUrl}/api/verify-email?token=${business.verification_token}`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const verificationLink = `${appUrl}/api/verify-email?token=${(business as any).verification_token}`;
 
   try {
     await sendVerificationEmail({

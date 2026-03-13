@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
+import { getActiveBusiness, getUserBusinesses } from '@/lib/active-business';
 import type { Business } from '@/lib/types';
 
 export const metadata = {
@@ -23,16 +24,15 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  // ---- Fetch business ----
-  const { data: business } = await supabase
-    .from('businesses')
-    .select('*')
-    .eq('user_id', user.id)
-    .single<Business>();
+  // ---- Fetch all businesses for this user ----
+  const businesses = await getUserBusinesses(supabase, user.id);
 
-  if (!business) {
+  if (businesses.length === 0) {
     redirect('/onboarding');
   }
+
+  // ---- Determine active business via cookie ----
+  const business = (await getActiveBusiness(supabase, user.id))!;
 
   // ---- Auto-verify OAuth users ----
   if (!business.email_verified) {
@@ -64,6 +64,8 @@ export default async function DashboardLayout({
       spinsUsed={spinsUsed ?? 0}
       spinsLimit={business.monthly_spin_limit}
       emailVerified={business.email_verified}
+      businesses={businesses}
+      activeBusinessId={business.id}
     >
       {children}
     </DashboardShell>

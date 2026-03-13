@@ -35,6 +35,12 @@ import { APP_URL, TEXTS } from '@/lib/constants';
 import { createClient } from '@/lib/supabase/client';
 import type { Business, FlowType } from '@/lib/types';
 
+function getActiveBusinessCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/woopla_active_business=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -256,11 +262,14 @@ export default function SettingsPage() {
 
         setUserEmail(user.email || '');
 
-        const { data } = await supabase
+        const { data: businesses } = await supabase
           .from('businesses')
           .select('*')
           .eq('user_id', user.id)
-          .single<Business>();
+          .order('created_at', { ascending: true });
+
+        const activeId = getActiveBusinessCookie();
+        const data = (businesses as Business[] | null)?.find(b => b.id === activeId) || (businesses as Business[] | null)?.[0] || null;
 
         if (data) {
           setBusiness(data);

@@ -3,6 +3,7 @@ import { getStripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
 import { STRIPE_PRICE_IDS, APP_URL } from '@/lib/constants';
 import { Business, PlanType } from '@/lib/types';
+import { getActiveBusinessForApi } from '@/lib/active-business';
 
 interface CreateCheckoutBody {
   planType: PlanType;
@@ -45,20 +46,16 @@ export async function POST(request: NextRequest) {
     }
 
     // ---- Fetch business record ----
-    const { data: business, error: bizError } = await supabase
-      .from('businesses')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    const business = await getActiveBusinessForApi(supabase, user.id, request.cookies.get('woopla_active_business')?.value);
 
-    if (bizError || !business) {
+    if (!business) {
       return NextResponse.json(
         { error: 'Business not found' },
         { status: 404 }
       );
     }
 
-    const typedBusiness = business as Business;
+    const typedBusiness = business;
 
     // ---- Get or create Stripe customer ----
     let stripeCustomerId = typedBusiness.stripe_customer_id;

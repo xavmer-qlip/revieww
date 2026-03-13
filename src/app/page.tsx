@@ -23,6 +23,7 @@ import {
   Users,
   Handshake,
   MapPin,
+  Building2,
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { FREE_PLAN, PAID_PLANS, TEXTS, APP_DOMAIN } from '@/lib/constants';
@@ -1563,6 +1564,139 @@ function DemoSection() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   MES ÉTABLISSEMENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+function MultiEstablishmentSection() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { once: true, amount: 0.05 });
+
+  const features = [
+    { emoji: '🏢', title: 'Un seul dashboard', desc: 'Gérez tous vos établissements depuis un seul compte. Passez d\'un établissement à l\'autre en un clic.' },
+    { emoji: '🎁', title: 'Lots partagés', desc: 'Vos clients qui tournent la roue dans un établissement peuvent gagner un lot d\'un autre de vos établissements.' },
+    { emoji: '📊', title: 'Vue globale', desc: 'Statistiques par établissement et vue consolidée. Contrôlez le stock partagé indépendamment de chaque roue.' },
+  ];
+
+  return (
+    <section id="multi" className="py-28 sm:py-36 relative overflow-hidden" style={{ background: C.bg }}>
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-[400px] h-[400px] rounded-full blur-[130px]" style={{ background: C.coralGlow }} />
+        <div className="absolute bottom-0 right-1/4 w-[350px] h-[350px] rounded-full blur-[120px]" style={{ background: C.skyGlow }} />
+      </div>
+      <div ref={sectionRef} className="max-w-5xl mx-auto px-6 relative z-10">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <span
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[12px] font-display font-semibold border mb-6"
+            style={{ borderColor: `${C.coral}30`, background: `${C.coral}08`, color: C.coral }}
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            Chaînes &amp; franchises
+          </span>
+          <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl mb-5 leading-tight" style={{ color: C.text }}>
+            Plusieurs établissements,{' '}
+            <span style={{ color: C.coral }}>un seul compte.</span>
+          </h2>
+          <p className="font-body text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: C.muted }}>
+            Vous gérez un groupe, une chaîne ou une franchise ? Centralisez la gestion de tous vos établissements et partagez vos lots entre eux pour maximiser l&apos;engagement client.
+          </p>
+        </motion.div>
+
+        {/* Feature cards */}
+        <div className="grid sm:grid-cols-3 gap-6 mb-12">
+          {features.map((f, i) => (
+            <motion.div
+              key={f.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.5, delay: inView ? i * 0.1 : 0 }}
+              className="rounded-2xl p-6 border text-center"
+              style={{ background: C.surface, borderColor: C.border }}
+            >
+              <span className="text-3xl block mb-3">{f.emoji}</span>
+              <h3 className="font-display font-bold text-[15px] mb-2" style={{ color: C.text }}>{f.title}</h3>
+              <p className="font-body text-[13px] leading-relaxed" style={{ color: C.muted }}>{f.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Visual — multi-location diagram */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6, delay: inView ? 0.3 : 0 }}
+          className="max-w-lg mx-auto"
+        >
+          <div className="rounded-2xl p-6 border" style={{ background: C.surface, borderColor: `${C.coral}20` }}>
+            <div className="flex items-center justify-center gap-3 mb-5">
+              <Building2 className="w-5 h-5" style={{ color: C.coral }} />
+              <span className="font-display font-bold text-[15px]" style={{ color: C.text }}>Groupe Hôtel du Lac</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { emoji: '🍕', name: 'Restaurant du Lac', spins: 142 },
+                { emoji: '🍸', name: 'Bar du Port', spins: 89 },
+                { emoji: '☕', name: 'Café de la Gare', spins: 63 },
+              ].map((loc, i) => (
+                <motion.div
+                  key={loc.name}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+                  transition={{ delay: inView ? 0.4 + i * 0.1 : 0, type: 'spring', stiffness: 200 }}
+                  className="rounded-xl p-3 border text-center"
+                  style={{ background: C.surfaceLight, borderColor: C.border }}
+                >
+                  <span className="text-2xl block mb-1">{loc.emoji}</span>
+                  <p className="font-display font-semibold text-[11px] truncate" style={{ color: C.text }}>{loc.name}</p>
+                  <p className="font-body text-[10px] mt-0.5" style={{ color: C.muted }}>{loc.spins} spins/mois</p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Connection arrows */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <div className="h-px flex-1" style={{ background: `${C.coral}30` }} />
+              <span className="text-[11px] font-display font-semibold px-2" style={{ color: C.coral }}>Lots partagés</span>
+              <div className="h-px flex-1" style={{ background: `${C.coral}30` }} />
+            </div>
+
+            <p className="font-body text-[12px] text-center mt-3 leading-relaxed" style={{ color: C.muted }}>
+              Un client du Restaurant du Lac peut gagner un cocktail du Bar du Port.
+              Chaque établissement garde sa propre roue et son propre abonnement.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.5, delay: inView ? 0.5 : 0 }}
+          className="text-center mt-10"
+        >
+          <p className="font-body text-[13px] mb-4" style={{ color: C.muted }}>
+            Disponible avec les plans Growth et Pro
+          </p>
+          <Link
+            href="/signup"
+            className="inline-flex items-center gap-2 px-6 py-3 font-display font-bold text-sm rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] text-white"
+            style={{ backgroundColor: C.coral, boxShadow: '0 6px 20px rgba(248,131,121,0.2)' }}
+          >
+            Créer mon groupe
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    PRICING
    ═══════════════════════════════════════════════════════════════════════════ */
 function PricingSection() {
@@ -1760,6 +1894,10 @@ function FAQSection() {
       a: 'Quand vous activez le réseau local, vous choisissez quels lots de votre roue partager avec un stock mensuel dédié. woopla vous met automatiquement en relation avec des commerçants d\'un autre secteur dans votre ville — jamais un concurrent. Vos lots apparaissent sur leurs roues, et les leurs sur la vôtre. Quand un de leurs clients gagne un de vos lots, il vient chez vous le récupérer. C\'est gagnant-gagnant. Actuellement disponible dans le canton de Genève, gratuit et inclus dans tous les plans.',
     },
     {
+      q: 'Je gère plusieurs établissements, comment ça marche ?',
+      a: 'woopla est conçu pour les chaînes et franchises. Depuis un seul compte, vous gérez tous vos établissements : chacun a sa propre roue, ses propres lots et son propre abonnement. Vous pouvez partager des lots entre vos établissements : un client qui tourne la roue chez l\'un peut gagner un lot d\'un autre. Chaque établissement garde le contrôle de son stock partagé. Disponible avec les plans Growth et Pro.',
+    },
+    {
       q: 'C\'est adapté à quel type de commerce ?',
       a: 'Restaurants, cafés, salons de coiffure, spas, escape games, boutiques, bars, boulangeries, fitness, food trucks… Tout commerce qui reçoit des clients sur place. Nos lots prédéfinis s\'adaptent automatiquement à votre secteur d\'activité. Que vous ayez 10 ou 500 clients par jour, woopla s\'adapte à votre volume.',
     },
@@ -1893,6 +2031,7 @@ export default function LandingPage() {
       <ClientExperienceSection />
       <LocalNetworkSection />
       <DemoSection />
+      <MultiEstablishmentSection />
       <PricingSection />
       <FAQSection />
       <FinalCTASection />

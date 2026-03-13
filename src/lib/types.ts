@@ -36,6 +36,7 @@ export interface Business {
   pin_updated_at: string | null;
   city: string | null;
   cross_promo_enabled: boolean;
+  group_id: string | null;
 }
 
 export interface WheelSegment {
@@ -95,6 +96,39 @@ export interface Plan {
   description: string;
   popular?: boolean;
   features?: string[];
+}
+
+export interface BusinessGroup {
+  id: string;
+  name: string;
+  owner_user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupSharedOffer {
+  id: string;
+  business_id: string;
+  segment_id: string;
+  monthly_stock: number;
+  is_active: boolean;
+  share_with: string;
+  created_at: string;
+}
+
+export interface GroupPrize {
+  id: string;
+  spin_id: string;
+  source_business_id: string;
+  prize_business_id: string;
+  offer_id: string;
+  prize_label: string;
+  prize_emoji: string | null;
+  validation_code: string;
+  expires_at: string;
+  claimed: boolean;
+  claimed_at: string | null;
+  created_at: string;
 }
 
 export interface CrossPromoOffer {

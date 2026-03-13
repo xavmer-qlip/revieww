@@ -177,6 +177,9 @@ interface ReservationPayload {
   isPartnerPrize?: boolean;
   partnerBusinessId?: string;
   offerId?: string;
+  isGroupPrize?: boolean;
+  prizeBusinessId?: string;
+  groupOfferId?: string;
 }
 
 /**
@@ -343,11 +346,14 @@ export async function getEligiblePartnerSegments(
  */
 export interface MergedSegment extends WheelSegment {
   is_partner?: boolean;
+  is_group_prize?: boolean;
   partner_name?: string;
   partner_logo_url?: string | null;
   partner_address?: string | null;
   offer_id?: string;
   partner_business_id?: string;
+  group_offer_id?: string;
+  prize_business_id?: string;
 }
 
 export function mergePartnerSegments(
@@ -398,4 +404,158 @@ export function mergePartnerSegments(
   }
 
   return { merged, selectedPartners: selected };
+}
+
+// ---------------------------------------------------------------------------
+// Multi-establishment (group) helpers
+// ---------------------------------------------------------------------------
+
+export interface GroupSegment {
+  offer_id: string;
+  segment_id: string;
+  label: string;
+  emoji: string;
+  color: string;
+  prize_business_id: string;
+  prize_business_name: string;
+  prize_business_logo_url: string | null;
+  prize_business_address: string | null;
+}
+
+/**
+ * Fetch eligible group segments from other businesses in the same group.
+ */
+export async function getEligibleGroupSegments(
+  supabase: Awaited<ReturnType<typeof createServiceClient>>,
+  business: Business
+): Promise<GroupSegment[]> {
+  if (!business.group_id) return [];
+
+  // Fetch active group shared offers from other businesses in the same group
+  const { data: offers, error } = await supabase
+    .from('group_shared_offers')
+    .select(`
+      id,
+      segment_id,
+      monthly_stock,
+      business_id,
+      share_with,
+      businesses!inner (
+        id,
+        name,
+        logo_url,
+        address
+      ),
+      wheel_segments!inner (
+        label,
+        emoji,
+        color
+      )
+    `)
+    .eq('is_active', true)
+    .neq('business_id', business.id);
+
+  if (error || !offers || offers.length === 0) return [];
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+  const eligible: GroupSegment[] = [];
+
+  for (const offer of offers) {
+    const prizeBiz = offer.businesses as unknown as {
+      id: string;
+      name: string;
+      logo_url: string | null;
+      address: string | null;
+    };
+    const seg = offer.wheel_segments as unknown as {
+      label: string;
+      emoji: string;
+      color: string;
+    };
+
+    // Check share_with: 'all' or comma-separated business IDs
+    if (offer.share_with !== 'all') {
+      const allowedIds = offer.share_with.split(',').map((s: string) => s.trim());
+      if (!allowedIds.includes(business.id)) continue;
+    }
+
+    // Check monthly stock usage
+    const { count: usedThisMonth } = await supabase
+      .from('group_prizes')
+      .select('*', { count: 'exact', head: true })
+      .eq('offer_id', offer.id)
+      .gte('created_at', monthStart);
+
+    if ((usedThisMonth ?? 0) >= offer.monthly_stock) continue;
+
+    eligible.push({
+      offer_id: offer.id,
+      segment_id: offer.segment_id,
+      label: seg.label,
+      emoji: seg.emoji,
+      color: seg.color,
+      prize_business_id: prizeBiz.id,
+      prize_business_name: prizeBiz.name,
+      prize_business_logo_url: prizeBiz.logo_url,
+      prize_business_address: prizeBiz.address,
+    });
+  }
+
+  return eligible;
+}
+
+/**
+ * Merge up to 3 group segments into the pool with 10% probability each.
+ * Adjusts existing segment probabilities proportionally.
+ */
+export function mergeGroupSegments(
+  segments: MergedSegment[],
+  groupSegments: GroupSegment[]
+): { merged: MergedSegment[]; selectedGroup: GroupSegment[] } {
+  if (groupSegments.length === 0) {
+    return { merged: [...segments], selectedGroup: [] };
+  }
+
+  // Pick up to 3 random group segments
+  const shuffled = [...groupSegments].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, 3);
+
+  const groupProbEach = 10; // 10% per group segment
+  const totalGroupProb = selected.length * groupProbEach;
+
+  // Scale down existing probabilities
+  const totalOriginal = segments.reduce((sum, s) => sum + s.probability, 0);
+  const scaleFactor = (totalOriginal - totalGroupProb) / totalOriginal;
+
+  const merged: MergedSegment[] = segments.map((s) => ({
+    ...s,
+    probability: Math.max(1, Math.round(s.probability * scaleFactor)),
+  }));
+
+  // Add group segments as virtual wheel segments
+  for (const gs of selected) {
+    merged.push({
+      id: `group-${gs.offer_id}`,
+      business_id: gs.prize_business_id,
+      label: gs.label,
+      emoji: gs.emoji,
+      probability: groupProbEach,
+      color: gs.color,
+      position: merged.length,
+      is_winning: true,
+      promo_code: null,
+      monthly_stock: 0,
+      created_at: '',
+      is_group_prize: true,
+      partner_name: gs.prize_business_name,
+      partner_logo_url: gs.prize_business_logo_url,
+      partner_address: gs.prize_business_address,
+      group_offer_id: gs.offer_id,
+      prize_business_id: gs.prize_business_id,
+    });
+  }
+
+  return { merged, selectedGroup: selected };
 }

@@ -34,11 +34,66 @@ export async function POST(request: NextRequest) {
         .eq('validation_code', code)
         .single();
 
+      // ---- If not found in cross-promo, check group prizes ----
       if (prizeError || !prize) {
-        return NextResponse.json(
-          { error: 'not_found' },
-          { status: 404 }
-        );
+        const { data: groupPrize, error: gpError } = await serviceClient
+          .from('group_prizes')
+          .select(`
+            *,
+            prize_business:businesses!group_prizes_prize_business_id_fkey(name, address),
+            source_business:businesses!group_prizes_source_business_id_fkey(name)
+          `)
+          .eq('validation_code', code)
+          .single();
+
+        if (gpError || !groupPrize) {
+          return NextResponse.json(
+            { error: 'not_found' },
+            { status: 404 }
+          );
+        }
+
+        if (groupPrize.claimed) {
+          return NextResponse.json(
+            { error: 'already_claimed', claimed_at: groupPrize.claimed_at },
+            { status: 409 }
+          );
+        }
+
+        const expiresAt = new Date(groupPrize.expires_at);
+        if (new Date() > expiresAt) {
+          return NextResponse.json(
+            { error: 'expired' },
+            { status: 410 }
+          );
+        }
+
+        const { error: gpUpdateError } = await serviceClient
+          .from('group_prizes')
+          .update({ claimed: true, claimed_at: new Date().toISOString() })
+          .eq('id', groupPrize.id);
+
+        if (gpUpdateError) {
+          console.error('Error claiming group prize:', gpUpdateError);
+          return NextResponse.json(
+            { error: 'Failed to claim prize' },
+            { status: 500 }
+          );
+        }
+
+        const prizeBiz = groupPrize.prize_business as unknown as { name: string; address: string | null } | null;
+        const sourceBiz = groupPrize.source_business as unknown as { name: string } | null;
+
+        return NextResponse.json({
+          success: true,
+          prize_label: groupPrize.prize_label,
+          prize_emoji: groupPrize.prize_emoji,
+          email: null,
+          businessName: prizeBiz?.name ?? 'Établissement du groupe',
+          is_group_prize: true,
+          source_business_name: sourceBiz?.name ?? null,
+          expires_at: groupPrize.expires_at,
+        });
       }
 
       if (prize.claimed) {

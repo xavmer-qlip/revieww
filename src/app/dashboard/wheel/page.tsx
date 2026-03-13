@@ -27,6 +27,12 @@ import { cn, pickWeightedSegment } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import type { WheelSegment } from '@/lib/types';
 
+function getActiveBusinessCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/woopla_active_business=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -589,11 +595,14 @@ export default function WheelEditorPage() {
         if (!user) return;
 
         // Get business
-        const { data: business } = await supabase
+        const { data: businesses } = await supabase
           .from('businesses')
           .select('id')
           .eq('user_id', user.id)
-          .single();
+          .order('created_at', { ascending: true });
+
+        const activeId = getActiveBusinessCookie();
+        const business = (businesses as { id: string }[] | null)?.find(b => b.id === activeId) || (businesses as { id: string }[] | null)?.[0] || null;
 
         if (!business) return;
         setBusinessId(business.id);

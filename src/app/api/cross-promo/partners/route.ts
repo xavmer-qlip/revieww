@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { mapGoogleCategoryToSector, SECTOR_LABELS } from '@/lib/constants';
 import { isInCrossPromoRegion } from '@/lib/utils';
+import { getActiveBusinessForApi } from '@/lib/active-business';
 
 export async function GET() {
   try {
@@ -12,11 +13,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: business } = await supabase
-      .from('businesses')
-      .select('id, city, address, google_business_category, cross_promo_enabled')
-      .eq('user_id', user.id)
-      .single();
+    const business = await getActiveBusinessForApi(supabase, user.id, null);
 
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });

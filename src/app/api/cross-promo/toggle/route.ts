@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeCity, isInCrossPromoRegion } from '@/lib/utils';
+import { getActiveBusinessForApi } from '@/lib/active-business';
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,13 +15,9 @@ export async function POST(request: NextRequest) {
     const { enabled, city } = await request.json();
 
     // Fetch business
-    const { data: business, error: bizError } = await supabase
-      .from('businesses')
-      .select('id, address, city')
-      .eq('user_id', user.id)
-      .single();
+    const business = await getActiveBusinessForApi(supabase, user.id, request.cookies.get('woopla_active_business')?.value);
 
-    if (bizError || !business) {
+    if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 

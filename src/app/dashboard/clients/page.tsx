@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ClientsTable } from '@/components/dashboard/clients-table';
+import { getActiveBusiness } from '@/lib/active-business';
 import type { Business, Spin } from '@/lib/types';
 
 export const metadata = {
@@ -20,11 +21,7 @@ export default async function ClientsPage() {
   }
 
   // ---- Fetch business ----
-  const { data: business } = await supabase
-    .from('businesses')
-    .select('id')
-    .eq('user_id', user.id)
-    .single<Pick<Business, 'id'>>();
+  const business = await getActiveBusiness(supabase, user.id);
 
   if (!business) {
     redirect('/onboarding');

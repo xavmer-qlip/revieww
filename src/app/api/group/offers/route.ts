@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getActiveBusinessForApi } from '@/lib/active-business';
 
+// GET: list group shared offers for active business
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -11,42 +12,33 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const business = await getActiveBusinessForApi(supabase, user.id, null);
-
+    const business = await getActiveBusinessForApi(supabase, user.id);
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 
-    const { data: offers, error } = await supabase
-      .from('cross_promo_offers')
-      .select(`
-        id,
-        segment_id,
-        monthly_stock,
-        is_active,
-        created_at,
-        wheel_segments (
-          id,
-          label,
-          emoji,
-          color
-        )
-      `)
-      .eq('business_id', business.id);
-
-    if (error) {
-      return NextResponse.json({ error: 'Failed to fetch offers' }, { status: 500 });
-    }
+    const { data: offers } = await supabase
+      .from('group_shared_offers')
+      .select('*')
+      .eq('business_id', business.id)
+      .order('created_at', { ascending: true });
 
     return NextResponse.json({ offers: offers ?? [] });
   } catch (error) {
-    console.error('Cross-promo offers GET error:', error);
+    console.error('Group offers GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+// POST: create or update a group shared offer
 export async function POST(request: NextRequest) {
   try {
+    const { segment_id, monthly_stock, share_with } = await request.json();
+
+    if (!segment_id) {
+      return NextResponse.json({ error: 'segment_id is required' }, { status: 400 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -54,16 +46,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { segment_id, monthly_stock = 5 } = await request.json();
-
-    if (!segment_id) {
-      return NextResponse.json({ error: 'segment_id is required' }, { status: 400 });
-    }
-
     const business = await getActiveBusinessForApi(supabase, user.id, request.cookies.get('woopla_active_business')?.value);
-
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
+    }
+
+    if (!business.group_id) {
+      return NextResponse.json({ error: 'Business is not in a group' }, { status: 400 });
     }
 
     // Verify segment belongs to this business
@@ -77,15 +66,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Segment not found' }, { status: 404 });
     }
 
-    // Upsert offer (segment_id is UNIQUE)
+    // Upsert offer
     const { data: offer, error } = await supabase
-      .from('cross_promo_offers')
+      .from('group_shared_offers')
       .upsert(
         {
           business_id: business.id,
           segment_id,
-          monthly_stock: Math.max(1, Math.min(50, monthly_stock)),
+          monthly_stock: monthly_stock ?? 10,
           is_active: true,
+          share_with: share_with ?? 'all',
         },
         { onConflict: 'segment_id' }
       )
@@ -93,19 +83,26 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Cross-promo offer upsert error:', error);
-      return NextResponse.json({ error: 'Failed to create offer' }, { status: 500 });
+      console.error('Group offer upsert error:', error);
+      return NextResponse.json({ error: 'Failed to save offer' }, { status: 500 });
     }
 
-    return NextResponse.json({ offer });
+    return NextResponse.json({ success: true, offer });
   } catch (error) {
-    console.error('Cross-promo offers POST error:', error);
+    console.error('Group offers POST error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+// DELETE: remove a group shared offer
 export async function DELETE(request: NextRequest) {
   try {
+    const { segment_id } = await request.json();
+
+    if (!segment_id) {
+      return NextResponse.json({ error: 'segment_id is required' }, { status: 400 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -113,31 +110,25 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { segment_id } = await request.json();
-
-    if (!segment_id) {
-      return NextResponse.json({ error: 'segment_id is required' }, { status: 400 });
-    }
-
     const business = await getActiveBusinessForApi(supabase, user.id, request.cookies.get('woopla_active_business')?.value);
-
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 
     const { error } = await supabase
-      .from('cross_promo_offers')
+      .from('group_shared_offers')
       .delete()
       .eq('segment_id', segment_id)
       .eq('business_id', business.id);
 
     if (error) {
+      console.error('Group offer delete error:', error);
       return NextResponse.json({ error: 'Failed to delete offer' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Cross-promo offers DELETE error:', error);
+    console.error('Group offers DELETE error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
