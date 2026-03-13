@@ -29,12 +29,12 @@ const HOW_IT_WORKS: { emoji: string; title: string; description: string }[] = [
   {
     emoji: '\u{1F3A1}',
     title: 'Il tourne la roue',
-    description: 'Il d\u00e9couvre son lot en quelques secondes',
+    description: 'Il découvre son lot en quelques secondes',
   },
   {
     emoji: '\u{1F4E7}',
     title: 'Il laisse son email',
-    description: 'Vous r\u00e9cup\u00e9rez un contact qualifi\u00e9',
+    description: 'Vous récupérez un contact qualifié',
   },
 ];
 
@@ -104,10 +104,10 @@ function StepVerifyEmail({
         </motion.div>
 
         <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-          V\u00e9rifiez votre email
+          Vérifiez votre email
         </h2>
         <p className="mt-2 text-text-muted font-body max-w-sm mx-auto">
-          Nous avons envoy\u00e9 un lien de v\u00e9rification \u00e0 votre adresse email. Cliquez dessus pour activer votre page.
+          Nous avons envoyé un lien de vérification à votre adresse email. Cliquez dessus pour activer votre page.
         </p>
       </div>
 
@@ -126,7 +126,7 @@ function StepVerifyEmail({
           loading={resending}
         >
           <MailCheck size={14} />
-          {resendSuccess ? 'Email envoy\u00e9 !' : 'Renvoyer l\'email'}
+          {resendSuccess ? 'Email envoyé !' : 'Renvoyer l\'email'}
         </Button>
       </motion.div>
 
@@ -142,7 +142,7 @@ function StepVerifyEmail({
           transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
           className="w-3 h-3 rounded-full border-2 border-sky/30 border-t-sky"
         />
-        <span className="text-xs font-body">En attente de v\u00e9rification...</span>
+        <span className="text-xs font-body">En attente de vérification...</span>
       </motion.div>
     </div>
   );
@@ -247,7 +247,7 @@ export default function OnboardingPage() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        setError('Session expir\u00e9e. Veuillez vous reconnecter.');
+        setError('Session expirée. Veuillez vous reconnecter.');
         setLoading(false);
         return;
       }
@@ -256,7 +256,7 @@ export default function OnboardingPage() {
       const name = (meta.business_name as string) || '';
 
       if (!name.trim()) {
-        setError('Donn\u00e9es du commerce introuvables. Veuillez vous r\u00e9inscrire.');
+        setError('Données du commerce introuvables. Veuillez vous réinscrire.');
         setLoading(false);
         return;
       }
@@ -318,7 +318,7 @@ export default function OnboardingPage() {
 
       if (bizError || !business) {
         console.error('Business creation error:', bizError);
-        setError('Erreur lors de la cr\u00e9ation du commerce. R\u00e9essayez.');
+        setError('Erreur lors de la création du commerce. Réessayez.');
         setLoading(false);
         return;
       }
@@ -364,7 +364,7 @@ export default function OnboardingPage() {
       fetch('/api/send-verification', { method: 'POST' }).catch(() => {});
     } catch (err) {
       console.error('Onboarding error:', err);
-      setError('Une erreur est survenue. R\u00e9essayez.');
+      setError('Une erreur est survenue. Réessayez.');
     } finally {
       setLoading(false);
     }
@@ -403,7 +403,7 @@ export default function OnboardingPage() {
                   <div className="space-y-6">
                     <div className="text-center">
                       <h2 className="text-2xl sm:text-3xl font-display font-bold text-text">
-                        Comment \u00e7a marche
+                        Comment ça marche
                       </h2>
                       <p className="mt-2 text-text-muted font-body">
                         Votre animation commerciale en 1 minute

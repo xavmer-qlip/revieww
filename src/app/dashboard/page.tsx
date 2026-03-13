@@ -5,7 +5,7 @@ import { getActiveBusiness } from '@/lib/active-business';
 import type { Business, Spin } from '@/lib/types';
 
 export const metadata = {
-  title: 'Vue d\u2019ensemble',
+  title: 'Vue d\'ensemble',
 };
 
 export default async function DashboardPage() {

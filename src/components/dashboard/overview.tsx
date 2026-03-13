@@ -852,7 +852,7 @@ function ActivationHero({ business }: { business: Business }) {
   };
 
   const sendEmail = () => {
-    const subject = encodeURIComponent(`woopla \u2014 animation commerciale pour ${business.name}`);
+    const subject = encodeURIComponent(`woopla - animation commerciale pour ${business.name}`);
     const body = encodeURIComponent(shareMessage);
     window.open(`mailto:?subject=${subject}&body=${body}`);
     markDone(2);
@@ -889,25 +889,25 @@ function ActivationHero({ business }: { business: Business }) {
       num: 0,
       icon: Disc3,
       title: 'Configurez vos lots',
-      subtitle: 'Personnalisez les r\u00e9compenses, emojis et probabilit\u00e9s',
+      subtitle: 'Personnalisez les récompenses, emojis et probabilités',
     },
     {
       num: 1,
       icon: ExternalLink,
       title: 'Testez la roue',
-      subtitle: 'Vivez l\u2019exp\u00e9rience client pour mieux l\u2019expliquer \u00e0 votre \u00e9quipe',
+      subtitle: 'Vivez l\'expérience client pour mieux l\'expliquer à votre équipe',
     },
     {
       num: 2,
       icon: Send,
-      title: 'Partagez avec votre \u00e9quipe',
-      subtitle: 'Envoyez le lien et les instructions \u00e0 vos collaborateurs',
+      title: 'Partagez avec votre équipe',
+      subtitle: 'Envoyez le lien et les instructions à vos collaborateurs',
     },
     {
       num: 3,
       icon: Sparkles,
-      title: 'D\u00e9couvrez votre dashboard',
-      subtitle: 'T\u00e9l\u00e9chargez le QR, suivez votre activit\u00e9 et g\u00e9rez vos contacts',
+      title: 'Découvrez votre dashboard',
+      subtitle: 'Téléchargez le QR, suivez votre activité et gérez vos contacts',
     },
   ];
 
@@ -944,12 +944,12 @@ function ActivationHero({ business }: { business: Business }) {
             )}
             <div className="min-w-0">
               <h2 className="text-lg font-display font-bold text-text truncate">
-                {allDone ? 'Vous \u00eates pr\u00eat !' : `Activez ${business.name}`}
+                {allDone ? 'Vous êtes prêt !' : `Activez ${business.name}`}
               </h2>
               <p className="text-sm text-text-muted font-body">
                 {allDone
                   ? 'Partagez votre QR code et lancez votre animation'
-                  : `${completedSteps.size}/4 \u00e9tapes compl\u00e9t\u00e9es`}
+                  : `${completedSteps.size}/4 étapes complétées`}
               </p>
             </div>
           </div>
@@ -1097,13 +1097,13 @@ function ActivationHero({ business }: { business: Business }) {
                           </Link>
                           <Button variant="outline" size="sm" className="flex-1" onClick={handleCopyLink}>
                             <Copy size={14} />
-                            {copied ? 'Copi\u00e9 !' : 'Copier le lien'}
+                            {copied ? 'Copié !' : 'Copier le lien'}
                           </Button>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <Button variant="outline" size="sm" className="flex-1" onClick={handleDownloadQR}>
                             <Download size={14} />
-                            T\u00e9l\u00e9charger le QR
+                            Télécharger le QR
                           </Button>
                           <Link href="/dashboard/qrcode" className="flex-1">
                             <Button variant="outline" size="sm" className="w-full">
@@ -1168,7 +1168,7 @@ function ActivationHero({ business }: { business: Business }) {
                         <div className="rounded-xl bg-background border border-border/50 overflow-hidden">
                           <div className="flex items-center justify-between px-3 py-2 border-b border-border/30">
                             <span className="text-[11px] font-display font-semibold text-text-muted">
-                              {'Message pour votre \u00e9quipe'}
+                              {'Message pour votre équipe'}
                             </span>
                             <button
                               onClick={() => setEditingMessage(!editingMessage)}
@@ -1204,11 +1204,11 @@ function ActivationHero({ business }: { business: Business }) {
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => { handleCopyMessage(); markDone(2); }} className="flex-1">
                             <Copy size={14} />
-                            {copied ? 'Copi\u00e9 !' : 'Copier'}
+                            {copied ? 'Copié !' : 'Copier'}
                           </Button>
                         </div>
                         <p className="text-[10px] font-body text-text-muted/60">
-                          {"Le lien QR est inclus dans le message \u2014 WhatsApp affichera un aper\u00e7u automatiquement"}
+                          {"Le lien QR est inclus dans le message - WhatsApp affichera un aperçu automatiquement"}
                         </p>
                         {!isDone && (
                           <button
@@ -1226,9 +1226,9 @@ function ActivationHero({ business }: { business: Business }) {
                       <div className="space-y-2">
                         {[
                           { icon: Disc3, label: 'Ma Roue', desc: 'Personnalisez vos lots', href: '/dashboard/wheel' },
-                          { icon: QrCode, label: 'Mon QR Code', desc: 'T\u00e9l\u00e9chargez et imprimez', href: '/dashboard/qrcode' },
+                          { icon: QrCode, label: 'Mon QR Code', desc: 'Téléchargez et imprimez', href: '/dashboard/qrcode' },
                           { icon: Users, label: 'Fichier client', desc: 'Vos contacts pour newsletters et campagnes', href: '/dashboard/clients' },
-                          { icon: ShieldCheck, label: 'Valider un lot', desc: 'V\u00e9rifiez les codes gagnants', href: '/dashboard/validate' },
+                          { icon: ShieldCheck, label: 'Valider un lot', desc: 'Vérifiez les codes gagnants', href: '/dashboard/validate' },
                         ].map((item) => {
                           const ItemIcon = item.icon;
                           return (
@@ -1330,7 +1330,7 @@ function getTimeAgo(dateStr: string): string {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMins < 1) return 'à l\u2019instant';
+  if (diffMins < 1) return 'à l\'instant';
   if (diffMins < 60) return `il y a ${diffMins}min`;
   if (diffHours < 24) return `il y a ${diffHours}h`;
   if (diffDays < 7) return `il y a ${diffDays}j`;

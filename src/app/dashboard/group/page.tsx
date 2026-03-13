@@ -11,12 +11,15 @@ import {
   ToggleLeft,
   ToggleRight,
   Plus,
+  Lock,
+  ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn, getInitials } from '@/lib/utils';
 import { TEXTS } from '@/lib/constants';
+import type { PlanType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +69,7 @@ interface Stats {
 
 export default function GroupPage() {
   const [loading, setLoading] = useState(true);
+  const [planType, setPlanType] = useState<PlanType | null>(null);
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -81,12 +85,18 @@ export default function GroupPage() {
   // ---- Fetch all data ----
   const fetchData = useCallback(async () => {
     try {
-      const [infoRes, offersRes, statsRes, segmentsRes] = await Promise.all([
+      const [bizRes, infoRes, offersRes, statsRes, segmentsRes] = await Promise.all([
+        fetch('/api/dashboard/business'),
         fetch('/api/group/info'),
         fetch('/api/group/offers'),
         fetch('/api/group/stats'),
         fetch('/api/dashboard/segments'),
       ]);
+
+      if (bizRes.ok) {
+        const bizData = await bizRes.json();
+        setPlanType(bizData.plan_type ?? 'free');
+      }
 
       const infoData = await infoRes.json();
       const offersData = await offersRes.json();
@@ -171,6 +181,63 @@ export default function GroupPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
+      </div>
+    );
+  }
+
+  // ---- Upgrade gate for free/starter plans ----
+  if (planType && planType !== 'growth' && planType !== 'pro') {
+    return (
+      <div className="max-w-2xl mx-auto mt-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-surface rounded-2xl border border-border/40 p-8 text-center"
+        >
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Building2 className="w-8 h-8 text-primary" />
+          </div>
+
+          <h1 className="text-2xl font-display font-bold text-text mb-3">
+            Mes établissements
+          </h1>
+
+          <p className="text-sm font-body text-text-muted leading-relaxed max-w-md mx-auto mb-6">
+            Vous gérez plusieurs points de vente ? Avec le plan Growth ou Pro, regroupez vos établissements et partagez vos lots entre eux. Vos clients peuvent gagner un cadeau dans un de vos autres établissements, ce qui génère du trafic croisé.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8 text-left max-w-lg mx-auto">
+            {[
+              { emoji: '🏪', text: 'Gérez plusieurs établissements depuis un seul compte' },
+              { emoji: '🎁', text: 'Partagez vos lots entre vos différents points de vente' },
+              { emoji: '📊', text: 'Statistiques agrégées pour suivre la performance globale' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-start gap-2 bg-background rounded-xl p-3">
+                <span className="text-lg shrink-0">{item.emoji}</span>
+                <p className="text-xs font-body text-text-muted leading-relaxed">{item.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/dashboard/billing">
+              <Button variant="primary" size="lg">
+                Passer au plan Growth
+                <ArrowRight size={16} />
+              </Button>
+            </a>
+            <a
+              href="mailto:xavier@qlip.ch?subject=woopla - Multi-établissements"
+              className="text-sm font-body text-text-muted hover:text-primary transition-colors"
+            >
+              Contactez-nous
+            </a>
+          </div>
+
+          <p className="text-xs font-body text-text-muted/60 mt-4">
+            Disponible avec le plan Growth (39 CHF/mois) ou Pro (79 CHF/mois)
+          </p>
+        </motion.div>
       </div>
     );
   }

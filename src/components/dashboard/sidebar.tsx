@@ -63,21 +63,21 @@ interface SidebarProps {
 // ---------------------------------------------------------------------------
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: Home, label: 'Vue d\u2019ensemble', href: '/dashboard' },
+  { icon: Home, label: 'Vue d\'ensemble', href: '/dashboard' },
   { icon: Disc3, label: 'Ma Roue', href: '/dashboard/wheel' },
   { icon: QrCode, label: 'Mon QR Code', href: '/dashboard/qrcode' },
   { icon: Users, label: 'Fichier client', href: '/dashboard/clients' },
   { icon: ShieldCheck, label: 'Valider un lot', href: '/dashboard/validate' },
   { icon: Handshake, label: 'Réseau local', href: '/dashboard/network', badge: 'Beta' },
-  { icon: Building2, label: 'Mes établissements', href: '/dashboard/group', badge: 'New', requiredPlan: ['growth', 'pro'] },
+  { icon: Building2, label: 'Mes établissements', href: '/dashboard/group', badge: 'New' },
   {
     icon: MessageSquare,
     label: 'Messages',
     href: '/dashboard/messages',
     disabled: true,
-    badge: 'Bient\u00f4t',
+    badge: 'Bientôt',
   },
-  { icon: Settings, label: 'Param\u00e8tres', href: '/dashboard/settings' },
+  { icon: Settings, label: 'Paramètres', href: '/dashboard/settings' },
   { icon: CreditCard, label: 'Abonnement', href: '/dashboard/billing' },
 ];
 
@@ -176,7 +176,7 @@ function SpinQuota({
       <div className="flex items-center justify-between text-[11px] font-medium text-white/50 mb-2">
         <span>Spins ce mois</span>
         {isPro ? (
-          <span className="text-sky">Illimit\u00e9 \u2728</span>
+          <span className="text-sky">Illimité ✨</span>
         ) : (
           <span>
             {spinsUsed} / {spinsLimit}
