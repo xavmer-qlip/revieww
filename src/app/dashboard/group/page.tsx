@@ -352,7 +352,7 @@ export default function GroupPage() {
             </div>
 
             <a
-              href="/onboarding?add=true"
+              href="/dashboard/group/add"
               className="inline-flex items-center gap-2 text-sm font-display font-semibold text-primary hover:text-primary-dark transition-colors"
             >
               <Plus className="w-4 h-4" />

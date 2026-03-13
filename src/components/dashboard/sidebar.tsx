@@ -323,7 +323,7 @@ function BusinessCard({
             {/* Add new establishment */}
             <div className="border-t border-white/10 p-1">
               <Link
-                href="/onboarding?add=true"
+                href="/dashboard/group/add"
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white hover:bg-white/5 transition-colors"
                 onClick={() => setOpen(false)}
               >
