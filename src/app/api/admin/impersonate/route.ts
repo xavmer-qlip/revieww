@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to generate login link' }, { status: 500 });
     }
 
-    // The link contains a token — extract the hashed_token and redirect through auth/callback
+    // The link contains a token — extract and rebuild with our domain
     const properties = data.properties;
     const actionLink = properties?.action_link;
 
@@ -45,10 +45,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No action link generated' }, { status: 500 });
     }
 
+    // Supabase generates a link on their domain — extract token params and rebuild on ours
+    const url = new URL(actionLink);
+    const token = url.searchParams.get('token');
+    const type = url.searchParams.get('type') || 'magiclink';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.woopla.ch';
+    const loginUrl = `${appUrl}/auth/callback?token_hash=${token}&type=${type}&next=/dashboard`;
+
     return NextResponse.json({
       success: true,
       email: user.email,
-      loginUrl: actionLink,
+      loginUrl,
     });
   } catch (error) {
     console.error('Admin impersonate error:', error);

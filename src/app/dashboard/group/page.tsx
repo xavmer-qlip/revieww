@@ -95,7 +95,7 @@ export default function GroupPage() {
 
       if (bizRes.ok) {
         const bizData = await bizRes.json();
-        setPlanType(bizData.plan_type ?? 'free');
+        setPlanType(bizData.business?.plan_type ?? bizData.plan_type ?? 'free');
       }
 
       const infoData = await infoRes.json();

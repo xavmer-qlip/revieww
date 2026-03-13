@@ -70,13 +70,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: ShieldCheck, label: 'Valider un lot', href: '/dashboard/validate' },
   { icon: Handshake, label: 'Réseau local', href: '/dashboard/network', badge: 'Beta' },
   { icon: Building2, label: 'Mes établissements', href: '/dashboard/group', badge: 'New' },
-  {
-    icon: MessageSquare,
-    label: 'Messages',
-    href: '/dashboard/messages',
-    disabled: true,
-    badge: 'Bientôt',
-  },
+  { icon: MessageSquare, label: 'Messages', href: '/dashboard/messages', badge: 'Bientôt' },
   { icon: Settings, label: 'Paramètres', href: '/dashboard/settings' },
   { icon: CreditCard, label: 'Abonnement', href: '/dashboard/billing' },
 ];
