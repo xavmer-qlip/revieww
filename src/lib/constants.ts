@@ -208,6 +208,13 @@ export const PLAN_CONTACT_LIMITS: Record<string, number> = {
   pro: 999999,
 };
 
+/** Plans that can use group/multi-establishment features */
+export const GROUP_ELIGIBLE_PLANS: string[] = ['growth', 'pro'];
+
+export function isGroupEligible(planType: string): boolean {
+  return GROUP_ELIGIBLE_PLANS.includes(planType);
+}
+
 export const STRIPE_PRICE_IDS: Record<string, string> = {
   starter: process.env.STRIPE_PRICE_STARTER || '',
   growth: process.env.STRIPE_PRICE_GROWTH || '',

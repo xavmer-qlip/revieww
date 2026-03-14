@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn, getInitials } from '@/lib/utils';
-import { TEXTS } from '@/lib/constants';
+import { TEXTS, isGroupEligible } from '@/lib/constants';
 import type { PlanType } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -83,16 +83,15 @@ function MemberChecklist({ member, onSwitch, switching }: {
   onSwitch: (id: string, dest: string) => void;
   switching: string | null;
 }) {
-  const isFree = member.plan_type === 'free';
+  const isEligible = isGroupEligible(member.plan_type);
   const hasWheel = member.winning_segment_count > 0;
   const hasOffers = member.shared_offer_count > 0;
-  const hasPlan = !isFree;
 
   const steps = [
     {
-      done: hasPlan,
-      label: hasPlan ? `Plan ${member.plan_type}` : 'Plan Free',
-      action: isFree ? () => onSwitch(member.id, '/dashboard/billing') : undefined,
+      done: isEligible,
+      label: isEligible ? `Plan ${member.plan_type}` : `Plan ${member.plan_type} (Growth requis)`,
+      action: !isEligible ? () => onSwitch(member.id, '/dashboard/billing') : undefined,
       actionLabel: 'Upgrader',
       actionColor: 'text-warning',
     },
@@ -118,7 +117,7 @@ function MemberChecklist({ member, onSwitch, switching }: {
     <div
       className={cn(
         'rounded-xl border px-4 py-3',
-        isFree ? 'bg-warning/5 border-warning/20' : allDone ? 'bg-background border-border/30' : 'bg-background border-border/30',
+        !isEligible ? 'bg-warning/5 border-warning/20' : 'bg-background border-border/30',
       )}
     >
       <div className="flex items-center gap-3">
@@ -138,7 +137,7 @@ function MemberChecklist({ member, onSwitch, switching }: {
             <p className="text-sm font-display font-semibold text-text truncate">
               {member.name}
             </p>
-            <Badge variant={isFree ? 'warning' : 'muted'} size="sm" className="capitalize shrink-0">
+            <Badge variant={!isEligible ? 'warning' : 'muted'} size="sm" className="capitalize shrink-0">
               {member.plan_type}
             </Badge>
             {allDone && (
@@ -366,8 +365,8 @@ export default function GroupPage() {
     );
   }
 
-  // ---- Upgrade gate for free/starter plans ----
-  if (planType && planType !== 'growth' && planType !== 'pro') {
+  // ---- Upgrade gate for ineligible plans ----
+  if (planType && !isGroupEligible(planType)) {
     return (
       <div className="max-w-2xl mx-auto mt-8">
         <motion.div
@@ -424,14 +423,15 @@ export default function GroupPage() {
   }
 
   // ---- Global status computation ----
-  const paidMembers = members.filter((m) => m.plan_type !== 'free');
-  const freeMembers = members.filter((m) => m.plan_type === 'free');
+  const eligibleMembers = members.filter((m) => isGroupEligible(m.plan_type));
+  const ineligibleMembers = members.filter((m) => !isGroupEligible(m.plan_type));
   const membersWithOffers = members.filter((m) => m.shared_offer_count > 0);
   const membersWithoutOffers = members.filter((m) => m.shared_offer_count === 0);
   const membersWithoutWheel = members.filter((m) => m.winning_segment_count === 0);
 
-  // Multi-establishment works when: group exists + at least 2 paid members + at least 2 members share offers
-  const isGroupActive = !!group && paidMembers.length >= 2 && membersWithOffers.length >= 2;
+  // Multi-establishment works when: group exists + at least 2 eligible (growth/pro) members + at least 2 share offers
+  const eligibleWithOffers = members.filter((m) => isGroupEligible(m.plan_type) && m.shared_offer_count > 0);
+  const isGroupActive = !!group && eligibleMembers.length >= 2 && eligibleWithOffers.length >= 2;
 
   // Determine what's blocking
   function getStatusMessage(): { type: 'success' | 'warning' | 'error'; title: string; description: string } | null {
@@ -441,7 +441,7 @@ export default function GroupPage() {
       return {
         type: 'success',
         title: 'Multi-établissements actif',
-        description: `${membersWithOffers.length} établissements partagent des lots entre eux. Vos clients peuvent gagner des cadeaux croisés.`,
+        description: `${eligibleWithOffers.length} établissements partagent des lots entre eux. Vos clients peuvent gagner des cadeaux croisés.`,
       };
     }
 
@@ -453,21 +453,21 @@ export default function GroupPage() {
       };
     }
 
-    if (paidMembers.length < 2) {
-      const needed = 2 - paidMembers.length;
+    if (eligibleMembers.length < 2) {
+      const needed = 2 - eligibleMembers.length;
       return {
         type: 'error',
         title: `${needed} établissement${needed > 1 ? 's' : ''} à upgrader`,
-        description: 'Il faut au moins 2 établissements avec un plan payant (Growth ou plus) pour que le partage fonctionne.',
+        description: 'Il faut au moins 2 établissements en plan Growth ou Pro pour que le partage fonctionne.',
       };
     }
 
-    if (membersWithOffers.length < 2) {
-      const needed = 2 - membersWithOffers.length;
+    if (eligibleWithOffers.length < 2) {
+      const needed = 2 - eligibleWithOffers.length;
       return {
         type: 'warning',
-        title: `${needed} établissement${needed > 1 ? 's' : ''} sans lots partagés`,
-        description: 'Chaque établissement doit partager au moins un lot pour que les clients puissent gagner des cadeaux croisés.',
+        title: `${needed > 1 ? `${needed} établissements manquent` : '1 établissement manque'} de lots partagés`,
+        description: 'Chaque établissement Growth/Pro doit partager au moins un lot pour que les clients puissent gagner des cadeaux croisés.',
       };
     }
 

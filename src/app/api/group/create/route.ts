@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getActiveBusinessForApi } from '@/lib/active-business';
+import { isGroupEligible } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check plan requirement
-    if (business.plan_type !== 'growth' && business.plan_type !== 'pro') {
+    if (!isGroupEligible(business.plan_type)) {
       return NextResponse.json({ error: 'Plan Growth ou Pro requis' }, { status: 403 });
     }
 

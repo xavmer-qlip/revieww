@@ -1,5 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server';
-import { PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS, mapGoogleCategoryToSector } from '@/lib/constants';
+import { PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS, mapGoogleCategoryToSector, isGroupEligible } from '@/lib/constants';
 import { Business, WheelSegment } from '@/lib/types';
 import { isInCrossPromoRegion } from '@/lib/utils';
 import crypto from 'crypto';
@@ -431,7 +431,11 @@ export async function getEligibleGroupSegments(
 ): Promise<GroupSegment[]> {
   if (!business.group_id) return [];
 
+  // Only growth/pro plans can receive group prizes
+  if (!isGroupEligible(business.plan_type)) return [];
+
   // Fetch active group shared offers from other businesses in the same group
+  // Only include offers from businesses on growth/pro plans
   const { data: offers, error } = await supabase
     .from('group_shared_offers')
     .select(`
@@ -444,7 +448,9 @@ export async function getEligibleGroupSegments(
         id,
         name,
         logo_url,
-        address
+        address,
+        plan_type,
+        group_id
       ),
       wheel_segments!inner (
         label,
@@ -468,12 +474,20 @@ export async function getEligibleGroupSegments(
       name: string;
       logo_url: string | null;
       address: string | null;
+      plan_type: string;
+      group_id: string | null;
     };
     const seg = offer.wheel_segments as unknown as {
       label: string;
       emoji: string;
       color: string;
     };
+
+    // Skip offers from businesses that downgraded below growth
+    if (!isGroupEligible(prizeBiz.plan_type)) continue;
+
+    // Skip offers from businesses no longer in the same group
+    if (prizeBiz.group_id !== business.group_id) continue;
 
     // Check share_with: 'all' or comma-separated business IDs
     if (offer.share_with !== 'all') {

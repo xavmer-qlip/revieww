@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
-import { STRIPE_PRICE_IDS, PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS } from '@/lib/constants';
+import { STRIPE_PRICE_IDS, PLAN_SPIN_LIMITS, PLAN_CONTACT_LIMITS, isGroupEligible } from '@/lib/constants';
 import { PlanType, SubscriptionStatus } from '@/lib/types';
 import { sendTrialExpiringEmail } from '@/lib/emails/trial-expiring';
 import Stripe from 'stripe';
@@ -89,6 +89,22 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
       { businessId, subscriptionId: subscription.id }
     );
   }
+
+  // If downgraded below growth, deactivate group shared offers
+  if (planType && !isGroupEligible(planType)) {
+    const { error: offersError } = await supabase
+      .from('group_shared_offers')
+      .update({ is_active: false })
+      .eq('business_id', businessId);
+
+    if (offersError) {
+      console.error(
+        'Webhook: Failed to deactivate group offers on downgrade:',
+        offersError,
+        { businessId, planType }
+      );
+    }
+  }
 }
 
 // ---- Handle subscription deleted ----
@@ -114,6 +130,20 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       'Webhook: Failed to update business for subscription deletion:',
       error,
       { businessId, subscriptionId: subscription.id }
+    );
+  }
+
+  // Deactivate group shared offers when subscription is canceled
+  const { error: offersError } = await supabase
+    .from('group_shared_offers')
+    .update({ is_active: false })
+    .eq('business_id', businessId);
+
+  if (offersError) {
+    console.error(
+      'Webhook: Failed to deactivate group offers on subscription deletion:',
+      offersError,
+      { businessId }
     );
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getActiveBusinessForApi } from '@/lib/active-business';
+import { isGroupEligible } from '@/lib/constants';
 
 // GET: list group shared offers for active business
 export async function GET() {
@@ -53,6 +54,10 @@ export async function POST(request: NextRequest) {
 
     if (!business.group_id) {
       return NextResponse.json({ error: 'Business is not in a group' }, { status: 400 });
+    }
+
+    if (!isGroupEligible(business.plan_type)) {
+      return NextResponse.json({ error: 'Plan Growth ou Pro requis pour partager des lots' }, { status: 403 });
     }
 
     // Verify segment belongs to this business
