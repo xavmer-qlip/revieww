@@ -3,6 +3,29 @@ import { createClient } from '@/lib/supabase/server';
 import { getActiveBusinessForApi } from '@/lib/active-business';
 import { isGroupEligible } from '@/lib/constants';
 
+/**
+ * Resolve which business to operate on.
+ * If `business_id` is provided in the body, verify the user owns it.
+ * Otherwise fall back to the active business cookie.
+ */
+async function resolveBusinessForUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  requestedBusinessId?: string,
+  cookieValue?: string
+) {
+  if (requestedBusinessId) {
+    const { data: biz } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('id', requestedBusinessId)
+      .eq('user_id', userId)
+      .single();
+    return biz ?? null;
+  }
+  return getActiveBusinessForApi(supabase, userId, cookieValue);
+}
+
 // GET: list group shared offers for active business
 export async function GET() {
   try {
@@ -34,7 +57,7 @@ export async function GET() {
 // POST: create or update a group shared offer
 export async function POST(request: NextRequest) {
   try {
-    const { segment_id, monthly_stock, share_with } = await request.json();
+    const { segment_id, monthly_stock, share_with, business_id } = await request.json();
 
     if (!segment_id) {
       return NextResponse.json({ error: 'segment_id is required' }, { status: 400 });
@@ -47,7 +70,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const business = await getActiveBusinessForApi(supabase, user.id, request.cookies.get('woopla_active_business')?.value);
+    const business = await resolveBusinessForUser(
+      supabase,
+      user.id,
+      business_id,
+      request.cookies.get('woopla_active_business')?.value
+    );
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
@@ -102,7 +130,7 @@ export async function POST(request: NextRequest) {
 // DELETE: remove a group shared offer
 export async function DELETE(request: NextRequest) {
   try {
-    const { segment_id } = await request.json();
+    const { segment_id, business_id } = await request.json();
 
     if (!segment_id) {
       return NextResponse.json({ error: 'segment_id is required' }, { status: 400 });
@@ -115,7 +143,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const business = await getActiveBusinessForApi(supabase, user.id, request.cookies.get('woopla_active_business')?.value);
+    const business = await resolveBusinessForUser(
+      supabase,
+      user.id,
+      business_id,
+      request.cookies.get('woopla_active_business')?.value
+    );
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }

@@ -29,11 +29,11 @@ export async function GET() {
       .eq('group_id', group.id)
       .order('created_at', { ascending: true });
 
-    // Fetch spin counts, segment counts, and shared offer counts per member
+    // Fetch per-member: spins, winning segments (with details), shared offers
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    const membersWithStats = await Promise.all(
+    const membersWithData = await Promise.all(
       (members ?? []).map(async (m) => {
         const [spinsResult, segmentsResult, offersResult] = await Promise.all([
           supabase
@@ -43,25 +43,28 @@ export async function GET() {
             .gte('created_at', monthStart),
           supabase
             .from('wheel_segments')
-            .select('*', { count: 'exact', head: true })
+            .select('id, label, emoji, color, monthly_stock')
             .eq('business_id', m.id)
-            .eq('is_winning', true),
+            .eq('is_winning', true)
+            .order('position', { ascending: true }),
           supabase
             .from('group_shared_offers')
-            .select('*', { count: 'exact', head: true })
+            .select('id, segment_id, monthly_stock, is_active')
             .eq('business_id', m.id),
         ]);
 
         return {
           ...m,
           spins_this_month: spinsResult.count ?? 0,
-          winning_segment_count: segmentsResult.count ?? 0,
-          shared_offer_count: offersResult.count ?? 0,
+          winning_segment_count: segmentsResult.data?.length ?? 0,
+          shared_offer_count: offersResult.data?.filter((o) => o.is_active).length ?? 0,
+          segments: segmentsResult.data ?? [],
+          shared_offers: offersResult.data ?? [],
         };
       })
     );
 
-    return NextResponse.json({ group, members: membersWithStats });
+    return NextResponse.json({ group, members: membersWithData });
   } catch (error) {
     console.error('Group info error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
