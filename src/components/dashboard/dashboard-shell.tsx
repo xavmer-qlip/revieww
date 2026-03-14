@@ -2,10 +2,19 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { MailCheck, CheckCircle2 } from 'lucide-react';
+import { MailCheck, CheckCircle2, Building2 } from 'lucide-react';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
+import { Badge } from '@/components/ui/badge';
+import { getInitials, formatNumber } from '@/lib/utils';
 import type { PlanType } from '@/lib/types';
+
+const PLAN_BADGE: Record<PlanType, { label: string; variant: 'primary' | 'success' | 'warning' | 'muted' }> = {
+  free: { label: 'Free', variant: 'muted' },
+  starter: { label: 'Starter', variant: 'warning' },
+  growth: { label: 'Growth', variant: 'primary' },
+  pro: { label: 'Pro', variant: 'success' },
+};
 
 interface BusinessSummary {
   id: string;
@@ -87,6 +96,29 @@ export function DashboardShell({
       <div className="lg:pl-64">
         {/* Mobile topbar */}
         <Topbar onMenuToggle={toggleMenu} />
+
+        {/* Desktop context bar */}
+        <div className="hidden lg:flex items-center gap-3 px-6 py-2 border-b border-border/40 bg-surface/50 text-sm">
+          {businessLogoUrl ? (
+            <img src={businessLogoUrl} alt={businessName} className="h-6 w-6 rounded-md object-cover" />
+          ) : (
+            <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary">
+              {getInitials(businessName)}
+            </div>
+          )}
+          <span className="font-display font-semibold text-text">{businessName}</span>
+          <Badge variant={PLAN_BADGE[planType].variant} size="sm">
+            {PLAN_BADGE[planType].label}
+          </Badge>
+          <span className="text-text-muted">·</span>
+          <span className="text-text-muted font-body">
+            {planType === 'pro'
+              ? `${formatNumber(spinsUsed)} spins ce mois`
+              : planType === 'free'
+                ? `${formatNumber(spinsUsed)} / ${formatNumber(spinsLimit)} spins restants`
+                : `${formatNumber(spinsUsed)} / ${formatNumber(spinsLimit)} spins ce mois`}
+          </span>
+        </div>
 
         {/* Email verified success banner */}
         {showVerifiedBanner && (

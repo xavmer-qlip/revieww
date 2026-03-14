@@ -86,6 +86,10 @@ const PLAN_META: Record<PlanType, { label: string; variant: 'primary' | 'success
   pro: { label: 'Pro', variant: 'success' },
 };
 
+function getFreeBadgeVariant(planType: PlanType, businessCount: number): 'muted' | 'warning' {
+  return planType === 'free' && businessCount >= 2 ? 'warning' : 'muted';
+}
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
@@ -208,8 +212,12 @@ function BusinessCard({
   const [open, setOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
   const router = useRouter();
-  const plan = PLAN_META[planType];
   const hasMultiple = businesses.length > 1;
+  const freeBadgeVariant = getFreeBadgeVariant(planType, businesses.length);
+  const plan = {
+    ...PLAN_META[planType],
+    variant: planType === 'free' ? freeBadgeVariant : PLAN_META[planType].variant,
+  };
 
   async function handleSwitch(businessId: string) {
     if (businessId === activeBusinessId) {
@@ -224,8 +232,7 @@ function BusinessCard({
         body: JSON.stringify({ businessId }),
       });
       if (res.ok) {
-        router.refresh();
-        setOpen(false);
+        window.location.reload();
       }
     } finally {
       setSwitching(false);
@@ -263,13 +270,18 @@ function BusinessCard({
         </div>
 
         {hasMultiple && (
-          <ChevronDown
-            size={16}
-            className={cn(
-              'text-white/40 transition-transform',
-              open && 'rotate-180'
-            )}
-          />
+          <span className="flex items-center gap-1 shrink-0">
+            <span className="text-[10px] font-medium text-white/30">
+              {businesses.findIndex((b) => b.id === activeBusinessId) + 1}/{businesses.length}
+            </span>
+            <ChevronDown
+              size={16}
+              className={cn(
+                'text-white/40 transition-transform',
+                open && 'rotate-180'
+              )}
+            />
+          </span>
         )}
       </button>
 
@@ -280,7 +292,7 @@ function BusinessCard({
             initial={{ opacity: 0, y: 8, height: 0 }}
             animate={{ opacity: 1, y: 0, height: 'auto' }}
             exit={{ opacity: 0, y: 8, height: 0 }}
-            className="absolute bottom-full left-2 right-2 mb-1 bg-sidebar-hover rounded-xl border border-white/10 overflow-hidden z-50"
+            className="absolute top-full left-2 right-2 mt-1 bg-sidebar-hover rounded-xl border border-white/10 overflow-hidden z-50"
           >
             <div className="py-1 max-h-48 overflow-y-auto">
               {businesses.map((biz) => {
@@ -381,6 +393,21 @@ export function Sidebar({
       {/* ---- Divider ---- */}
       <div className="mx-4 h-px bg-white/[0.06]" />
 
+      {/* ---- Business card (top) ---- */}
+      <BusinessCard
+        businessName={businessName}
+        businessLogoUrl={businessLogoUrl}
+        planType={planType}
+        businesses={businesses}
+        activeBusinessId={activeBusinessId}
+      />
+
+      {/* Spin quota */}
+      <SpinQuota spinsUsed={spinsUsed} spinsLimit={spinsLimit} planType={planType} />
+
+      {/* ---- Divider ---- */}
+      <div className="mx-4 h-px bg-white/[0.06]" />
+
       {/* ---- Navigation ---- */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map((item) => (
@@ -392,21 +419,6 @@ export function Sidebar({
       <div className="mt-auto">
         {/* Divider */}
         <div className="mx-4 h-px bg-white/[0.06]" />
-
-        {/* Spin quota */}
-        <SpinQuota spinsUsed={spinsUsed} spinsLimit={spinsLimit} planType={planType} />
-
-        {/* Divider */}
-        <div className="mx-4 h-px bg-white/[0.06]" />
-
-        {/* Business card */}
-        <BusinessCard
-          businessName={businessName}
-          businessLogoUrl={businessLogoUrl}
-          planType={planType}
-          businesses={businesses}
-          activeBusinessId={activeBusinessId}
-        />
 
         {/* Logout */}
         <div className="px-3 pb-4 pt-1">

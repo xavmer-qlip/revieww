@@ -70,9 +70,19 @@ export default function AddBusinessPage() {
       }
 
       setSuccess(true);
+
+      // Switch to the new business and redirect to billing
+      const newBusinessId = data.businessId || data.business?.id;
+      if (newBusinessId) {
+        await fetch('/api/dashboard/switch-business', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ businessId: newBusinessId }),
+        });
+      }
+
       setTimeout(() => {
-        router.push('/dashboard/group');
-        router.refresh();
+        window.location.href = '/dashboard/billing?new=true';
       }, 1500);
     } catch {
       setError('Une erreur est survenue. Réessayez.');
@@ -96,7 +106,7 @@ export default function AddBusinessPage() {
             Établissement ajouté !
           </h2>
           <p className="text-sm font-body text-text-muted">
-            Redirection vers vos établissements...
+            Redirection vers l'abonnement...
           </p>
         </motion.div>
       </div>

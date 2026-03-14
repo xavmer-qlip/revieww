@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   CreditCard,
@@ -18,6 +19,7 @@ import {
   Sparkles,
   Star,
   Shield,
+  Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -333,6 +335,8 @@ function PlanCard({
 // ---------------------------------------------------------------------------
 
 export function BillingClient({ business, spinsUsed }: BillingClientProps) {
+  const searchParams = useSearchParams();
+  const isNewBusiness = searchParams.get('new') === 'true';
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [loadingPortal, setLoadingPortal] = useState(false);
   const [changingPlan, setChangingPlan] = useState<PlanType | null>(null);
@@ -451,6 +455,25 @@ export function BillingClient({ business, spinsUsed }: BillingClientProps) {
           Gerez votre plan et votre facturation
         </p>
       </motion.div>
+
+      {/* ---- New business banner ---- */}
+      {isNewBusiness && business.plan_type === 'free' && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-3 rounded-xl border border-sky/20 bg-sky/5 px-4 py-3"
+        >
+          <Info size={18} className="text-sky shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-display font-semibold text-text">
+              Votre nouvel établissement {business.name} est en plan Free.
+            </p>
+            <p className="text-xs font-body text-text-muted mt-0.5">
+              Choisissez un plan ci-dessous pour le lancer.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {/* ---- Current plan + status ---- */}
       <motion.div

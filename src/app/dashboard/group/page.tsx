@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import Link from 'next/link';
 import {
   Building2,
   Gift,
@@ -11,8 +12,15 @@ import {
   ToggleLeft,
   ToggleRight,
   Plus,
-  Lock,
   ArrowRight,
+  Settings,
+  Zap,
+  AlertCircle,
+  Disc3,
+  CreditCard,
+  X,
+  CircleCheck,
+  Circle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +46,9 @@ interface Member {
   plan_type: string;
   slug: string;
   spins_this_month: number;
+  monthly_spin_limit: number;
+  winning_segment_count: number;
+  shared_offer_count: number;
 }
 
 interface Offer {
@@ -64,11 +75,139 @@ interface Stats {
 }
 
 // ---------------------------------------------------------------------------
+// Status checklist helper
+// ---------------------------------------------------------------------------
+
+function MemberChecklist({ member, onSwitch, switching }: {
+  member: Member;
+  onSwitch: (id: string, dest: string) => void;
+  switching: string | null;
+}) {
+  const isFree = member.plan_type === 'free';
+  const hasWheel = member.winning_segment_count > 0;
+  const hasOffers = member.shared_offer_count > 0;
+  const hasPlan = !isFree;
+
+  const steps = [
+    {
+      done: hasPlan,
+      label: hasPlan ? `Plan ${member.plan_type}` : 'Plan Free',
+      action: isFree ? () => onSwitch(member.id, '/dashboard/billing') : undefined,
+      actionLabel: 'Upgrader',
+      actionColor: 'text-warning',
+    },
+    {
+      done: hasWheel,
+      label: hasWheel ? `${member.winning_segment_count} lot${member.winning_segment_count > 1 ? 's' : ''} sur la roue` : 'Roue non configurée',
+      action: !hasWheel ? () => onSwitch(member.id, '/dashboard/wheel') : undefined,
+      actionLabel: 'Configurer',
+      actionColor: 'text-primary',
+    },
+    {
+      done: hasOffers,
+      label: hasOffers ? `${member.shared_offer_count} lot${member.shared_offer_count > 1 ? 's' : ''} partagé${member.shared_offer_count > 1 ? 's' : ''}` : 'Aucun lot partagé',
+      action: undefined, // handled by the offers section below
+      actionLabel: undefined,
+      actionColor: undefined,
+    },
+  ];
+
+  const allDone = steps.every((s) => s.done);
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl border px-4 py-3',
+        isFree ? 'bg-warning/5 border-warning/20' : allDone ? 'bg-background border-border/30' : 'bg-background border-border/30',
+      )}
+    >
+      <div className="flex items-center gap-3">
+        {member.logo_url ? (
+          <img
+            src={member.logo_url}
+            alt={member.name}
+            className="w-9 h-9 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+            {getInitials(member.name)}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-display font-semibold text-text truncate">
+              {member.name}
+            </p>
+            <Badge variant={isFree ? 'warning' : 'muted'} size="sm" className="capitalize shrink-0">
+              {member.plan_type}
+            </Badge>
+            {allDone && (
+              <CircleCheck size={14} className="text-success shrink-0" />
+            )}
+          </div>
+          {member.address && (
+            <p className="text-[11px] font-body text-text-muted truncate">
+              {member.address}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => onSwitch(member.id, '/dashboard')}
+            disabled={switching === member.id}
+            className="text-[11px] font-display font-semibold text-primary hover:text-primary-dark transition-colors disabled:opacity-50 flex items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-primary/5"
+          >
+            <Settings size={11} />
+            Gérer
+          </button>
+        </div>
+      </div>
+
+      {/* Checklist */}
+      <div className="mt-2.5 pl-12 space-y-1">
+        {steps.map((step, i) => (
+          <div key={i} className="flex items-center gap-2 text-[11px] font-body">
+            {step.done ? (
+              <CircleCheck size={13} className="text-success shrink-0" />
+            ) : (
+              <Circle size={13} className="text-text-muted/40 shrink-0" />
+            )}
+            <span className={step.done ? 'text-text-muted' : 'text-text'}>
+              {step.label}
+            </span>
+            {step.action && step.actionLabel && (
+              <button
+                onClick={step.action}
+                disabled={switching === member.id}
+                className={cn(
+                  'font-display font-semibold transition-colors disabled:opacity-50 flex items-center gap-0.5 ml-1',
+                  step.actionColor
+                )}
+              >
+                {step.actionLabel} →
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Spins info */}
+      <div className="mt-2 pl-12">
+        <p className="text-[10px] font-body text-text-muted">
+          {member.spins_this_month} spin{member.spins_this_month > 1 ? 's' : ''} ce mois
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function GroupPage() {
   const [loading, setLoading] = useState(true);
+  const [switching, setSwitching] = useState<string | null>(null);
   const [planType, setPlanType] = useState<PlanType | null>(null);
   const [group, setGroup] = useState<GroupInfo | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -79,6 +218,7 @@ export default function GroupPage() {
   const [creating, setCreating] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [savingSegment, setSavingSegment] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   const T = TEXTS.group;
 
@@ -122,6 +262,23 @@ export default function GroupPage() {
     fetchData();
   }, [fetchData]);
 
+  // ---- Switch business + navigate ----
+  async function switchAndNavigate(businessId: string, destination: string) {
+    setSwitching(businessId);
+    try {
+      const res = await fetch('/api/dashboard/switch-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessId }),
+      });
+      if (res.ok) {
+        window.location.href = destination;
+      }
+    } finally {
+      setSwitching(null);
+    }
+  }
+
   // ---- Create group ----
   async function handleCreateGroup() {
     if (!groupName.trim()) return;
@@ -143,37 +300,61 @@ export default function GroupPage() {
   async function handleToggleOffer(segmentId: string) {
     const existingOffer = offers.find((o) => o.segment_id === segmentId);
     setSavingSegment(segmentId);
+    setError('');
 
     try {
+      let res: Response;
       if (existingOffer) {
-        await fetch('/api/group/offers', {
+        res = await fetch('/api/group/offers', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ segment_id: segmentId }),
         });
       } else {
-        await fetch('/api/group/offers', {
+        res = await fetch('/api/group/offers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ segment_id: segmentId, monthly_stock: 10 }),
         });
       }
+
+      if (!res.ok) {
+        const data = await res.json();
+        if (data.error === 'Business is not in a group') {
+          setError('Créez d\'abord un groupe pour partager des lots.');
+        } else {
+          setError(data.error || 'Erreur lors de la mise à jour.');
+        }
+      }
+
       await fetchData();
-    } catch { /* */ }
+    } catch {
+      setError('Erreur réseau. Réessayez.');
+    }
     setSavingSegment(null);
   }
 
   // ---- Update offer stock ----
   async function handleUpdateStock(segmentId: string, stock: number) {
     setSavingSegment(segmentId);
+    setError('');
+
     try {
-      await fetch('/api/group/offers', {
+      const res = await fetch('/api/group/offers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ segment_id: segmentId, monthly_stock: stock }),
       });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'Erreur lors de la mise à jour du stock.');
+      }
+
       await fetchData();
-    } catch { /* */ }
+    } catch {
+      setError('Erreur réseau. Réessayez.');
+    }
     setSavingSegment(null);
   }
 
@@ -235,12 +416,65 @@ export default function GroupPage() {
           </div>
 
           <p className="text-xs font-body text-text-muted/60 mt-4">
-            Disponible avec le plan Growth (39 CHF/mois) ou Pro (79 CHF/mois)
+            Disponible avec le plan Growth (59 CHF/mois) ou Pro (89 CHF/mois)
           </p>
         </motion.div>
       </div>
     );
   }
+
+  // ---- Global status computation ----
+  const paidMembers = members.filter((m) => m.plan_type !== 'free');
+  const freeMembers = members.filter((m) => m.plan_type === 'free');
+  const membersWithOffers = members.filter((m) => m.shared_offer_count > 0);
+  const membersWithoutOffers = members.filter((m) => m.shared_offer_count === 0);
+  const membersWithoutWheel = members.filter((m) => m.winning_segment_count === 0);
+
+  // Multi-establishment works when: group exists + at least 2 paid members + at least 2 members share offers
+  const isGroupActive = !!group && paidMembers.length >= 2 && membersWithOffers.length >= 2;
+
+  // Determine what's blocking
+  function getStatusMessage(): { type: 'success' | 'warning' | 'error'; title: string; description: string } | null {
+    if (!group) return null;
+
+    if (isGroupActive) {
+      return {
+        type: 'success',
+        title: 'Multi-établissements actif',
+        description: `${membersWithOffers.length} établissements partagent des lots entre eux. Vos clients peuvent gagner des cadeaux croisés.`,
+      };
+    }
+
+    if (members.length < 2) {
+      return {
+        type: 'warning',
+        title: 'Ajoutez un 2e établissement',
+        description: 'Il faut au moins 2 établissements dans le groupe pour activer le partage de lots.',
+      };
+    }
+
+    if (paidMembers.length < 2) {
+      const needed = 2 - paidMembers.length;
+      return {
+        type: 'error',
+        title: `${needed} établissement${needed > 1 ? 's' : ''} à upgrader`,
+        description: 'Il faut au moins 2 établissements avec un plan payant (Growth ou plus) pour que le partage fonctionne.',
+      };
+    }
+
+    if (membersWithOffers.length < 2) {
+      const needed = 2 - membersWithOffers.length;
+      return {
+        type: 'warning',
+        title: `${needed} établissement${needed > 1 ? 's' : ''} sans lots partagés`,
+        description: 'Chaque établissement doit partager au moins un lot pour que les clients puissent gagner des cadeaux croisés.',
+      };
+    }
+
+    return null;
+  }
+
+  const statusMessage = getStatusMessage();
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -261,7 +495,39 @@ export default function GroupPage() {
       </div>
 
       {/* ================================================================
-          Card 1 — Mon groupe
+          Global status banner
+          ================================================================ */}
+      {statusMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={cn(
+            'flex items-start gap-3 rounded-xl border px-4 py-3',
+            statusMessage.type === 'success' && 'border-success/20 bg-success/5',
+            statusMessage.type === 'warning' && 'border-warning/20 bg-warning/5',
+            statusMessage.type === 'error' && 'border-danger/20 bg-danger/5',
+          )}
+        >
+          {statusMessage.type === 'success' ? (
+            <CircleCheck size={18} className="text-success shrink-0 mt-0.5" />
+          ) : statusMessage.type === 'error' ? (
+            <AlertCircle size={18} className="text-danger shrink-0 mt-0.5" />
+          ) : (
+            <AlertCircle size={18} className="text-warning shrink-0 mt-0.5" />
+          )}
+          <div>
+            <p className="text-sm font-display font-semibold text-text">
+              {statusMessage.title}
+            </p>
+            <p className="text-xs font-body text-text-muted mt-0.5">
+              {statusMessage.description}
+            </p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* ================================================================
+          Card 1 — Mon groupe + checklist par membre
           ================================================================ */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -299,7 +565,7 @@ export default function GroupPage() {
             </div>
           </>
         ) : (
-          // Group exists — show members
+          // Group exists — show members with checklist
           <>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -312,52 +578,31 @@ export default function GroupPage() {
               </div>
             </div>
 
+            {/* Summary line */}
+            {members.length > 1 && (
+              <p className="text-xs font-body text-text-muted mb-3">
+                Total : {members.reduce((sum, m) => sum + m.spins_this_month, 0)} spins ce mois sur {members.length} établissements
+              </p>
+            )}
+
             <div className="space-y-2 mb-4">
               {members.map((member) => (
-                <div
+                <MemberChecklist
                   key={member.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/30 bg-background"
-                >
-                  {member.logo_url ? (
-                    <img
-                      src={member.logo_url}
-                      alt={member.name}
-                      className="w-9 h-9 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                      {getInitials(member.name)}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-display font-semibold text-text truncate">
-                      {member.name}
-                    </p>
-                    {member.address && (
-                      <p className="text-[11px] font-body text-text-muted truncate">
-                        {member.address}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <Badge variant="muted" size="sm" className="capitalize">
-                      {member.plan_type}
-                    </Badge>
-                    <p className="text-[10px] font-body text-text-muted mt-0.5">
-                      {member.spins_this_month} spin{member.spins_this_month > 1 ? 's' : ''} ce mois
-                    </p>
-                  </div>
-                </div>
+                  member={member}
+                  onSwitch={switchAndNavigate}
+                  switching={switching}
+                />
               ))}
             </div>
 
-            <a
+            <Link
               href="/dashboard/group/add"
               className="inline-flex items-center gap-2 text-sm font-display font-semibold text-primary hover:text-primary-dark transition-colors"
             >
               <Plus className="w-4 h-4" />
               {T.addLocationCta}
-            </a>
+            </Link>
 
             <p className="text-xs font-body text-text-muted mt-3">
               {T.requiresGrowth}
@@ -385,6 +630,26 @@ export default function GroupPage() {
                   {T.offersDescription}
                 </p>
               </div>
+
+              {/* Error banner */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-2 bg-danger/5 border border-danger/20 text-danger rounded-xl px-3 py-2.5 mt-3 text-sm font-body">
+                      <AlertCircle size={14} className="shrink-0" />
+                      <span className="flex-1">{error}</span>
+                      <button onClick={() => setError('')} className="shrink-0 p-0.5 hover:bg-danger/10 rounded">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="space-y-2 mt-4">
                 {segments.map((seg) => {
@@ -449,6 +714,10 @@ export default function GroupPage() {
                     <p className="text-xs font-body text-text-muted mt-1">
                       Ajoutez des lots depuis la page "Ma Roue" pour les partager ici.
                     </p>
+                    <Link href="/dashboard/wheel" className="inline-flex items-center gap-1.5 mt-3 text-sm font-display font-semibold text-primary hover:text-primary-dark transition-colors">
+                      <Disc3 size={14} />
+                      Configurer ma roue
+                    </Link>
                   </div>
                 )}
               </div>
@@ -457,6 +726,35 @@ export default function GroupPage() {
                 <Gift className="w-3.5 h-3.5 shrink-0" />
                 Ce stock est indépendant de votre roue. La validité suit les paramètres de chaque établissement.
               </p>
+
+              {/* Per-member offers summary */}
+              {members.length > 1 && (
+                <div className="mt-4 pt-4 border-t border-border/30">
+                  <h3 className="text-xs font-display font-semibold text-text-muted uppercase tracking-wider mb-2">
+                    Lots partagés par établissement
+                  </h3>
+                  <div className="space-y-1">
+                    {members.map((m) => (
+                      <div key={m.id} className="flex items-center justify-between px-3 py-1.5 rounded-lg">
+                        <span className="text-sm font-body text-text truncate">{m.name}</span>
+                        <span className={cn(
+                          'text-xs font-body',
+                          m.shared_offer_count > 0 ? 'text-primary' : 'text-text-muted/50'
+                        )}>
+                          {m.shared_offer_count > 0
+                            ? `${m.shared_offer_count} lot${m.shared_offer_count > 1 ? 's' : ''}`
+                            : 'aucun'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {membersWithoutOffers.length > 0 && (
+                    <p className="text-[11px] font-body text-text-muted mt-2">
+                      Basculez sur chaque établissement pour configurer ses lots partagés.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         )}

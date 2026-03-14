@@ -25,23 +25,39 @@ export async function GET() {
     // Fetch all businesses in this group
     const { data: members } = await supabase
       .from('businesses')
-      .select('id, name, logo_url, address, plan_type, slug')
+      .select('id, name, logo_url, address, plan_type, slug, monthly_spin_limit')
       .eq('group_id', group.id)
       .order('created_at', { ascending: true });
 
-    // Fetch spin counts for current month per member
+    // Fetch spin counts, segment counts, and shared offer counts per member
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
     const membersWithStats = await Promise.all(
       (members ?? []).map(async (m) => {
-        const { count } = await supabase
-          .from('spins')
-          .select('*', { count: 'exact', head: true })
-          .eq('business_id', m.id)
-          .gte('created_at', monthStart);
+        const [spinsResult, segmentsResult, offersResult] = await Promise.all([
+          supabase
+            .from('spins')
+            .select('*', { count: 'exact', head: true })
+            .eq('business_id', m.id)
+            .gte('created_at', monthStart),
+          supabase
+            .from('wheel_segments')
+            .select('*', { count: 'exact', head: true })
+            .eq('business_id', m.id)
+            .eq('is_winning', true),
+          supabase
+            .from('group_shared_offers')
+            .select('*', { count: 'exact', head: true })
+            .eq('business_id', m.id),
+        ]);
 
-        return { ...m, spins_this_month: count ?? 0 };
+        return {
+          ...m,
+          spins_this_month: spinsResult.count ?? 0,
+          winning_segment_count: segmentsResult.count ?? 0,
+          shared_offer_count: offersResult.count ?? 0,
+        };
       })
     );
 
